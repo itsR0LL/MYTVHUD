@@ -2,7 +2,11 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import appIcon from './logo.png?asset'
-import { registerDatabaseIPC, databaseService } from './database/database'
+import {
+  registerDatabaseIPC,
+  databaseService,
+  removeDeprecatedRegistrationFields
+} from './database/database'
 import { registerDataTransferIPC } from './database/data-transfer'
 import './gsi/gsi'
 import './overlay/overlay'
@@ -73,6 +77,12 @@ app.whenReady().then(async () => {
   ipcMain.on('close', () => {
     BrowserWindow.getAllWindows().forEach((win) => win.close())
   })
+
+  try {
+    await removeDeprecatedRegistrationFields()
+  } catch (error) {
+    console.error('清理旧版注册字段失败：', error)
+  }
 
   // 启动时读取窗口毛玻璃设置
   try {

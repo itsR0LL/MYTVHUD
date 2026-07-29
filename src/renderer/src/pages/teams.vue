@@ -52,18 +52,6 @@
       <div class="input-container">
         <AvatarUpload v-model="createTeamForm.avatar" :label="t('teams.avatar')" />
       </div>
-      <div class="input-container">
-        <Select v-model="createTeamForm.type">
-          <SelectTrigger class="min-w-[180px]">
-            <SelectValue :placeholder="t('teams.type')" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="opt in teamTypeOptions" :key="opt.value" :value="opt.value"
-              >{{ opt.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
       <div class="input-container" style="margin-top: 1rem">
         <Button variant="destructive" @click="closeCreateTeamForm">{{ t('common.cancel') }}</Button>
         <Button variant="default" @click="isEditing ? updateTeam() : createTeam()">{{
@@ -207,13 +195,6 @@ import { useI18n } from 'vue-i18n'
 import { Input } from '@/components/ui/input'
 import AvatarUpload from '../components/AvatarUpload.vue'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem
-} from '@/components/ui/select'
 import { toast } from 'vue-sonner'
 import {
   DropdownMenu,
@@ -231,16 +212,10 @@ const createTeamForm = ref<Team>({
   id: 0,
   name: '',
   name_ingame: '',
-  avatar: '',
-  type: 'Normal'
+  avatar: ''
 })
 
 const openedContextTeamId = ref<any>(null)
-
-const teamTypeOptions = ref([
-  { label: '普通', value: 'Normal' },
-  { label: 'Faceit', value: 'Faceit' }
-])
 
 const closeCreateTeamForm = () => {
   showCreateTeamForm.value = false
@@ -250,8 +225,7 @@ const closeCreateTeamForm = () => {
     id: '',
     name: '',
     name_ingame: '',
-    avatar: '',
-    type: 'Normal'
+    avatar: ''
   }
 }
 
@@ -277,11 +251,10 @@ onMounted(() => {
 
 // 创建战队
 async function createTeam() {
-  const { name, name_ingame, type } = createTeamForm.value
+  const { name, name_ingame } = createTeamForm.value
   const missing: string[] = []
   if (!name) missing.push(t('teams.name'))
   if (!name_ingame) missing.push(t('teams.nameIngame'))
-  if (!type) missing.push(t('teams.type'))
 
   if (missing.length) {
     toast.warning(t('common.missingRequired'), {
@@ -314,18 +287,22 @@ async function createTeam() {
 
 // 打开战队编辑表单
 function openEditTeam(team: Team) {
-  createTeamForm.value = { ...team }
+  createTeamForm.value = {
+    id: team.id,
+    name: team.name,
+    name_ingame: team.name_ingame,
+    avatar: team.avatar ?? ''
+  }
   isEditing.value = true
   showCreateTeamForm.value = true
 }
 
 // 更新战队
 async function updateTeam() {
-  const { id, name, name_ingame, type } = createTeamForm.value
+  const { id, name, name_ingame } = createTeamForm.value
   const missing: string[] = []
   if (!name) missing.push(t('teams.name'))
   if (!name_ingame) missing.push(t('teams.nameIngame'))
-  if (!type) missing.push(t('teams.type'))
 
   if (missing.length) {
     toast.warning(t('common.missingRequired'), {

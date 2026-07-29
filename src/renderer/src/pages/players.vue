@@ -37,19 +37,8 @@
                 </div>
 
                 <div class="form-input-group">
-                    <IdCard class="size-4 opacity-60" />
-                    <Input v-model="createPlayerForm.realname" :placeholder="t('players.realnamePlaceholder')" />
-                </div>
-            </div>
-            <div class="input-container">
-                <div class="form-input-group">
                     <ExternalLink class="size-4 opacity-60" />
                     <Input v-model="createPlayerForm.steamid" :placeholder="t('players.steamidPlaceholder')" />
-                </div>
-
-                <div class="form-input-group">
-                    <Camera class="size-4 opacity-60" />
-                    <Input v-model="createPlayerForm.camera" :placeholder="t('players.cameraPlaceholder')" />
                 </div>
             </div>
             <div class="input-container">
@@ -83,19 +72,8 @@
                 </div>
 
                 <div class="form-input-group">
-                    <IdCard class="size-4 opacity-60" />
-                    <Input v-model="editPlayerForm.realname" :placeholder="t('players.realnamePlaceholder')" />
-                </div>
-            </div>
-            <div class="input-container">
-                <div class="form-input-group">
                     <ExternalLink class="size-4 opacity-60" />
                     <Input v-model="editPlayerForm.steamid" :placeholder="t('players.steamidPlaceholder')" />
-                </div>
-
-                <div class="form-input-group">
-                    <Camera class="size-4 opacity-60" />
-                    <Input v-model="editPlayerForm.camera" :placeholder="t('players.cameraPlaceholder')" />
                 </div>
             </div>
             <div class="input-container">
@@ -263,7 +241,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import { User, IdCard, ExternalLink, Camera, Plus } from 'lucide-vue-next'
+import { User, ExternalLink, Plus } from 'lucide-vue-next'
 
 
 const { t } = useI18n({ useScope: 'global' })
@@ -284,9 +262,7 @@ async function loadPlayers() {
 const createPlayerForm = ref<Player>({
     id: '',
     name: '',
-    realname: '',
     steamid: '',
-    camera: '',
     avatar: '',
     type: 'player'
 })
@@ -336,9 +312,7 @@ async function createPlayer() {
         createPlayerForm.value = {
             id: '',
             name: '',
-            realname: '',
             steamid: '',
-            camera: '',
             avatar: '',
             type: 'player'
         }
@@ -353,15 +327,19 @@ const showEditPlayerForm = ref(false)
 const editPlayerForm = ref<Player>({
     id: '',
     name: '',
-    realname: '',
     steamid: '',
-    camera: '',
     avatar: '',
     type: 'player'
 })
 
 function openEditPlayerForm(player: Player) {
-    editPlayerForm.value = { ...player }
+    editPlayerForm.value = {
+        id: player.id,
+        name: player.name,
+        steamid: player.steamid,
+        avatar: player.avatar,
+        type: player.type
+    }
     showEditPlayerForm.value = true
 }
 

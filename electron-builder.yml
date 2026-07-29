@@ -1,5 +1,6 @@
 appId: com.mytvhud.manager
 productName: MYTVHUD Manager
+buildNumber: '6'
 directories:
   buildResources: build
 files:
@@ -15,9 +16,9 @@ win:
   icon: build/icon.ico
   executableName: MYTVHUD Manager
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${name}-${buildVersion}-setup.${ext}
   shortcutName: MYTVHUD Manager
-  uninstallDisplayName: MYTVHUD Manager ${version}
+  uninstallDisplayName: MYTVHUD Manager ${buildVersion}
   createDesktopShortcut: always
   installerIcon: build/icon.ico
   oneClick: false
@@ -31,7 +32,7 @@ mac:
     - NSDownloadsFolderUsageDescription: 应用需要访问下载文件夹。
   notarize: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${buildVersion}.${ext}
 linux:
   target:
     - AppImage
@@ -40,7 +41,7 @@ linux:
   maintainer: electronjs.org
   category: Utility
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${buildVersion}.${ext}
 npmRebuild: false
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

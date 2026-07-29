@@ -290,6 +290,68 @@ export class DatabaseService {
 export const databaseService = new DatabaseService()
 
 /**
+ * 删除旧版注册表单已经废弃的字段，防止历史数据继续进入 HUD 或导出包
+ */
+export async function removeDeprecatedRegistrationFields(): Promise<void> {
+  const [players, teams, matchs] = await Promise.all([
+    databaseService.players.getAll(),
+    databaseService.teams.getAll(),
+    databaseService.matchs.getAll()
+  ])
+
+  let playersChanged = false
+  const normalizedPlayers = players.map((item) => {
+    const player = { ...item }
+    if (Object.prototype.hasOwnProperty.call(player, 'realname')) {
+      delete player.realname
+      playersChanged = true
+    }
+    if (Object.prototype.hasOwnProperty.call(player, 'camera')) {
+      delete player.camera
+      playersChanged = true
+    }
+    return player
+  })
+
+  let teamsChanged = false
+  const normalizedTeams = teams.map((item) => {
+    const team = { ...item }
+    if (Object.prototype.hasOwnProperty.call(team, 'type')) {
+      delete team.type
+      teamsChanged = true
+    }
+    return team
+  })
+
+  let matchsChanged = false
+  const normalizedMatchs = Object.fromEntries(
+    Object.entries(matchs).map(([key, item]) => {
+      const match = { ...item }
+      for (const teamKey of ['team_a', 'team_b'] as const) {
+        const team = match[teamKey]
+        if (
+          typeof team === 'object' &&
+          team !== null &&
+          Object.prototype.hasOwnProperty.call(team, 'type')
+        ) {
+          const normalizedTeam = { ...team }
+          delete normalizedTeam.type
+          match[teamKey] = normalizedTeam
+          matchsChanged = true
+        }
+      }
+      return [key, match]
+    })
+  )
+
+  const writes: Promise<unknown>[] = []
+  if (playersChanged) writes.push(databaseService.players.set(normalizedPlayers))
+  if (teamsChanged) writes.push(databaseService.teams.set(normalizedTeams))
+  if (matchsChanged) writes.push(databaseService.matchs.setAll(normalizedMatchs))
+  await Promise.all(writes)
+}
+
+/**
  * 注册供渲染进程调用的数据库 IPC 接口
  *
  * 统一通道：'db:invoke'

@@ -13,9 +13,7 @@ const PACKAGE_EXTENSION = '.mytvhud'
 
 type PlayerRecord = BaseEntity & {
   name: string
-  realname: string
   steamid: string
-  camera: string
   avatar: string
   type: 'player' | 'coach' | 'spectator'
 }
@@ -24,7 +22,6 @@ type TeamRecord = BaseEntity & {
   name: string
   name_ingame: string
   avatar?: string
-  type: 'Normal' | 'Faceit'
 }
 
 type TransferResult = {
@@ -63,7 +60,7 @@ function validatePlayers(items: unknown[]): PlayerRecord[] {
     if (!isRecord(item)) throw new Error(`${source} 不是对象`)
     if (!hasValidId(item.id)) throw new Error(`${source} 的 id 无效`)
 
-    for (const field of ['name', 'realname', 'steamid', 'camera', 'avatar']) {
+    for (const field of ['name', 'steamid', 'avatar']) {
       requireString(item, field, source)
     }
     if (!['player', 'coach', 'spectator'].includes(String(item.type))) {
@@ -78,7 +75,10 @@ function validatePlayers(items: unknown[]): PlayerRecord[] {
     if (steamIds.has(steamId)) throw new Error(`players.json 中存在重复 steamid：${steamId}`)
     steamIds.add(steamId)
 
-    return item as PlayerRecord
+    const player = { ...item }
+    delete player.realname
+    delete player.camera
+    return player as PlayerRecord
   })
 }
 
@@ -97,10 +97,6 @@ function validateTeams(items: unknown[]): TeamRecord[] {
     if (item.avatar !== undefined && typeof item.avatar !== 'string') {
       throw new Error(`${source} 的 avatar 必须是字符串`)
     }
-    if (!['Normal', 'Faceit'].includes(String(item.type))) {
-      throw new Error(`${source} 的 type 无效`)
-    }
-
     const idKey = String(item.id)
     if (ids.has(idKey)) throw new Error(`teams.json 中存在重复 id：${idKey}`)
     ids.add(idKey)
@@ -111,7 +107,9 @@ function validateTeams(items: unknown[]): TeamRecord[] {
     }
     inGameNames.add(inGameName)
 
-    return item as TeamRecord
+    const team = { ...item }
+    delete team.type
+    return team as TeamRecord
   })
 }
 
@@ -153,6 +151,17 @@ async function createPackage(
   purpose: 'export' | 'automatic-backup'
 ): Promise<Buffer> {
   const zip = new JSZip()
+  const normalizedPlayers = players.map((item) => {
+    const player = { ...item }
+    delete player.realname
+    delete player.camera
+    return player
+  })
+  const normalizedTeams = teams.map((item) => {
+    const team = { ...item }
+    delete team.type
+    return team
+  })
   zip.file(
     'manifest.json',
     JSON.stringify(
@@ -168,8 +177,8 @@ async function createPackage(
       2
     )
   )
-  zip.file('players.json', JSON.stringify({ items: players }, null, 2))
-  zip.file('teams.json', JSON.stringify({ items: teams }, null, 2))
+  zip.file('players.json', JSON.stringify({ items: normalizedPlayers }, null, 2))
+  zip.file('teams.json', JSON.stringify({ items: normalizedTeams }, null, 2))
   return zip.generateAsync({
     type: 'nodebuffer',
     compression: 'DEFLATE',

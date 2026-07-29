@@ -49,20 +49,15 @@ const messages = {
       editTitle: '编辑战队',
       name: '队伍名称',
       nameIngame: '队伍名称（游戏内）',
-      type: '队伍类型',
       avatar: '队伍头像'
     },
     players: {
       createTitle: '创建选手',
       editTitle: '编辑选手',
       nickname: '昵称',
-      realname: '真实姓名',
       steamid: 'SteamID',
-      cameraUrl: '摄像头地址',
       nicknamePlaceholder: '昵称 *',
-      realnamePlaceholder: '真实姓名',
       steamidPlaceholder: 'SteamID *',
-      cameraPlaceholder: '摄像头地址',
       uploadAvatar: '上传头像',
       type: {
         player: '选手',

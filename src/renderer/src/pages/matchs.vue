@@ -194,13 +194,16 @@ import { toast } from 'vue-sonner'
 
 const { t } = useI18n()
 const teams = ref<Team[]>([])
-const types = ref([
+const types: { name: Match['type']; label: Match['type'] }[] = [
   { name: 'BO1', label: 'BO1' },
-  { name: 'BO2', label: 'BO2' },
   { name: 'BO3', label: 'BO3' },
-  { name: 'BO4', label: 'BO4' },
   { name: 'BO5', label: 'BO5' }
-])
+]
+const allowedMatchTypes = new Set<Match['type']>(types.map((item) => item.name))
+
+function normalizeMatchType(value: unknown): Match['type'] {
+  return allowedMatchTypes.has(value as Match['type']) ? (value as Match['type']) : 'BO1'
+}
 const mapOptions = computed(() => [
   { name: t('maps.inferno'), label: 'de_inferno' },
   { name: t('maps.mirage'), label: 'de_mirage' },
@@ -253,14 +256,12 @@ const matchForm = ref<Match>({
   team_a: {
     id: '',
     name: '',
-    name_ingame: '',
-    type: 'Normal'
+    name_ingame: ''
   },
   team_b: {
     id: '',
     name: '',
-    name_ingame: '',
-    type: 'Normal'
+    name_ingame: ''
   },
   type: 'BO1',
   maps: [
@@ -321,7 +322,6 @@ watch(
     if (picked) {
       matchForm.value.team_a.name = picked.name ?? ''
       matchForm.value.team_a.name_ingame = picked.name_ingame ?? ''
-      matchForm.value.team_a.type = (picked as any)?.type ?? matchForm.value.team_a.type
     } else {
       matchForm.value.team_a.name = ''
       matchForm.value.team_a.name_ingame = ''
@@ -336,7 +336,6 @@ watch(
     if (picked) {
       matchForm.value.team_b.name = picked.name ?? ''
       matchForm.value.team_b.name_ingame = picked.name_ingame ?? ''
-      matchForm.value.team_b.type = (picked as any)?.type ?? matchForm.value.team_b.type
     } else {
       matchForm.value.team_b.name = ''
       matchForm.value.team_b.name_ingame = ''
@@ -375,14 +374,20 @@ async function autoLoadMatch() {
     const loaded: Match = {
       id: record.id,
       team_a: {
-        ...(record.team_a ?? matchForm.value.team_a),
-        id: String(record.team_a?.id ?? matchForm.value.team_a.id ?? '')
+        id: String(record.team_a?.id ?? matchForm.value.team_a.id ?? ''),
+        name: String(record.team_a?.name ?? matchForm.value.team_a.name ?? ''),
+        name_ingame: String(
+          record.team_a?.name_ingame ?? matchForm.value.team_a.name_ingame ?? ''
+        )
       },
       team_b: {
-        ...(record.team_b ?? matchForm.value.team_b),
-        id: String(record.team_b?.id ?? matchForm.value.team_b.id ?? '')
+        id: String(record.team_b?.id ?? matchForm.value.team_b.id ?? ''),
+        name: String(record.team_b?.name ?? matchForm.value.team_b.name ?? ''),
+        name_ingame: String(
+          record.team_b?.name_ingame ?? matchForm.value.team_b.name_ingame ?? ''
+        )
       },
-      type: record.type ?? 'BO1',
+      type: normalizeMatchType(record.type),
       maps:
         Array.isArray(record.maps) && record.maps.length > 0
           ? record.maps.map((m: any) => ({
@@ -413,14 +418,12 @@ function resetForm() {
     team_a: {
       id: '',
       name: '',
-      name_ingame: '',
-      type: 'Normal'
+      name_ingame: ''
     },
     team_b: {
       id: '',
       name: '',
-      name_ingame: '',
-      type: 'Normal'
+      name_ingame: ''
     },
     type: 'BO1',
     maps: [
@@ -476,8 +479,7 @@ async function submitForm() {
       matchForm.value.team_a = {
         ...matchForm.value.team_a,
         name: ta.name ?? '',
-        name_ingame: (ta as any)?.name_ingame ?? '',
-        type: (ta as any)?.type ?? matchForm.value.team_a.type
+        name_ingame: ta.name_ingame ?? ''
       }
     }
     const tb = teams.value.find((t) => String(t.id) === String(matchForm.value.team_b.id))
@@ -485,8 +487,7 @@ async function submitForm() {
       matchForm.value.team_b = {
         ...matchForm.value.team_b,
         name: tb.name ?? '',
-        name_ingame: (tb as any)?.name_ingame ?? '',
-        type: (tb as any)?.type ?? matchForm.value.team_b.type
+        name_ingame: tb.name_ingame ?? ''
       }
     }
   }

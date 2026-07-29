@@ -293,7 +293,6 @@ interface PlayerExtension {
   id: string
   name: string
   steamid: string
-  realName: string | null
   country: string | null
   avatar: string | null
   extra: Record<string, string>
@@ -304,7 +303,6 @@ interface TeamsInfo {
   id: number
   name: string
   name_ingame: string
-  type: 'Normal' | 'Faceit'
 }
 
 type Orientation = 'left' | 'right'
@@ -351,10 +349,8 @@ interface Player {
   isFocused: boolean
   infos?: {
     avatar: string | null
-    camera: string | null
     id: number
     name: string
-    realname: string | null
     steamid: string
     type: 'player' | 'coach' | 'spectator'
   }
@@ -385,7 +381,6 @@ interface Player {
   forward: number[]
   avatar: string | null
   country: string | null
-  realName: string | null
   extra: Record<string, string>
   bomb?: Weapon
   active_weapon: Weapon
@@ -495,7 +490,7 @@ interface Match {
   maps: PickMap[]
   team_a: TeamsInfo
   team_b: TeamsInfo
-  type: 'BO1' | 'BO2' | 'BO3' | 'BO4' | 'BO5'
+  type: 'BO1' | 'BO3' | 'BO5'
 }
 
 interface PickMap {

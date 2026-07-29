@@ -43,9 +43,7 @@ interface Window {
 interface Player {
   id: string | number
   name: string
-  realname: string
   steamid: string
-  camera: string
   avatar: string
   type: 'player' | 'coach' | 'spectator'
 }
@@ -55,7 +53,6 @@ interface Team {
   name: string
   name_ingame: string
   avatar?: string
-  type: 'Normal' | 'Faceit'
 }
 
 interface PickMap {
@@ -84,6 +81,6 @@ interface Match {
   id: string | number
   team_a: Team
   team_b: Team
-  type: 'BO1' | 'BO2' | 'BO3' | 'BO4' | 'BO5'
+  type: 'BO1' | 'BO3' | 'BO5'
   maps: PickMap[]
 }
