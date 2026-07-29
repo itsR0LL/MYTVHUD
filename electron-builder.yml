@@ -1,0 +1,46 @@
+appId: com.mytvhud.manager
+productName: MYTVHUD Manager
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+asarUnpack:
+  - resources/**
+win:
+  icon: build/icon.ico
+  executableName: MYTVHUD Manager
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: MYTVHUD Manager
+  uninstallDisplayName: MYTVHUD Manager ${version}
+  createDesktopShortcut: always
+  installerIcon: build/icon.ico
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    - NSCameraUsageDescription: 应用需要访问摄像头。
+    - NSMicrophoneUsageDescription: 应用需要访问麦克风。
+    - NSDocumentsFolderUsageDescription: 应用需要访问文稿文件夹。
+    - NSDownloadsFolderUsageDescription: 应用需要访问下载文件夹。
+  notarize: false
+dmg:
+  artifactName: ${name}-${version}.${ext}
+linux:
+  target:
+    - AppImage
+    - snap
+    - deb
+  maintainer: electronjs.org
+  category: Utility
+appImage:
+  artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+electronDownload:
+  mirror: https://npmmirror.com/mirrors/electron/

@@ -1,0 +1,39 @@
+// 样式变量和 Tailwind CSS
+@use './variable.scss';
+@use 'tailwindcss';
+
+// 全局基础样式
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  background-color: var(--background-glass);
+  color: var(--foreground);
+  font-family: 'Inter', 'HarmonyOS Sans SC', sans-serif;
+}
+
+
+html {
+  -ms-overflow-style: none;
+  /* 隐藏 IE 和 Edge 的滚动条 */
+  scrollbar-width: none;
+  /* 隐藏 Firefox 的滚动条 */
+}
+
+::-webkit-scrollbar-button {
+  height: 0;
+  background-color: transparent;
+}
