@@ -94,6 +94,18 @@ export async function setBPContent(value: BPContentInput): Promise<BPPayload> {
   return payload
 }
 
+export async function resetBPBroadcastState(): Promise<BPPayload> {
+  const match = await getCurrentMatch()
+  liveBPState = {
+    ...createDefaultBPState(),
+    animationEnabled: liveBPState.animationEnabled,
+    revision: liveBPState.revision + 1
+  }
+  const payload = { state: getBPState(), match }
+  publishPayload?.(payload)
+  return payload
+}
+
 export async function removeDeprecatedBPState(): Promise<void> {
   await databaseService.additional.remove(BP_STATE_KEY)
 }

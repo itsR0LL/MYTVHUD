@@ -18,7 +18,7 @@ import {
   INTERMISSION_CANVAS_WIDTH,
   INTERMISSION_PREVIEW_MESSAGES,
   type IntermissionPayload,
-  type IntermissionPreviewPortMessage
+  type IntermissionPreviewMessage
 } from '../../../../shared/intermission'
 
 const props = defineProps<{ payload: IntermissionPayload | null }>()
@@ -28,7 +28,6 @@ const emit = defineEmits<{
 
 const canvasElement = ref<HTMLElement | null>(null)
 const frameElement = ref<HTMLIFrameElement | null>(null)
-let channel: MessageChannel | null = null
 let resizeObserver: ResizeObserver | null = null
 
 function updateScale(): void {
@@ -38,31 +37,19 @@ function updateScale(): void {
 }
 
 function sendPayload(): void {
-  if (!channel || !props.payload) return
+  const target = frameElement.value?.contentWindow
+  if (!target || !props.payload) return
   const serializablePayload = JSON.parse(JSON.stringify(props.payload)) as IntermissionPayload
-  const message: IntermissionPreviewPortMessage = {
+  const message: IntermissionPreviewMessage = {
     type: INTERMISSION_PREVIEW_MESSAGES.state,
     payload: serializablePayload
   }
-  channel.port1.postMessage(JSON.stringify(message))
+  target.postMessage(JSON.stringify(message), 'http://localhost:5031')
 }
 
 function connectPreview(): void {
-  const target = frameElement.value?.contentWindow
-  if (!target) return
-  channel?.port1.close()
-  channel?.port2.close()
-  channel = new MessageChannel()
-  channel.port1.onmessage = (event: MessageEvent<IntermissionPreviewPortMessage>) => {
-    if (event.data?.type === INTERMISSION_PREVIEW_MESSAGES.ready) {
-      emit('ready')
-      sendPayload()
-    }
-  }
-  channel.port1.start()
-  target.postMessage({ type: INTERMISSION_PREVIEW_MESSAGES.connect }, 'http://localhost:5031', [
-    channel.port2
-  ])
+  emit('ready')
+  sendPayload()
 }
 
 watch(() => props.payload, sendPayload)
@@ -75,8 +62,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
-  channel?.port1.close()
-  channel?.port2.close()
 })
 
 defineExpose({ canvasElement })

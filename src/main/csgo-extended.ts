@@ -353,6 +353,7 @@ interface Player {
     name: string
     steamid: string
     type: 'player' | 'coach' | 'spectator'
+    team_id: string
   }
   stats: {
     kills: number

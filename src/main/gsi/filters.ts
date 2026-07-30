@@ -1,5 +1,10 @@
 import type { CSGO, PlayerExtension } from '../csgo-extended'
-import { databaseService } from '../database/database'
+import {
+  injectResolvedTeamInfo,
+  resolveActiveMatchTeamSides,
+  type GSIRuntimeContext,
+  type ResolvedTeamSides
+} from './match-runtime'
 export type Filter = (data: CSGO) => CSGO | Promise<CSGO>
 export interface FilterOptions {
   sortPlayersByObserverSlot?: boolean
@@ -60,50 +65,12 @@ export function sortPlayersByObserverSlotFilter(data: CSGO): CSGO {
     return data
   }
 }
-export async function injectTeamInfo(data: CSGO): Promise<CSGO> {
-  try {
-    const teamsRaw = await databaseService.teams.getAll()
-    const teamsList = Array.isArray(teamsRaw) ? (teamsRaw as any[]) : Object.values(teamsRaw as any)
-
-    // 建立“游戏内名称 -> 完整战队记录”的索引
-    const teamLookup = new Map<string, any>()
-    for (const t of teamsList) {
-      const ingame = String((t as any)?.name_ingame ?? '').trim()
-      if (!ingame) continue
-      teamLookup.set(ingame, t)
-    }
-
-    if (teamLookup.size === 0) return data
-
-    const attachInfos = (team: any) => {
-      if (!team || typeof team !== 'object') return team
-      const key = String(team?.name ?? '').trim()
-      const info = teamLookup.get(key)
-      if (info) {
-        const nextInfo = { ...info }
-        delete nextInfo.avatar
-        return { ...team, infos: nextInfo }
-      }
-      return team
-    }
-
-    const currentMap = (data as any)?.map
-    if (!currentMap || typeof currentMap !== 'object') return data
-
-    const nextMap = {
-      ...currentMap,
-      team_ct: Array.isArray(currentMap.team_ct)
-        ? currentMap.team_ct.map(attachInfos)
-        : attachInfos(currentMap.team_ct),
-      team_t: Array.isArray(currentMap.team_t)
-        ? currentMap.team_t.map(attachInfos)
-        : attachInfos(currentMap.team_t)
-    }
-
-    return { ...(data as any), map: nextMap } as CSGO
-  } catch {
-    return data
-  }
+export function injectTeamInfo(
+  data: CSGO,
+  context: GSIRuntimeContext,
+  resolvedSides: ResolvedTeamSides | null
+): CSGO {
+  return injectResolvedTeamInfo(data, context, resolvedSides)
 }
 
 export function playerGrenadesFilter(data: CSGO): CSGO {
@@ -185,30 +152,23 @@ export function playerWeaponsFilter(data: CSGO): CSGO {
   }
 }
 
-export async function injectPlayerInfo(data: CSGO): Promise<CSGO> {
+export function injectPlayerInfo(data: CSGO, context: GSIRuntimeContext): CSGO {
   try {
-    const playersRaw = await databaseService.players.getAll()
-    const playersList = Array.isArray(playersRaw)
-      ? (playersRaw as any[])
-      : Object.values(playersRaw as any)
+    const playersList = context.players
 
     if (!Array.isArray(playersList) || playersList.length === 0) return data
 
     // 建立“Steam ID -> 完整选手记录”的索引
     const lookup = new Map<string, any>()
     for (const p of playersList) {
-      const sid = String(
-        (p as any)?.steamid ?? (p as any)?.steamID ?? (p as any)?.steamId ?? ''
-      ).trim()
+      const sid = typeof p.steamid === 'string' ? p.steamid.trim() : ''
       if (!sid) continue
       lookup.set(sid, p)
     }
 
     const attachInfos = (pl: any) => {
       if (!pl || typeof pl !== 'object') return pl
-      const sid = String(
-        (pl as any)?.steamid ?? (pl as any)?.steamID ?? (pl as any)?.steamId ?? ''
-      ).trim()
+      const sid = typeof pl.steamid === 'string' ? pl.steamid.trim() : ''
       if (!sid) return pl
       const info = lookup.get(sid)
       if (info) {
@@ -239,7 +199,7 @@ function playerIsFocused(data: CSGO): CSGO {
     if (!Array.isArray(players) || players.length === 0) return data
 
     const getSteamId = (obj: any): string =>
-      String(obj?.steamid ?? obj?.steamID ?? obj?.steamId ?? '').trim()
+      typeof obj?.steamid === 'string' ? obj.steamid.trim() : ''
 
     const focusedId = getSteamId(focused)
     const isSame = (p: any): boolean => {
@@ -259,20 +219,22 @@ function playerIsFocused(data: CSGO): CSGO {
 
 export async function applyFilters(
   gamedata: CSGO,
+  context: GSIRuntimeContext,
   options: FilterOptions = defaultOptions
 ): Promise<CSGO> {
   const filters: Filter[] = []
+  const resolvedSides = resolveActiveMatchTeamSides(gamedata, context)
 
   if (options.sortPlayersByObserverSlot) {
     filters.push(sortPlayersByObserverSlotFilter)
   }
 
   if (options.replaceTeamName) {
-    filters.push(injectTeamInfo)
+    filters.push((data) => injectTeamInfo(data, context, resolvedSides))
   }
 
   // 根据 Steam ID 注入本地选手资料
-  filters.push(injectPlayerInfo)
+  filters.push((data) => injectPlayerInfo(data, context))
 
   // 从全部选手及当前观察选手的武器列表中拆分投掷物
   filters.push(playerGrenadesFilter)

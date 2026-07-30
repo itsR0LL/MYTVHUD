@@ -6,6 +6,7 @@ import { registerDatabaseIPC, removeDeprecatedRegistrationFields } from './datab
 import { registerDataTransferIPC } from './database/data-transfer'
 import { registerBPIPC, removeDeprecatedBPState } from './bp/bp'
 import { initializeIntermissionState, registerIntermissionIPC } from './intermission/intermission'
+import { registerMatchResetIPC } from './match-reset'
 import './gsi/gsi'
 import './overlay/overlay'
 import { registerAutoPlaceGSIIPC } from './gsi/auto-place'
@@ -87,6 +88,8 @@ app.whenReady().then(async () => {
   registerBPIPC(ipcMain)
   // 注册赛间播出状态、地图状态与倒计时接口
   registerIntermissionIPC(ipcMain)
+  // 注册比赛结束后的播出状态联动重置接口
+  registerMatchResetIPC(ipcMain)
   // 注册数据目录及赛事数据导入、导出接口
   registerDataTransferIPC(ipcMain)
   // 注册 GSI 配置自动写入接口

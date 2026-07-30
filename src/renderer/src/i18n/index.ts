@@ -60,6 +60,9 @@ const messages = {
       nicknamePlaceholder: '昵称 *',
       steamidPlaceholder: 'SteamID *',
       uploadAvatar: '上传头像',
+      team: '所属战队',
+      teamPlaceholder: '所属战队 *',
+      duplicateSteamId: '该 SteamID 已经注册',
       type: {
         player: '选手',
         coach: '教练',

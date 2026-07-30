@@ -45,12 +45,12 @@
                 <AvatarUpload v-model="createPlayerForm.avatar" :label="t('players.uploadAvatar')" />
             </div>
             <div class="input-container">
-                <Select v-model="createPlayerForm.type">
+                <Select v-model="createPlayerForm.team_id">
                     <SelectTrigger class="min-w-[180px]">
-                        <SelectValue :placeholder="t('players.type.player')" />
+                        <SelectValue :placeholder="t('players.teamPlaceholder')" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem v-for="opt in playerTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}
+                        <SelectItem v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -80,12 +80,12 @@
                 <AvatarUpload v-model="editPlayerForm.avatar" :label="t('players.uploadAvatar')" />
             </div>
             <div class="input-container">
-                <Select v-model="editPlayerForm.type">
+                <Select v-model="editPlayerForm.team_id">
                     <SelectTrigger class="min-w-[180px]">
-                        <SelectValue :placeholder="t('players.type.player')" />
+                        <SelectValue :placeholder="t('players.teamPlaceholder')" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem v-for="opt in playerTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}
+                        <SelectItem v-for="team in teams" :key="team.id" :value="String(team.id)">{{ team.name }}
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -232,7 +232,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import AvatarUpload from '../components/AvatarUpload.vue';
@@ -247,6 +247,7 @@ const { t } = useI18n({ useScope: 'global' })
 
 
 const Players = ref<Player[]>([])
+const teams = ref<Team[]>([])
 const openedContextPlayerId = ref<any>(null)
 
 async function loadPlayers() {
@@ -258,19 +259,23 @@ async function loadPlayers() {
     }
 }
 
+async function loadTeams() {
+    try {
+        const list = await window.db.teams.getAll()
+        teams.value = list as Team[]
+    } catch (error: any) {
+        toast.error(t('common.loadFailed'), { description: error?.message ?? t('common.loadFailed'), duration: 4000 })
+    }
+}
+
 const createPlayerForm = ref<Player>({
     id: '',
     name: '',
     steamid: '',
     avatar: '',
-    type: 'player'
+    type: 'player',
+    team_id: ''
 })
-
-const playerTypeOptions = computed(() => [
-    { label: t('players.type.player'), value: 'player' },
-    { label: t('players.type.coach'), value: 'coach' },
-    { label: t('players.type.spectator'), value: 'spectator' }
-])
 
 const showCreatePlayerForm = ref(false)
 function openCreatePlayerForm() {
@@ -280,24 +285,34 @@ function closeCreatePlayerForm() {
     showCreatePlayerForm.value = false
 }
 onMounted(() => {
-    loadPlayers()
+    void Promise.all([loadPlayers(), loadTeams()])
 })
 async function createPlayer() {
     // 校验必填字段
-    const { name, steamid, type } = createPlayerForm.value
+    const { name, steamid, team_id } = createPlayerForm.value
     const missing: string[] = []
     if (!name) missing.push(t('players.nickname'))
     if (!steamid) missing.push(t('players.steamid'))
-    if (!type) missing.push(t('players.type.player'))
+    if (!team_id) missing.push(t('players.team'))
 
     if (missing.length) {
         toast.warning(t('common.missingRequired'), { description: t('common.pleaseFill', { fields: missing.join(' / ') }), duration: 3500 })
         return
     }
 
+    const normalizedSteamId = steamid.trim()
+    if (Players.value.some((player) => player.steamid.trim() === normalizedSteamId)) {
+        toast.warning(t('players.duplicateSteamId'), { duration: 3500 })
+        return
+    }
+
     // 为新选手生成本地 ID
     const newItem = {
         ...createPlayerForm.value,
+        name: name.trim(),
+        steamid: normalizedSteamId,
+        team_id: String(team_id),
+        type: 'player' as const,
         id: Date.now()
     }
 
@@ -313,7 +328,8 @@ async function createPlayer() {
             name: '',
             steamid: '',
             avatar: '',
-            type: 'player'
+            type: 'player',
+            team_id: ''
         }
         showCreatePlayerForm.value = false
     } catch (error: any) {
@@ -328,7 +344,8 @@ const editPlayerForm = ref<Player>({
     name: '',
     steamid: '',
     avatar: '',
-    type: 'player'
+    type: 'player',
+    team_id: ''
 })
 
 function openEditPlayerForm(player: Player) {
@@ -337,7 +354,8 @@ function openEditPlayerForm(player: Player) {
         name: player.name,
         steamid: player.steamid,
         avatar: player.avatar,
-        type: player.type
+        type: 'player',
+        team_id: String(player.team_id ?? '')
     }
     showEditPlayerForm.value = true
 }
@@ -347,20 +365,33 @@ function closeEditPlayerForm() {
 }
 
 async function updatePlayer() {
-    const { id, name, steamid, type } = editPlayerForm.value
+    const { id, name, steamid, team_id } = editPlayerForm.value
     const missing: string[] = []
     if (!name) missing.push(t('players.nickname'))
     if (!steamid) missing.push(t('players.steamid'))
-    if (!type) missing.push(t('players.type.player'))
+    if (!team_id) missing.push(t('players.team'))
 
     if (missing.length) {
         toast.warning(t('common.missingRequired'), { description: t('common.pleaseFill', { fields: missing.join(' / ') }), duration: 3500 })
         return
     }
 
+    const normalizedSteamId = steamid.trim()
+    if (Players.value.some((player) => player.id !== id && player.steamid.trim() === normalizedSteamId)) {
+        toast.warning(t('players.duplicateSteamId'), { duration: 3500 })
+        return
+    }
+
     try {
         const current = await window.db.players.getAll()
-        const updated = (current as Player[]).map(p => p.id === id ? { ...editPlayerForm.value } : p)
+        const updatedPlayer = {
+            ...editPlayerForm.value,
+            name: name.trim(),
+            steamid: normalizedSteamId,
+            team_id: String(team_id),
+            type: 'player' as const
+        }
+        const updated = (current as Player[]).map(p => p.id === id ? updatedPlayer : p)
         await window.db.players.set(updated as any)
 
         await loadPlayers()

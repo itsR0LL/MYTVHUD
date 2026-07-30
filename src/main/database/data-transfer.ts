@@ -8,7 +8,8 @@ import type { BaseEntity } from './database'
 import { emitOverlayRefresh } from '../gsi/gsi'
 
 const PACKAGE_FORMAT = 'MYTVHUD_DATA_PACKAGE'
-const PACKAGE_SCHEMA_VERSION = 1
+const PACKAGE_SCHEMA_VERSION = 2
+const SUPPORTED_PACKAGE_SCHEMA_VERSIONS = [1, 2] as const
 const PACKAGE_EXTENSION = '.mytvhud'
 
 type PlayerRecord = BaseEntity & {
@@ -16,6 +17,7 @@ type PlayerRecord = BaseEntity & {
   steamid: string
   avatar: string
   type: 'player' | 'coach' | 'spectator'
+  team_id: string
 }
 
 type TeamRecord = BaseEntity & {
@@ -51,7 +53,7 @@ function requireString(record: Record<string, unknown>, field: string, source: s
   }
 }
 
-function validatePlayers(items: unknown[]): PlayerRecord[] {
+function validatePlayers(items: unknown[], schemaVersion: number): PlayerRecord[] {
   const ids = new Set<string>()
   const steamIds = new Set<string>()
 
@@ -63,6 +65,7 @@ function validatePlayers(items: unknown[]): PlayerRecord[] {
     for (const field of ['name', 'steamid', 'avatar']) {
       requireString(item, field, source)
     }
+    if (schemaVersion >= 2) requireString(item, 'team_id', source)
     if (!['player', 'coach', 'spectator'].includes(String(item.type))) {
       throw new Error(`${source} 的 type 无效`)
     }
@@ -78,8 +81,22 @@ function validatePlayers(items: unknown[]): PlayerRecord[] {
     const player = { ...item }
     delete player.realname
     delete player.camera
+    player.team_id =
+      typeof item.team_id === 'string' || typeof item.team_id === 'number'
+        ? String(item.team_id)
+        : ''
     return player as PlayerRecord
   })
+}
+
+function validatePlayerTeamReferences(players: PlayerRecord[], teams: TeamRecord[]): void {
+  const teamIds = new Set(teams.map((team) => String(team.id)))
+  const invalidPlayer = players.find(
+    (player) => player.team_id && !teamIds.has(String(player.team_id))
+  )
+  if (invalidPlayer) {
+    throw new Error(`选手 ${invalidPlayer.name} 引用了数据包中不存在的战队`)
+  }
 }
 
 function validateTeams(items: unknown[]): TeamRecord[] {
@@ -155,6 +172,10 @@ async function createPackage(
     const player = { ...item }
     delete player.realname
     delete player.camera
+    player.team_id =
+      typeof player.team_id === 'string' || typeof player.team_id === 'number'
+        ? String(player.team_id)
+        : ''
     return player
   })
   const normalizedTeams = teams.map((item) => {
@@ -217,14 +238,21 @@ async function readPackage(filePath: string): Promise<{
   if (!isRecord(manifest) || manifest.format !== PACKAGE_FORMAT) {
     throw new Error('不是 MYTVHUD 数据包')
   }
-  if (manifest.schemaVersion !== PACKAGE_SCHEMA_VERSION) {
+  if (
+    typeof manifest.schemaVersion !== 'number' ||
+    !SUPPORTED_PACKAGE_SCHEMA_VERSIONS.includes(
+      manifest.schemaVersion as (typeof SUPPORTED_PACKAGE_SCHEMA_VERSIONS)[number]
+    )
+  ) {
     throw new Error(`不支持的数据包版本：${String(manifest.schemaVersion)}`)
   }
 
-  const players = validatePlayers(
-    parseCollection(await playersEntry.async('string'), 'players.json')
-  )
   const teams = validateTeams(parseCollection(await teamsEntry.async('string'), 'teams.json'))
+  const players = validatePlayers(
+    parseCollection(await playersEntry.async('string'), 'players.json'),
+    manifest.schemaVersion
+  )
+  validatePlayerTeamReferences(players, teams)
   return { players, teams }
 }
 

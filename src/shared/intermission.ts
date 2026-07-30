@@ -111,14 +111,13 @@ export interface IntermissionPayload {
 }
 
 export const INTERMISSION_PREVIEW_MESSAGES = {
-  connect: 'intermission-preview-connect',
-  ready: 'intermission-preview-ready',
   state: 'intermission-preview-state'
 } as const
 
-export type IntermissionPreviewPortMessage =
-  | { type: typeof INTERMISSION_PREVIEW_MESSAGES.ready }
-  | { type: typeof INTERMISSION_PREVIEW_MESSAGES.state; payload: IntermissionPayload }
+export type IntermissionPreviewMessage = {
+  type: typeof INTERMISSION_PREVIEW_MESSAGES.state
+  payload: IntermissionPayload
+}
 
 const BP_MAP_IDS = BP_MAPS.map((map) => map.id)
 

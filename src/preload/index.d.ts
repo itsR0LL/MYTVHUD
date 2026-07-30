@@ -42,6 +42,7 @@ declare global {
       getBPState: () => Promise<BPPayload>
       setBPState: (state: BPState) => Promise<BPPayload>
       setBPContent: (content: BPContentInput) => Promise<BPPayload>
+      resetMatchBroadcastState: () => Promise<void>
       getIntermissionState: () => Promise<IntermissionPayload>
       updateIntermissionState: (update: IntermissionStateUpdate) => Promise<IntermissionPayload>
       updateIntermissionMapStatus: (

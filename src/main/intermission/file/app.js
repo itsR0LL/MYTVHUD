@@ -12,8 +12,6 @@ const MAP_SHORT_LABELS = {
 }
 
 const PREVIEW_MESSAGES = {
-  connect: 'intermission-preview-connect',
-  ready: 'intermission-preview-ready',
   state: 'intermission-preview-state'
 }
 
@@ -34,7 +32,6 @@ let activePayload = null
 let clockOffsetMs = 0
 let latestRevision = -1
 let latestServerNowMs = -1
-let previewPort = null
 let previouslyFinished = false
 let renderedContentPayload = null
 
@@ -234,45 +231,20 @@ function applyNewestPayload(payload) {
   renderPayload(payload)
 }
 
-function isAllowedEditorParentOrigin(origin) {
-  if (origin === 'null') return true
-  try {
-    const url = new URL(origin)
-    return (
-      url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-    )
-  } catch {
-    return false
-  }
-}
-
 if (isEditorMode) {
   window.addEventListener('message', (event) => {
-    if (
-      previewPort ||
-      event.source !== window.parent ||
-      !isAllowedEditorParentOrigin(event.origin) ||
-      event.data?.type !== PREVIEW_MESSAGES.connect ||
-      event.ports.length !== 1
-    ) {
-      return
-    }
-    previewPort = event.ports[0]
-    previewPort.onmessage = (portEvent) => {
-      let message = portEvent.data
-      if (typeof message === 'string') {
-        try {
-          message = JSON.parse(message)
-        } catch {
-          return
-        }
-      }
-      if (message?.type === PREVIEW_MESSAGES.state) {
-        renderPayload(message.payload)
+    if (event.source !== window.parent) return
+    let message = event.data
+    if (typeof message === 'string') {
+      try {
+        message = JSON.parse(message)
+      } catch {
+        return
       }
     }
-    previewPort.start()
-    previewPort.postMessage({ type: PREVIEW_MESSAGES.ready })
+    if (message?.type === PREVIEW_MESSAGES.state) {
+      renderPayload(message.payload)
+    }
   })
 } else {
   const socket = window.io({ transports: ['websocket', 'polling'] })

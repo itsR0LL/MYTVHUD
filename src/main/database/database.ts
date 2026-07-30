@@ -309,6 +309,14 @@ export async function removeDeprecatedRegistrationFields(): Promise<void> {
       delete player.camera
       playersChanged = true
     }
+    const normalizedTeamId =
+      typeof player.team_id === 'string' || typeof player.team_id === 'number'
+        ? String(player.team_id)
+        : ''
+    if (player.team_id !== normalizedTeamId) {
+      player.team_id = normalizedTeamId
+      playersChanged = true
+    }
     return player
   })
 
@@ -380,8 +388,20 @@ export function registerDatabaseIPC(ipc: IpcMain) {
           return svc.getById(payload.id)
         case 'add':
           return svc.add(payload.item)
-        case 'remove':
-          return svc.remove(payload.id)
+        case 'remove': {
+          const removed = await svc.remove(payload.id)
+          if (removed && target === 'teams') {
+            const teamId = String(payload.id)
+            const players = await databaseService.players.getAll()
+            const normalizedPlayers = players.map((player) =>
+              String(player.team_id ?? '') === teamId ? { ...player, team_id: '' } : player
+            )
+            if (normalizedPlayers.some((player, index) => player !== players[index])) {
+              await databaseService.players.set(normalizedPlayers)
+            }
+          }
+          return removed
+        }
         case 'modify':
           return svc.modify(payload.id, payload.partial)
         case 'set':

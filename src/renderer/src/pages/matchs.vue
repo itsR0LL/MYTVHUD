@@ -78,6 +78,9 @@
             </Select>
           </div>
         </div>
+        <div class="mt-4 rounded-md border px-3 py-2 text-sm" :class="gsiResolutionClass">
+          {{ gsiResolutionText }}
+        </div>
       </section>
 
       <section class="space-y-4">
@@ -320,7 +323,7 @@
       </section>
 
       <div class="flex items-center justify-end gap-3 pb-4 pt-2">
-        <Button variant="outline" type="reset" @click="resetForm">
+        <Button variant="outline" type="reset" :disabled="isResetting" @click="resetForm">
           {{ t('common.reset') }}
         </Button>
         <Button type="submit" @click="submitForm">
@@ -332,7 +335,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
 import { X } from 'lucide-vue-next'
@@ -398,12 +401,25 @@ interface StoredMatchRecord {
   maps?: unknown
 }
 
+interface GSITeamResolutionStatus {
+  state: 'waiting' | 'resolved' | 'unresolved' | 'offline'
+  teamCT: { id: string; name: string } | null
+  teamT: { id: string; name: string } | null
+}
+
 const { t } = useI18n()
 const teams = ref<MatchTeam[]>([])
 const bpSequence = ref<BPSequenceItem[]>([])
 const scoreByMap = ref(createScoreState())
 const legacyMapsNeedStatusConfirmation = ref(false)
+const isResetting = ref(false)
+const gsiTeamResolution = ref<GSITeamResolutionStatus>({
+  state: 'waiting',
+  teamCT: null,
+  teamT: null
+})
 let isRestoringMatch = false
+let gsiResolutionTimer: number | null = null
 
 const types: Array<{ name: MatchFormData['type']; label: MatchFormData['type'] }> = [
   { name: 'BO1', label: 'BO1' },
@@ -430,6 +446,23 @@ const selectedTeamA = computed(() =>
 const selectedTeamB = computed(() =>
   teams.value.find((team) => String(team.id) === String(matchForm.value.team_b.id))
 )
+const gsiResolutionText = computed(() => {
+  const status = gsiTeamResolution.value
+  if (status.state === 'resolved' && status.teamCT && status.teamT) {
+    return `HUD 战队识别：CT → ${status.teamCT.name}，T → ${status.teamT.name}`
+  }
+  if (status.state === 'unresolved') {
+    return 'HUD 战队尚未识别，请检查当前比赛与选手所属战队。'
+  }
+  if (status.state === 'offline') return '本地 GSI 服务未连接。'
+  return '等待 CS2 GSI 数据。'
+})
+const gsiResolutionClass = computed(() => {
+  if (gsiTeamResolution.value.state === 'resolved') return 'border-emerald-500/40 text-emerald-500'
+  if (gsiTeamResolution.value.state === 'unresolved')
+    return 'border-destructive/40 text-destructive'
+  return 'text-muted-foreground'
+})
 const currentRule = computed(() => BP_SERIES_RULES[matchForm.value.type])
 const currentActionOrder = computed(() => BP_SERIES_ACTION_ORDER[matchForm.value.type])
 const nextRequiredAction = computed(() => currentActionOrder.value[bpSequence.value.length])
@@ -597,6 +630,24 @@ function validateForm(): string | null {
   return null
 }
 
+async function loadGSITeamResolution(): Promise<void> {
+  try {
+    const response = await fetch('http://127.0.0.1:5031/api/gsi/team-resolution')
+    if (!response.ok) throw new Error(String(response.status))
+    const value = (await response.json()) as Partial<GSITeamResolutionStatus>
+    if (!['waiting', 'resolved', 'unresolved'].includes(String(value.state))) {
+      throw new Error('Invalid GSI team resolution state')
+    }
+    gsiTeamResolution.value = {
+      state: value.state as 'waiting' | 'resolved' | 'unresolved',
+      teamCT: value.teamCT ?? null,
+      teamT: value.teamT ?? null
+    }
+  } catch {
+    gsiTeamResolution.value = { state: 'offline', teamCT: null, teamT: null }
+  }
+}
+
 async function loadTeams(): Promise<void> {
   try {
     const list = await window.db.teams.getAll()
@@ -613,8 +664,10 @@ async function autoLoadMatch(): Promise<void> {
   try {
     let record: StoredMatchRecord | undefined
     try {
-      const currentId = await window.db.settings.get('currentMatchId')
-      if (currentId != null) {
+      const settings = await window.db.settings.getAll()
+      if (Object.prototype.hasOwnProperty.call(settings, 'currentMatchId')) {
+        const currentId = settings.currentMatchId
+        if (currentId == null) return
         record = (await window.db.matchs.getById(currentId)) as StoredMatchRecord | undefined
       }
     } catch {
@@ -683,14 +736,27 @@ async function autoLoadMatch(): Promise<void> {
   }
 }
 
-function resetForm(): void {
-  isRestoringMatch = true
-  matchForm.value = createEmptyMatch()
-  isRestoringMatch = false
-  bpSequence.value = []
-  scoreByMap.value = createScoreState()
-  legacyMapsNeedStatusConfirmation.value = false
-  toast.info(t('common.resetSuccess'), { duration: 2000 })
+async function resetForm(): Promise<void> {
+  if (isResetting.value) return
+  isResetting.value = true
+  try {
+    await window.api.resetMatchBroadcastState()
+    isRestoringMatch = true
+    matchForm.value = createEmptyMatch()
+    isRestoringMatch = false
+    bpSequence.value = []
+    scoreByMap.value = createScoreState()
+    legacyMapsNeedStatusConfirmation.value = false
+    toast.info(t('common.resetSuccess'), { duration: 2000 })
+  } catch (error: unknown) {
+    isRestoringMatch = false
+    toast.error(t('common.saveFailed'), {
+      description: error instanceof Error ? error.message : String(error),
+      duration: 4000
+    })
+  } finally {
+    isResetting.value = false
+  }
 }
 
 async function submitForm(): Promise<void> {
@@ -777,6 +843,15 @@ watch(
 onMounted(async () => {
   await loadTeams()
   await autoLoadMatch()
+  await loadGSITeamResolution()
+  gsiResolutionTimer = window.setInterval(() => {
+    void loadGSITeamResolution()
+  }, 1000)
+})
+
+onBeforeUnmount(() => {
+  if (gsiResolutionTimer !== null) window.clearInterval(gsiResolutionTimer)
+  gsiResolutionTimer = null
 })
 </script>
 

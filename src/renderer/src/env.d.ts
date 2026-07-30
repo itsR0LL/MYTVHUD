@@ -48,6 +48,7 @@ interface Window {
     getBPState: () => Promise<BPPayload>
     setBPState: (state: BPState) => Promise<BPPayload>
     setBPContent: (content: BPContentInput) => Promise<BPPayload>
+    resetMatchBroadcastState: () => Promise<void>
     getIntermissionState: () => Promise<IntermissionPayload>
     updateIntermissionState: (update: IntermissionStateUpdate) => Promise<IntermissionPayload>
     updateIntermissionMapStatus: (
@@ -65,6 +66,7 @@ interface Player {
   steamid: string
   avatar: string
   type: 'player' | 'coach' | 'spectator'
+  team_id: string
 }
 
 interface Team {

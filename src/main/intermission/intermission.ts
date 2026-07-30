@@ -256,6 +256,25 @@ export async function getIntermissionPayload(): Promise<IntermissionPayload> {
   return buildPayload()
 }
 
+export async function publishIntermissionSnapshot(): Promise<IntermissionPayload> {
+  const payload = await getIntermissionPayload()
+  publishPayload?.(payload)
+  return payload
+}
+
+export async function resetIntermissionBroadcastState(): Promise<IntermissionPayload> {
+  return enqueueMutation(async () => {
+    const defaultState = createDefaultIntermissionState()
+    clearExpiryTimer()
+    liveState = {
+      ...defaultState,
+      layout: liveState.layout,
+      revision: liveState.revision + 1
+    }
+    return persistAndPublish()
+  })
+}
+
 export async function updateIntermissionState(value: unknown): Promise<IntermissionPayload> {
   return enqueueMutation(async () => {
     if (!isRecord(value)) throw new Error('赛间状态更新必须是对象')

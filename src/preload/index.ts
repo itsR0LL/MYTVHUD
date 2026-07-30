@@ -17,6 +17,7 @@ const api = {
   getBPState: () => ipcRenderer.invoke('bp:get-state'),
   setBPState: (state: unknown) => ipcRenderer.invoke('bp:set-state', state),
   setBPContent: (content: unknown) => ipcRenderer.invoke('bp:set-content', content),
+  resetMatchBroadcastState: () => ipcRenderer.invoke('match:reset-broadcast-state'),
   getIntermissionState: () => ipcRenderer.invoke('intermission:get-state'),
   updateIntermissionState: (update: unknown) =>
     ipcRenderer.invoke('intermission:update-state', update),

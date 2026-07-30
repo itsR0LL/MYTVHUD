@@ -116,6 +116,7 @@ const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 let lastRevision = -1
 let lastVisible = false
 let revealTimers = []
+let lastPayloadSignature = ''
 
 function teamName(team, fallback) {
   if (!team) return fallback
@@ -392,6 +393,9 @@ function createCard(item, index, state, matchType, match, shouldAnimate) {
 function render(payload) {
   if (!payload || !payload.state) return
 
+  const payloadSignature = JSON.stringify(payload)
+  if (payloadSignature === lastPayloadSignature) return
+
   const { state, match } = payload
   const matchType = match?.type || ''
   const shouldAnimate =
@@ -438,6 +442,7 @@ function render(payload) {
 
   lastVisible = state.visible
   lastRevision = state.revision
+  lastPayloadSignature = payloadSignature
 }
 
 function createPreviewPayload(matchType) {

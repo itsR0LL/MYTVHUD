@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
@@ -270,6 +270,7 @@ async function loadBP(): Promise<void> {
     hasLoaded = false
     state.value = payload.state
     match.value = payload.match
+    await nextTick()
     hasLoaded = true
   } catch (error: unknown) {
     toast.error(t('bp.toast.loadFailed'), {
@@ -322,6 +323,7 @@ async function showOutput(): Promise<void> {
   try {
     state.value.visible = true
     state.value.revision += 1
+    await nextTick()
     await persistState()
   } finally {
     isOutputBusy.value = false
@@ -333,6 +335,7 @@ async function hideOutput(): Promise<void> {
   isOutputBusy.value = true
   try {
     state.value.visible = false
+    await nextTick()
     await persistState()
   } finally {
     isOutputBusy.value = false
