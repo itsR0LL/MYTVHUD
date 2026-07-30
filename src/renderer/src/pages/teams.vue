@@ -74,8 +74,7 @@
   justify-content: center;
   flex-direction: column;
   gap: 1rem;
-  background: var(--background-alpha);
-  backdrop-filter: blur(15px);
+  background: var(--background);
 }
 
 .team-card-container {
@@ -104,7 +103,7 @@
     position: relative;
     border: 1px solid var(--border);
     box-shadow: var(--shadow-2xs);
-    background: var(--background-alpha);
+    background: var(--background);
 
     .team-avatar {
       height: 6.5rem;
@@ -159,7 +158,7 @@
         border-radius: var(--radius);
 
         &:hover {
-          background: var(--background-glass);
+          background: var(--accent);
         }
       }
     }
@@ -173,7 +172,7 @@
     gap: 0.2rem;
     width: var(--team-card-width);
     height: var(--team-card-height);
-    background: var(--background-alpha);
+    background: var(--background);
     border-radius: var(--radius);
     padding: 0.5rem;
     cursor: pointer;

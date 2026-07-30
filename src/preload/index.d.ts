@@ -1,4 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
+import type { BPContentInput, BPPayload, BPState } from '../shared/bp'
 
 interface DataTransferResult {
   success: boolean
@@ -32,6 +33,9 @@ declare global {
       openDataDirectory: () => Promise<DataTransferResult>
       exportDataPackage: () => Promise<DataTransferResult>
       importDataPackage: () => Promise<DataTransferResult>
+      getBPState: () => Promise<BPPayload>
+      setBPState: (state: BPState) => Promise<BPPayload>
+      setBPContent: (content: BPContentInput) => Promise<BPPayload>
     }
     db: {
       matchs: {

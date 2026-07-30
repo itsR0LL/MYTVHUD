@@ -30,7 +30,7 @@
   z-index: 2;
   transform: translateX(-15%);
   border-radius: var(--radius);
-  background: var(--background-glass);
+  background: var(--popover);
   pointer-events: none;
 }
 
@@ -41,8 +41,7 @@
   flex-direction: row;
   width: 100%;
   height: var(--header-height);
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(25px);
+  background: var(--background);
   border-bottom: 1px solid var(--color-zinc-900);
   padding: 0.25rem;
   -webkit-app-region: drag;
@@ -58,7 +57,7 @@
     color: var(--color-zinc-400);
     margin-left: 32px;
     padding: 0 12px;
-    background: var(--glass);
+    background: var(--accent);
     border-radius: 4px;
     width: 240px;
     height: 24px;
@@ -98,7 +97,7 @@
     position: relative;
 
     &:hover {
-      background: var(--glass);
+      background: var(--accent);
       transition: var(--transition);
 
       .hover-tips {

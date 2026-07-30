@@ -111,8 +111,7 @@
     gap: 1rem;
     width: 100%;
     height: 100%;
-    background: var(--background-alpha);
-    backdrop-filter: blur(15px);
+    background: var(--background);
 
     .form-title {
         font-size: 1.2rem;
@@ -144,7 +143,7 @@
         height: var(--player-card-height);
         border-radius: var(--radius);
         border: 1px solid var(--border);
-        background: var(--background-alpha);
+        background: var(--background);
         box-shadow: var(--shadow-2xs);
         padding: 0.5rem;
         position: relative;
@@ -177,7 +176,7 @@
                 border-radius: var(--radius);
 
                 &:hover {
-                    background: var(--background-glass);
+                    background: var(--accent);
                 }
             }
         }
@@ -216,7 +215,7 @@
         gap: 0.2rem;
         width: var(--player-card-width);
         height: var(--player-card-height);
-        background: var(--background-alpha);
+        background: var(--background);
         border-radius: var(--radius);
         padding: 0.5rem;
         cursor: pointer;

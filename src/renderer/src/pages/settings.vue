@@ -18,8 +18,8 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n({ useScope: 'global' })
 
 const settings = ref({
-  seriesName_first: 'BLAST Rival #1',
-  seriesName_second: 'Grand Final',
+  seriesName_first: '',
+  seriesName_second: '',
   seriesName_third: 'MYTVHUD',
   overlayFocusedPlayer: true,
   overlaySidebars: 'row',
@@ -29,13 +29,12 @@ const settings = ref({
   tColor: 'f52559',
   borderRadius: '0',
   currentMatchId: 'current',
-  shortcutKey: 'Ctrl+Alt+I',
-  acrylicEnabled: true
+  shortcutKey: 'Ctrl+Alt+I'
 })
 
 const default_settings = ref({
-  seriesName_first: 'BLAST Rival #1',
-  seriesName_second: 'Grand Final',
+  seriesName_first: '',
+  seriesName_second: '',
   seriesName_third: 'MYTVHUD',
   overlayFocusedPlayer: true,
   overlaySidebars: 'row',
@@ -45,8 +44,7 @@ const default_settings = ref({
   tColor: 'f52559',
   borderRadius: '0',
   currentMatchId: 'current',
-  shortcutKey: 'Ctrl+Alt+I',
-  acrylicEnabled: true
+  shortcutKey: 'Ctrl+Alt+I'
 })
 
 const modifierOptions = [
@@ -94,13 +92,6 @@ watch(
     parseShortcut(val)
   }
 )
-watch(
-  () => settings.value.acrylicEnabled,
-  () => {
-    promptRestart()
-  }
-)
-
 const saveSettings = async () => {
   try {
     await window.db.settings.setAll({ ...settings.value })
@@ -111,25 +102,6 @@ const saveSettings = async () => {
       duration: 3500
     })
   }
-}
-
-function promptRestart() {
-  toast.info(t('common.restartRequired'), {
-    duration: 6000,
-    action: {
-      label: t('common.relaunchNow'),
-      onClick: async () => {
-        try {
-          await window.electron.ipcRenderer.invoke('app:relaunch')
-        } catch (err: any) {
-          toast.error(t('common.saveFailed'), { description: String(err?.message ?? err) })
-        }
-      }
-    },
-    cancel: {
-      label: t('common.notNow')
-    }
-  })
 }
 
 const resetSettings = async () => {
@@ -230,6 +202,7 @@ onMounted(async () => {
               class="w-60"
               id="seriesName_first"
               v-model="settings.seriesName_first"
+              :placeholder="t('settings.manager.seriesName_first.placeholder')"
               type="text"
             />
           </div>
@@ -242,22 +215,9 @@ onMounted(async () => {
               class="w-60"
               id="seriesName_second"
               v-model="settings.seriesName_second"
+              :placeholder="t('settings.manager.seriesName_second.placeholder')"
               type="text"
             />
-          </div>
-        </div>
-      </div>
-    </Transition>
-    <Transition name="transform-in" appear>
-      <div class="settings-item">
-        <div class="setting-item-title">{{ t('settings.managerSettings.title') }}</div>
-        <div class="setting-item-container">
-          <div class="setting-item">
-            <div class="setting-item-label">
-              <div class="title">{{ t('settings.managerSettings.acrylic.label') }}</div>
-              <div class="description">{{ t('settings.managerSettings.acrylic.desc') }}</div>
-            </div>
-            <Switch id="acrylicEnabled" disabled v-model="settings.acrylicEnabled" />
           </div>
         </div>
       </div>

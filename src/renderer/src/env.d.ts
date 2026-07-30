@@ -1,5 +1,9 @@
 /// <reference types="vite/client" />
 
+type BPState = import('../../shared/bp').BPState
+type BPPayload = import('../../shared/bp').BPPayload
+type BPContentInput = import('../../shared/bp').BPContentInput
+
 interface Window {
   api: {
     minimize: () => void
@@ -37,6 +41,9 @@ interface Window {
       url: string
       id: number | null
     }>
+    getBPState: () => Promise<BPPayload>
+    setBPState: (state: BPState) => Promise<BPPayload>
+    setBPContent: (content: BPContentInput) => Promise<BPPayload>
   }
 }
 

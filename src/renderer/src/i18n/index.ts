@@ -10,6 +10,7 @@ const messages = {
     indicator: {
       menu: '菜单',
       matchs: '比赛',
+      bp: 'BP 选图',
       players: '选手',
       teams: '战队',
       settings: '设置'
@@ -40,9 +41,8 @@ const messages = {
       modifySuccess: '修改成功',
       addSuccess: '添加成功',
       saveFailed: '保存失败',
-      restartRequired: '设置已更改，但是需要重启客户端后生效。',
-      relaunchNow: '立即重启',
-      notNow: '暂不'
+      enabled: '开启',
+      disabled: '关闭'
     },
     teams: {
       createTitle: '创建战队',
@@ -101,6 +101,7 @@ const messages = {
     multi: {
       matchForm: {
         title: '比赛表单',
+        desc: '设置比赛双方、赛制与完整地图 BP；提交后由 BP 页面控制播出。',
         type: '赛制',
         teamA: '战队 A',
         teamB: '战队 B',
@@ -112,7 +113,22 @@ const messages = {
         pickTeams: '请选择战队 A 和战队 B',
         teamsUnique: '两支战队不能相同',
         mapsCountMismatch: '地图数量与赛制不一致',
-        deciderNoPicker: '决胜图不能设置选图方'
+        deciderNoPicker: '决胜图不能设置选图方',
+        submitAndPrepare: '保存比赛并准备 BP',
+        bp: {
+          title: '地图 BP',
+          desc: '按实际比赛流程完成 7 步禁选。前六步可排序，第七步固定为决胜图。',
+          mapHint: '根据当前赛制完成规定数量的禁用与选择，每张地图只能使用一次。',
+          emptySequence: '从左侧地图池开始添加 BP 步骤',
+          banCount: '当前赛制必须包含 {count} 个禁用步骤。',
+          pickCount: '当前赛制必须包含 {count} 个选择步骤。',
+          prepared: 'BP 已准备并保持隐藏，请前往 BP 页面确认后点击显示。'
+        },
+        score: {
+          title: '对局地图与比分',
+          desc: '此处仅显示 BP 中选用的地图和决胜图，比分继续供比赛 HUD 使用。',
+          empty: '完成地图 BP 后，这里将自动列出实际比赛地图。'
+        }
       },
       menu: {
         items: '{n} 项',
@@ -139,7 +155,66 @@ const messages = {
         title: '步骤 3：配置 OBS',
         content1_prefix: '在 OBS 中添加一个新的浏览器源，URL 填写',
         content1_suffix: '，请确保浏览器源置于最上层。',
-        content2: '设置浏览器源的高度、宽度为你的屏幕宽度，单位为 px。'
+        content2: '设置浏览器源的高度、宽度为你的屏幕宽度，单位为 px。',
+        content3_prefix: '地图 BP 使用单独的浏览器源，URL 填写',
+        content3_suffix: '。'
+      }
+    },
+    bp: {
+      title: 'BP 选图',
+      outputUrl: 'OBS 浏览器源',
+      copyUrl: '复制 BP 展示地址',
+      openOutput: '在浏览器中打开 BP 展示页',
+      animation: '动画',
+      show: '显示',
+      hide: '隐藏',
+      teamA: '战队 A',
+      teamB: '战队 B',
+      noMatch: {
+        title: '尚未设置当前比赛',
+        desc: '请先在比赛页面完成战队、赛制与全部 7 步 BP，并提交当前比赛。',
+        action: '前往比赛设置'
+      },
+      readOnly: {
+        title: '当前 BP 结果',
+        desc: '此处仅用于核对和播出。BP 内容请在比赛页面修改。',
+        editInMatch: '前往比赛页面修改',
+        emptyTitle: '尚未准备 BP',
+        emptyDesc: '请在比赛页面完成并提交 7 步 BP。',
+        banResult: '{team} 禁用了此地图',
+        pickResult: '{team} 选择了此地图',
+        deciderResult: '最终决胜地图',
+        sideResult: '{team} 选择 {side} 方开局',
+        sidePending: '尚未设置开局阵营'
+      },
+      mapPool: '地图池',
+      mapHint: '每一步均可由导播自由选择禁用或选择。',
+      deciderHint: '前六步已完成，请手动指定第七张决胜图。',
+      added: '已加入',
+      action: {
+        ban: '禁用',
+        pick: '选择',
+        decider: '决胜图'
+      },
+      clear: '清除',
+      removeStep: '删除该步骤',
+      executingTeam: '执行战队',
+      selectActorFirst: '请先选择选图战队',
+      startingSide: '{team} 选择开局阵营',
+      validation: {
+        noMatch: '请先在比赛页面设置并提交当前比赛。',
+        stepCount: '需要完成全部 7 个 BP 步骤。',
+        decider: '第 7 步必须是决胜图。',
+        actor: '第 {step} 步尚未选择执行战队。',
+        side: '第 {step} 步尚未设置对方战队的开局阵营。'
+      },
+      toast: {
+        loadFailed: 'BP 数据加载失败',
+        saveFailed: 'BP 数据保存失败',
+        incomplete: 'BP 信息尚未完成',
+        cleared: 'BP 内容已清除',
+        urlCopied: 'BP 展示地址已复制',
+        copyFailed: '复制失败'
       }
     },
     settings: {
@@ -147,11 +222,13 @@ const messages = {
         title: '赛事名',
         seriesName_first: {
           label: '赛事名（#1）',
-          desc: '赛事或任意你想要的名字'
+          desc: '赛事或任意你想要的名字',
+          placeholder: '如：绵阳Major - 冬日余晖杯'
         },
         seriesName_second: {
           label: '赛事名（#2）',
-          desc: '赛事或任意你想要的名字'
+          desc: '赛事或任意你想要的名字',
+          placeholder: '如：淘汰赛 0-0'
         },
         seriesName_third: {
           label: '赛事名（#3）（不可用）',
@@ -204,17 +281,6 @@ const messages = {
       },
       toast: {
         saved: '设置已保存'
-      },
-      managerSettings: {
-        title: '管理器设置',
-        acrylic: {
-          label: '毛玻璃特效（不可用）',
-          desc: '开启 Windows 毛玻璃（Acrylic）背景'
-        },
-        acrylicShortcut: {
-          label: '毛玻璃快捷键',
-          desc: '用于切换毛玻璃的全局快捷键（重启后生效）'
-        }
       },
       data: {
         title: '赛事数据',

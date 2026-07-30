@@ -17,6 +17,18 @@ export default defineConfig({
             dest: 'overlay/file'
           },
           {
+            src: 'src/main/bp/file/**/*',
+            dest: 'bp/file'
+          },
+          {
+            src: 'src/renderer/src/assets/chinese_fonts/HarmonyOS_Sans_SC_Regular.ttf',
+            dest: 'bp/file/fonts'
+          },
+          {
+            src: 'src/renderer/src/assets/chinese_fonts/HarmonyOS_Sans_SC_Bold.ttf',
+            dest: 'bp/file/fonts'
+          },
+          {
             src: 'src/gamestate_integration_mytvhud.cfg',
             dest: 'gsi'
           }

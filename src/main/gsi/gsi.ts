@@ -7,6 +7,7 @@ import { join } from 'path'
 import { applyFilters } from './filters'
 import { app as electronApp, globalShortcut } from 'electron'
 import cors from 'cors'
+import { getBPPayload, setBPPublisher } from '../bp/bp'
 
 const expressApp = express()
 const GSI = new CSGOGSI()
@@ -20,6 +21,10 @@ const io = new Server(server, {
 
 // HUD 主动刷新使用的实时通信命名空间
 const realtime = io.of('/realtime')
+
+setBPPublisher((payload) => {
+  io.emit('bp-state', payload)
+})
 
 export function emitOverlayRefresh(): void {
   realtime.emit('refresh-now')
@@ -82,7 +87,19 @@ expressApp.get('/api/settings', async (_req, res) => {
   res.json(data)
 })
 
+expressApp.get('/api/bp', async (_req, res) => {
+  try {
+    res.json(await getBPPayload())
+  } catch (error) {
+    res.status(500).json({ error: String(error) })
+  }
+})
+
 expressApp.use('/overlay', express.static(join(__dirname, 'overlay/file')))
+expressApp.get('/bp', (_req, res) => {
+  res.sendFile(join(__dirname, 'bp/file/index.html'))
+})
+expressApp.use('/bp', express.static(join(__dirname, 'bp/file')))
 
 // 处理 GSI 数据并通过 Socket.IO 推送给 HUD 页面
 GSI.on('data', async (data) => {

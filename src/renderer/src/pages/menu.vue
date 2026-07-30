@@ -30,6 +30,10 @@
         {{ t('menu.step3.content1_prefix') }}<span>http://localhost:5031/overlay</span
         >{{ t('menu.step3.content1_suffix') }}
       </div>
+      <div class="menu-item-content">
+        {{ t('menu.step3.content3_prefix') }}<span>http://localhost:5031/bp</span
+        >{{ t('menu.step3.content3_suffix') }}
+      </div>
       <div class="menu-item-content">{{ t('menu.step3.content2') }}</div>
     </div>
   </div>

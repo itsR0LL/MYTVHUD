@@ -67,13 +67,14 @@ import {
   SidebarRail,
   SidebarInset
 } from '@/components/ui/sidebar'
-import { Home, Trophy, Users, Settings } from 'lucide-vue-next'
+import { Home, Trophy, Users, Settings, Map as MapIcon } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 
 const indicatorItems = ref([
   { label: 'indicator.menu', path: '/', icon: Home },
   { label: 'indicator.matchs', path: '/matchs', icon: Trophy },
+  { label: 'indicator.bp', path: '/bp', icon: MapIcon },
   { label: 'indicator.players', path: '/players', icon: Users },
   { label: 'indicator.teams', path: '/teams', icon: Users },
   { label: 'indicator.settings', path: '/settings', icon: Settings }

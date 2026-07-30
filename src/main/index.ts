@@ -4,15 +4,13 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import appIcon from './logo.png?asset'
 import {
   registerDatabaseIPC,
-  databaseService,
   removeDeprecatedRegistrationFields
 } from './database/database'
 import { registerDataTransferIPC } from './database/data-transfer'
+import { registerBPIPC, removeDeprecatedBPState } from './bp/bp'
 import './gsi/gsi'
 import './overlay/overlay'
 import { registerAutoPlaceGSIIPC } from './gsi/auto-place'
-
-let acrylicEnabledSetting = true
 
 function createWindow(): void {
   // 创建管理器主窗口
@@ -34,17 +32,6 @@ function createWindow(): void {
       devTools: true
     }
   })
-
-  if (process.platform === 'win32' && acrylicEnabledSetting) {
-    const applyAcrylic = (): void => {
-      try {
-        mainWindow.setBackgroundMaterial('acrylic')
-      } catch {}
-    }
-    applyAcrylic()
-    mainWindow.on('blur', applyAcrylic)
-    mainWindow.on('focus', applyAcrylic)
-  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -84,29 +71,20 @@ app.whenReady().then(async () => {
     console.error('清理旧版注册字段失败：', error)
   }
 
-  // 启动时读取窗口毛玻璃设置
   try {
-    const enabled = await databaseService.settings.get('acrylicEnabled')
-    acrylicEnabledSetting = enabled == null ? true : Boolean(enabled)
-  } catch {}
+    await removeDeprecatedBPState()
+  } catch (error) {
+    console.error('清理旧版 BP 持久化状态失败：', error)
+  }
 
   // 注册数据库 IPC 接口
   registerDatabaseIPC(ipcMain)
+  // 注册 BP 控制与展示状态接口
+  registerBPIPC(ipcMain)
   // 注册数据目录及赛事数据导入、导出接口
   registerDataTransferIPC(ipcMain)
   // 注册 GSI 配置自动写入接口
   registerAutoPlaceGSIIPC(ipcMain)
-
-  // 注册应用重启接口
-  ipcMain.handle('app:relaunch', () => {
-    try {
-      app.relaunch()
-      app.exit(0)
-      return { success: true }
-    } catch (e) {
-      return { success: false, error: String(e) }
-    }
-  })
 
   createWindow()
 

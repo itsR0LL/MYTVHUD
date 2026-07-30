@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ws: wss:"
+    />
+    <title>MYTVHUD BAN &amp; PICK</title>
+    <link rel="stylesheet" href="/bp/style.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/bp/app.js" defer></script>
+  </head>
+  <body>
+    <main id="bp-stage" class="bp-stage is-hidden" aria-live="polite" aria-hidden="true">
+      <section class="bp-shell" aria-labelledby="bp-title">
+        <header class="bp-masthead">
+          <h1 id="bp-title" class="bp-title">BAN &amp; PICK</h1>
+          <div id="bp-matchup" class="bp-matchup" aria-label="比赛双方">
+            <span id="bp-team-a" class="bp-match-team bp-match-team-a">战队 A</span>
+            <strong class="bp-versus">VS</strong>
+            <span id="bp-team-b" class="bp-match-team bp-match-team-b">战队 B</span>
+          </div>
+        </header>
+
+        <section id="bp-cards" class="bp-cards" aria-label="地图禁选结果"></section>
+      </section>
+    </main>
+  </body>
+</html>

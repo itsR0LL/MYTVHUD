@@ -13,7 +13,10 @@ const api = {
   autoPlaceGSI: () => ipcRenderer.invoke('gsi:auto-place'),
   openDataDirectory: () => ipcRenderer.invoke('data:open-directory'),
   exportDataPackage: () => ipcRenderer.invoke('data:export'),
-  importDataPackage: () => ipcRenderer.invoke('data:import')
+  importDataPackage: () => ipcRenderer.invoke('data:import'),
+  getBPState: () => ipcRenderer.invoke('bp:get-state'),
+  setBPState: (state: unknown) => ipcRenderer.invoke('bp:set-state', state),
+  setBPContent: (content: unknown) => ipcRenderer.invoke('bp:set-content', content)
 }
 
 // 按存储类型封装数据库 IPC 调用

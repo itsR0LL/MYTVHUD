@@ -5,7 +5,6 @@
 
 :root {
   --background: rgba(9, 9, 11);
-  --background-alpha: rgba(9, 9, 11, 0.7);
   --foreground: rgb(250, 250, 250);
   --card: rgb(9, 9, 11);
   --card-foreground: rgb(250, 250, 250);
@@ -156,7 +155,6 @@
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
 
-  --glass: rgba(255, 255, 255, 0.15);
   --transition: all 0.2s ease-in-out;
 }
 

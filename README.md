@@ -146,4 +146,4 @@ electron.vite.config.ts  构建配置
 
 - 原项目作者：`@NocYnTwoC`（Occasionally Online）
 - 交流社群：[🐧QQ群聊](https://qm.qq.com/q/piGO3Kv3vG)
-- 参考项目与社区：`cshuds.com`、`OpenHUD`、`drweissbrot/cs-hud`
+- 参考项目与社区：`cshuds.com`、`OpenHUD`、`drweissbrot/cs-hud`、`mycstv.cn`

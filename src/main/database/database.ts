@@ -270,8 +270,8 @@ export class DatabaseService {
   readonly teams = new CollectionStore<BaseEntity>(teamsFile)
   readonly players = new CollectionStore<BaseEntity>(playersFile)
   readonly settings = new KeyValueStore<KeyValueData>(settingsFile, {
-    "seriesName_first": "BLAST Rival #1",
-    "seriesName_second": "Grand Final",
+    "seriesName_first": "",
+    "seriesName_second": "",
     "seriesName_third": "MYTVHUD",
     "overlayFocusedPlayer": true,
     "overlaySidebars": "row",
@@ -281,8 +281,7 @@ export class DatabaseService {
     "tColor": "f52559",
     "borderRadius": "0px",
     "currentMatchId": "current",
-    "shortcutKey": "Ctrl+Alt+I",
-    "acrylicEnabled": true
+    "shortcutKey": "Ctrl+Alt+I"
   })
   readonly additional = new KeyValueStore<KeyValueData>(additionalFile, {})
 }
