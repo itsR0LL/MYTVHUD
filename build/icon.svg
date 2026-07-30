@@ -1,8 +1,3 @@
-<svg width="512" height="512" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs><linearGradient id="g" x1="24" y1="24" x2="136" y2="136" gradientUnits="userSpaceOnUse"><stop stop-color="#3DE6D2"/><stop offset="1" stop-color="#3D8BFF"/></linearGradient></defs>
-  <path d="M56 24H40C31.163 24 24 31.163 24 40V56M104 24H120C128.837 24 136 31.163 136 40V56M136 104V120C136 128.837 128.837 136 120 136H104M56 136H40C31.163 136 24 128.837 24 120V104" stroke="url(#g)" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="80" cy="80" r="32" stroke="#F4F7FB" stroke-width="8"/>
-  <circle cx="80" cy="80" r="12" fill="url(#g)"/>
-  <path d="M80 42V54M80 106V118M42 80H54M106 80H118" stroke="#8290A6" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="119" cy="45" r="8" fill="#FF9E45"/>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <image href="icon.png" width="256" height="256" />
 </svg>
