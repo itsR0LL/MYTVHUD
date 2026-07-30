@@ -1,14 +1,86 @@
+export const BP_MAP_ASSET_BASE_URL = 'http://localhost:5031/bp/maps'
+
 export const BP_MAPS = [
-  { id: 'de_ancient', name: 'Ancient', displayName: 'Ancient(远古遗迹)', image: '' },
-  { id: 'de_anubis', name: 'Anubis', displayName: 'Anubis(阿努比斯)', image: '' },
-  { id: 'de_dust2', name: 'Dust2', displayName: 'Dust2(炙热沙城2)', image: '' },
-  { id: 'de_inferno', name: 'Inferno', displayName: 'Inferno(炼狱小镇)', image: '' },
-  { id: 'de_mirage', name: 'Mirage', displayName: 'Mirage(荒漠迷城)', image: '' },
-  { id: 'de_nuke', name: 'Nuke', displayName: 'Nuke(核子危机)', image: '' },
-  { id: 'de_overpass', name: 'Overpass', displayName: 'Overpass(死亡游乐园)', image: '' },
-  { id: 'de_vertigo', name: 'Vertigo', displayName: 'Vertigo(殒命大厦)', image: '' },
-  { id: 'de_cache', name: 'Cache', displayName: 'Cache(死城之谜)', image: '' },
-  { id: 'de_train', name: 'Train', displayName: 'Train(列车停放站)', image: '' }
+  {
+    id: 'de_ancient',
+    name: 'Ancient',
+    displayName: 'Ancient(远古遗迹)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_ancient.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_ancient.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/ancient.png`
+  },
+  {
+    id: 'de_anubis',
+    name: 'Anubis',
+    displayName: 'Anubis(阿努比斯)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_anubis.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_anubis.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/anubis.png`
+  },
+  {
+    id: 'de_dust2',
+    name: 'Dust2',
+    displayName: 'Dust2(炙热沙城2)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_dust2.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_dust2.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/dust2.png`
+  },
+  {
+    id: 'de_inferno',
+    name: 'Inferno',
+    displayName: 'Inferno(炼狱小镇)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_inferno.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_inferno.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/inferno.png`
+  },
+  {
+    id: 'de_mirage',
+    name: 'Mirage',
+    displayName: 'Mirage(荒漠迷城)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_mirage.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_mirage.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/mirage.png`
+  },
+  {
+    id: 'de_nuke',
+    name: 'Nuke',
+    displayName: 'Nuke(核子危机)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_nuke.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_nuke.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/nuke.png`
+  },
+  {
+    id: 'de_overpass',
+    name: 'Overpass',
+    displayName: 'Overpass(死亡游乐园)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_overpass.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_overpass.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/overpass.png`
+  },
+  {
+    id: 'de_vertigo',
+    name: 'Vertigo',
+    displayName: 'Vertigo(殒命大厦)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_vertigo.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_vertigo.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/vertigo.png`
+  },
+  {
+    id: 'de_cache',
+    name: 'Cache',
+    displayName: 'Cache(死城之谜)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_cache.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_cache.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/cache.png`
+  },
+  {
+    id: 'de_train',
+    name: 'Train',
+    displayName: 'Train(列车停放站)',
+    image: `${BP_MAP_ASSET_BASE_URL}/icons/de_train.png`,
+    wideImage: `${BP_MAP_ASSET_BASE_URL}/wide/de_train.png`,
+    bo5Image: `${BP_MAP_ASSET_BASE_URL}/bo5/train.png`
+  }
 ] as const
 
 export const BP_ACTIONS = ['ban', 'pick', 'decider'] as const
@@ -64,6 +136,20 @@ export const BP_SERIES_RULES: Record<BPMatchType, { ban: number; pick: number }>
   BO1: { ban: 6, pick: 0 },
   BO3: { ban: 4, pick: 2 },
   BO5: { ban: 2, pick: 4 }
+}
+
+export const BP_SERIES_ACTION_ORDER: Record<BPMatchType, readonly BPAction[]> = {
+  BO1: ['ban', 'ban', 'ban', 'ban', 'ban', 'ban', 'decider'],
+  BO3: ['ban', 'ban', 'pick', 'pick', 'ban', 'ban', 'decider'],
+  BO5: ['ban', 'ban', 'pick', 'pick', 'pick', 'pick', 'decider']
+}
+
+export function isBPSequenceActionOrderValid(
+  sequence: readonly BPSequenceItem[],
+  matchType: BPMatchType
+): boolean {
+  const actionOrder = BP_SERIES_ACTION_ORDER[matchType]
+  return sequence.every((item, index) => item.action === actionOrder[index])
 }
 
 export function createDefaultBPState(): BPState {

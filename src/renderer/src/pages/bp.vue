@@ -34,14 +34,17 @@
               {{ state.animationEnabled ? t('common.enabled') : t('common.disabled') }}
             </span>
           </label>
+          <Button :disabled="isLoading || isOutputBusy" @click="showOutput">
+            <Play :size="16" />
+            {{ t('bp.startDisplay') }}
+          </Button>
           <Button
-            :variant="state.visible ? 'destructive' : 'default'"
-            :disabled="isLoading"
-            @click="state.visible ? hideOutput() : showOutput()"
+            variant="destructive"
+            :disabled="isLoading || isOutputBusy || !state.visible"
+            @click="hideOutput"
           >
-            <EyeOff v-if="state.visible" :size="16" />
-            <Eye v-else :size="16" />
-            {{ state.visible ? t('bp.hide') : t('bp.show') }}
+            <EyeOff :size="16" />
+            {{ t('bp.hide') }}
           </Button>
           <div class="min-w-12 text-right text-sm font-semibold tabular-nums">
             {{ state.sequence.length }} / 7
@@ -116,11 +119,26 @@
             </header>
             <div class="preview-art">
               <img
-                v-if="mapRecord(item.map)?.image"
-                :src="mapRecord(item.map)?.image"
+                v-if="mapRecord(item.map)?.wideImage"
+                class="preview-map-background"
+                :src="mapRecord(item.map)?.wideImage"
                 :alt="mapDisplayName(item.map)"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                decoding="async"
               />
-              <span v-else aria-hidden="true">{{ mapRecord(item.map)?.name }}</span>
+              <img
+                v-if="mapRecord(item.map)?.image"
+                class="preview-map-icon"
+                :src="mapRecord(item.map)?.image"
+                alt=""
+                aria-hidden="true"
+                width="512"
+                height="512"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
             <div class="preview-content">
               <div class="preview-map-name">{{ mapDisplayName(item.map) }}</div>
@@ -137,16 +155,17 @@
 </template>
 
 <script setup lang="ts">
-import { onActivated, onDeactivated, onUnmounted, ref, watch } from 'vue'
+import { onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
-import { Copy, ExternalLink, Eye, EyeOff, LockKeyhole, PencilLine } from 'lucide-vue-next'
+import { Copy, ExternalLink, EyeOff, LockKeyhole, PencilLine, Play } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import {
   BP_MAPS,
+  BP_SERIES_ACTION_ORDER,
   BP_SERIES_RULES,
   createDefaultBPState,
   type BPAction,
@@ -164,6 +183,7 @@ const router = useRouter()
 const state = ref(createDefaultBPState())
 const match = ref<BPMatch | null>(null)
 const isLoading = ref(true)
+const isOutputBusy = ref(false)
 
 let hasLoaded = false
 let saveTimer: number | null = null
@@ -266,6 +286,7 @@ function validateForOutput(): string | null {
   if (state.value.sequence.length !== 7) return t('bp.validation.stepCount')
 
   const rule = BP_SERIES_RULES[match.value.type]
+  const actionOrder = BP_SERIES_ACTION_ORDER[match.value.type]
   const banCount = state.value.sequence.filter((item) => item.action === 'ban').length
   const pickCount = state.value.sequence.filter((item) => item.action === 'pick').length
   if (banCount !== rule.ban) return t('multi.matchForm.bp.banCount', { count: rule.ban })
@@ -273,7 +294,13 @@ function validateForOutput(): string | null {
 
   for (let index = 0; index < state.value.sequence.length; index += 1) {
     const item = state.value.sequence[index]
-    if (index === 6 && item.action !== 'decider') return t('bp.validation.decider')
+    const requiredAction = actionOrder[index]
+    if (item.action !== requiredAction) {
+      return t('bp.validation.actionOrder', {
+        step: index + 1,
+        action: actionName(requiredAction)
+      })
+    }
     if (item.action !== 'decider' && !item.actor) {
       return t('bp.validation.actor', { step: index + 1 })
     }
@@ -285,19 +312,31 @@ function validateForOutput(): string | null {
 }
 
 async function showOutput(): Promise<void> {
+  if (isOutputBusy.value) return
   const error = validateForOutput()
   if (error) {
     toast.warning(t('bp.toast.incomplete'), { description: error, duration: 4000 })
     return
   }
-  state.value.visible = true
-  state.value.revision += 1
-  await persistState()
+  isOutputBusy.value = true
+  try {
+    state.value.visible = true
+    state.value.revision += 1
+    await persistState()
+  } finally {
+    isOutputBusy.value = false
+  }
 }
 
 async function hideOutput(): Promise<void> {
-  state.value.visible = false
-  await persistState()
+  if (isOutputBusy.value || !state.value.visible) return
+  isOutputBusy.value = true
+  try {
+    state.value.visible = false
+    await persistState()
+  } finally {
+    isOutputBusy.value = false
+  }
 }
 
 async function copyOutputUrl(): Promise<void> {
@@ -318,8 +357,12 @@ function openOutput(): void {
 
 watch(state, scheduleSave, { deep: true })
 
+onMounted(() => {
+  if (!hasLoaded) void loadBP()
+})
+
 onActivated(() => {
-  void loadBP()
+  if (hasLoaded) void loadBP()
 })
 
 onDeactivated(() => {
@@ -490,8 +533,9 @@ onUnmounted(() => {
 }
 
 .preview-art {
+  position: relative;
   display: flex;
-  height: 82px;
+  height: 96px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -507,10 +551,28 @@ onUnmounted(() => {
   font-weight: 900;
   text-transform: uppercase;
 
-  img {
+  .preview-map-background {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .preview-map-icon {
+    position: relative;
+    z-index: 1;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.75));
+  }
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(9, 9, 11, 0.08), rgba(9, 9, 11, 0.58));
+    content: '';
   }
 }
 

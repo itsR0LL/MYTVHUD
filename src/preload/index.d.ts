@@ -1,5 +1,11 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { BPContentInput, BPPayload, BPState } from '../shared/bp'
+import type {
+  IntermissionMapStatusUpdate,
+  IntermissionPayload,
+  IntermissionStateUpdate,
+  IntermissionTimerCommand
+} from '../shared/intermission'
 
 interface DataTransferResult {
   success: boolean
@@ -36,6 +42,14 @@ declare global {
       getBPState: () => Promise<BPPayload>
       setBPState: (state: BPState) => Promise<BPPayload>
       setBPContent: (content: BPContentInput) => Promise<BPPayload>
+      getIntermissionState: () => Promise<IntermissionPayload>
+      updateIntermissionState: (update: IntermissionStateUpdate) => Promise<IntermissionPayload>
+      updateIntermissionMapStatus: (
+        update: IntermissionMapStatusUpdate
+      ) => Promise<IntermissionPayload>
+      sendIntermissionTimerCommand: (
+        command: IntermissionTimerCommand
+      ) => Promise<IntermissionPayload>
     }
     db: {
       matchs: {

@@ -2,12 +2,10 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import appIcon from './logo.png?asset'
-import {
-  registerDatabaseIPC,
-  removeDeprecatedRegistrationFields
-} from './database/database'
+import { registerDatabaseIPC, removeDeprecatedRegistrationFields } from './database/database'
 import { registerDataTransferIPC } from './database/data-transfer'
 import { registerBPIPC, removeDeprecatedBPState } from './bp/bp'
+import { initializeIntermissionState, registerIntermissionIPC } from './intermission/intermission'
 import './gsi/gsi'
 import './overlay/overlay'
 import { registerAutoPlaceGSIIPC } from './gsi/auto-place'
@@ -77,10 +75,18 @@ app.whenReady().then(async () => {
     console.error('清理旧版 BP 持久化状态失败：', error)
   }
 
+  try {
+    await initializeIntermissionState()
+  } catch (error) {
+    console.error('初始化赛间播出状态失败：', error)
+  }
+
   // 注册数据库 IPC 接口
   registerDatabaseIPC(ipcMain)
   // 注册 BP 控制与展示状态接口
   registerBPIPC(ipcMain)
+  // 注册赛间播出状态、地图状态与倒计时接口
+  registerIntermissionIPC(ipcMain)
   // 注册数据目录及赛事数据导入、导出接口
   registerDataTransferIPC(ipcMain)
   // 注册 GSI 配置自动写入接口

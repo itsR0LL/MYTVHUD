@@ -3,6 +3,10 @@
 type BPState = import('../../shared/bp').BPState
 type BPPayload = import('../../shared/bp').BPPayload
 type BPContentInput = import('../../shared/bp').BPContentInput
+type IntermissionPayload = import('../../shared/intermission').IntermissionPayload
+type IntermissionStateUpdate = import('../../shared/intermission').IntermissionStateUpdate
+type IntermissionMapStatusUpdate = import('../../shared/intermission').IntermissionMapStatusUpdate
+type IntermissionTimerCommand = import('../../shared/intermission').IntermissionTimerCommand
 
 interface Window {
   api: {
@@ -44,6 +48,14 @@ interface Window {
     getBPState: () => Promise<BPPayload>
     setBPState: (state: BPState) => Promise<BPPayload>
     setBPContent: (content: BPContentInput) => Promise<BPPayload>
+    getIntermissionState: () => Promise<IntermissionPayload>
+    updateIntermissionState: (update: IntermissionStateUpdate) => Promise<IntermissionPayload>
+    updateIntermissionMapStatus: (
+      update: IntermissionMapStatusUpdate
+    ) => Promise<IntermissionPayload>
+    sendIntermissionTimerCommand: (
+      command: IntermissionTimerCommand
+    ) => Promise<IntermissionPayload>
   }
 }
 
@@ -82,6 +94,7 @@ interface PickMap {
   aid: string | number
   bscore: any
   bid: string | number
+  status: import('../../shared/intermission').MatchMapStatus
 }
 
 interface Match {

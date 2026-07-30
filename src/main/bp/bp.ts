@@ -3,6 +3,7 @@ import { databaseService } from '../database/database'
 import {
   createDefaultBPState,
   BP_MATCH_TYPES,
+  isBPSequenceActionOrderValid,
   normalizeBPSequence,
   normalizeBPState,
   type BPContentInput,
@@ -77,12 +78,18 @@ export async function saveBPState(value: unknown): Promise<BPPayload> {
 }
 
 export async function setBPContent(value: BPContentInput): Promise<BPPayload> {
+  const sequence = normalizeBPSequence(value?.sequence)
+  const match = await getCurrentMatch()
+  if (match && !isBPSequenceActionOrderValid(sequence, match.type)) {
+    throw new Error('BP 动作顺序与当前赛制不一致')
+  }
+
   liveBPState = {
     ...liveBPState,
-    sequence: normalizeBPSequence(value?.sequence),
+    sequence,
     visible: false
   }
-  const payload = { state: getBPState(), match: await getCurrentMatch() }
+  const payload = { state: getBPState(), match }
   publishPayload?.(payload)
   return payload
 }

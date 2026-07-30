@@ -21,6 +21,10 @@ export default defineConfig({
             dest: 'bp/file'
           },
           {
+            src: 'src/main/intermission/file/**/*',
+            dest: 'intermission/file'
+          },
+          {
             src: 'src/renderer/src/assets/chinese_fonts/HarmonyOS_Sans_SC_Regular.ttf',
             dest: 'bp/file/fonts'
           },

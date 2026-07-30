@@ -16,7 +16,14 @@ const api = {
   importDataPackage: () => ipcRenderer.invoke('data:import'),
   getBPState: () => ipcRenderer.invoke('bp:get-state'),
   setBPState: (state: unknown) => ipcRenderer.invoke('bp:set-state', state),
-  setBPContent: (content: unknown) => ipcRenderer.invoke('bp:set-content', content)
+  setBPContent: (content: unknown) => ipcRenderer.invoke('bp:set-content', content),
+  getIntermissionState: () => ipcRenderer.invoke('intermission:get-state'),
+  updateIntermissionState: (update: unknown) =>
+    ipcRenderer.invoke('intermission:update-state', update),
+  updateIntermissionMapStatus: (update: unknown) =>
+    ipcRenderer.invoke('intermission:update-map-status', update),
+  sendIntermissionTimerCommand: (command: unknown) =>
+    ipcRenderer.invoke('intermission:timer-command', command)
 }
 
 // 按存储类型封装数据库 IPC 调用

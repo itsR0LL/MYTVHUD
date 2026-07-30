@@ -1,7 +1,12 @@
 <template>
   <div class="avatar-upload-wrapper" @dragover.prevent="onDragOver" @drop.prevent="onDrop">
     <div class="avatar-upload" :style="uploadStyle" @click="triggerFileSelect">
-      <img v-if="modelValue" :src="modelValue" :alt="t('common.avatarPreview')" />
+      <img
+        v-if="modelValue"
+        :src="modelValue"
+        :alt="t('common.avatarPreview')"
+        :style="{ objectFit: fit }"
+      />
       <div v-else class="avatar-placeholder">
         <User class="size-8 opacity-60" />
       </div>
@@ -44,6 +49,7 @@ const props = withDefaults(
     label?: string
     size?: number
     rounded?: boolean
+    fit?: 'cover' | 'contain'
     overlayIcon?: string
     placeholderIcon?: string
     showActions?: boolean
@@ -54,6 +60,7 @@ const props = withDefaults(
     label: '上传',
     size: 140,
     rounded: true,
+    fit: 'cover',
     overlayIcon: 'pi pi-camera',
     placeholderIcon: 'pi pi-user',
     showActions: true
@@ -145,6 +152,7 @@ function handleFile(file: File) {
     position: relative;
     overflow: hidden;
     border: 1px solid var(--border);
+    background: var(--muted);
     cursor: pointer;
     transition: var(--transition);
 
@@ -153,9 +161,9 @@ function handleFile(file: File) {
     }
 
     img {
+      display: block;
       width: 100%;
       height: 100%;
-      object-fit: cover;
     }
 
     .avatar-placeholder {

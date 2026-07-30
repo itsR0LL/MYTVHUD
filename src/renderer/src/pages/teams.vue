@@ -13,7 +13,8 @@
           <DropdownMenuTrigger asChild>
             <div class="team-card" @contextmenu.prevent="openedContextTeamId = team.id">
               <div class="team-avatar">
-                <img :src="team.avatar" :alt="t('teams.avatar')" />
+                <img v-if="team.avatar" :src="team.avatar" :alt="t('teams.avatar')" />
+                <Shield v-else class="team-avatar-placeholder" aria-hidden="true" />
               </div>
               <div class="team-name">{{ team.name }}</div>
               <div class="team-name-ingame">{{ team.name_ingame }}</div>
@@ -50,7 +51,7 @@
         </div>
       </div>
       <div class="input-container">
-        <AvatarUpload v-model="createTeamForm.avatar" :label="t('teams.avatar')" />
+        <AvatarUpload v-model="createTeamForm.avatar" :label="t('teams.avatar')" fit="contain" />
       </div>
       <div class="input-container" style="margin-top: 1rem">
         <Button variant="destructive" @click="closeCreateTeamForm">{{ t('common.cancel') }}</Button>
@@ -106,27 +107,51 @@
     background: var(--background);
 
     .team-avatar {
+      display: flex;
+      width: 6.5rem;
       height: 6.5rem;
-      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 6.5rem;
       border: 2px solid var(--color-primary);
-
+      border-radius: 50%;
+      background: var(--muted);
       overflow: hidden;
 
       img {
+        display: block;
+        width: 100%;
         height: 100%;
-        object-fit: cover;
+        padding: 0.45rem;
+        object-fit: contain;
+      }
+
+      .team-avatar-placeholder {
+        width: 2.5rem;
+        height: 2.5rem;
+        color: var(--muted-foreground);
       }
     }
 
     .team-name {
+      width: 100%;
+      overflow: hidden;
       font-size: 1rem;
       font-weight: 600;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .team-name-ingame {
+      width: 100%;
+      overflow: hidden;
       font-size: 0.8rem;
       font-weight: 400;
       opacity: 0.7;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .team-control {
@@ -201,7 +226,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem
 } from '@/components/ui/dropdown-menu'
-import { User, IdCard, Plus } from 'lucide-vue-next'
+import { User, IdCard, Plus, Shield } from 'lucide-vue-next'
 const { t } = useI18n({ useScope: 'global' })
 
 const showCreateTeamForm = ref(false)

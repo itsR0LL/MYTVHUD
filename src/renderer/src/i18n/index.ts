@@ -11,6 +11,7 @@ const messages = {
       menu: '菜单',
       matchs: '比赛',
       bp: 'BP 选图',
+      intermission: '赛间播出',
       players: '选手',
       teams: '战队',
       settings: '设置'
@@ -117,8 +118,8 @@ const messages = {
         submitAndPrepare: '保存比赛并准备 BP',
         bp: {
           title: '地图 BP',
-          desc: '按实际比赛流程完成 7 步禁选。前六步可排序，第七步固定为决胜图。',
-          mapHint: '根据当前赛制完成规定数量的禁用与选择，每张地图只能使用一次。',
+          desc: '按当前赛制的固定顺序完成 7 步禁选，第七步固定为决胜图。',
+          mapHint: '每一步仅提供当前赛制允许的操作，每张地图只能使用一次。',
           emptySequence: '从左侧地图池开始添加 BP 步骤',
           banCount: '当前赛制必须包含 {count} 个禁用步骤。',
           pickCount: '当前赛制必须包含 {count} 个选择步骤。',
@@ -127,7 +128,11 @@ const messages = {
         score: {
           title: '对局地图与比分',
           desc: '此处仅显示 BP 中选用的地图和决胜图，比分继续供比赛 HUD 使用。',
-          empty: '完成地图 BP 后，这里将自动列出实际比赛地图。'
+          empty: '完成地图 BP 后，这里将自动列出实际比赛地图。',
+          status: '地图状态',
+          legacyStatus: '此比赛来自旧版数据，地图状态已按“未开始”读取。请逐张确认后重新保存比赛。',
+          onlyOneLive: '同一场比赛最多只能有一张地图处于“进行中”。',
+          finishedTie: '{map} 的比分为平局，不能标记为“已结束”。'
         }
       },
       menu: {
@@ -157,7 +162,103 @@ const messages = {
         content1_suffix: '，请确保浏览器源置于最上层。',
         content2: '设置浏览器源的高度、宽度为你的屏幕宽度，单位为 px。',
         content3_prefix: '地图 BP 使用单独的浏览器源，URL 填写',
-        content3_suffix: '。'
+        content3_suffix: '。',
+        content4_prefix: '赛间信息条使用单独的浏览器源，URL 填写',
+        content4_suffix: '。'
+      }
+    },
+    intermission: {
+      title: '赛间播出控制',
+      loading: '正在读取赛间播出状态…',
+      output: {
+        visible: '正在显示',
+        hidden: '当前隐藏',
+        copy: '复制地址',
+        open: '浏览器打开',
+        show: '显示到 OBS',
+        hide: '从 OBS 隐藏',
+        refresh: '刷新',
+        noValidMatch: '当前比赛数据不完整，请先在比赛页面完成设置。',
+        noNextMap: '显示前必须先选择下一张地图。'
+      },
+      noMatch: {
+        title: '尚无可用于赛间播出的当前比赛',
+        desc: '请先在比赛页面保存双方、赛制、实际比赛地图、比分和地图状态。',
+        action: '前往比赛设置'
+      },
+      match: {
+        title: '当前比赛'
+      },
+      maps: {
+        title: '地图状态',
+        pickedBy: '{team} 选用',
+        noPicker: '未记录选图方',
+        finishedTie: '平局比分不能标记为已结束',
+        statusNeedsConfirmation: '旧版记录：请确认并保存地图状态'
+      },
+      mapStatus: {
+        pending: '未开始',
+        live: '进行中',
+        finished: '已结束'
+      },
+      nextMap: {
+        title: '下一张地图',
+        placeholder: '选择下一张地图',
+        none: '尚未选择',
+        seriesFinished: '当前系列赛已经结束，不能继续选择下一张地图。'
+      },
+      score: {
+        title: '人工系列赛比分',
+        desc: '仅用于弃权、判罚或技术性获胜。',
+        automatic: '当前使用地图结果自动计算',
+        manualActive: '当前正在使用人工比分',
+        save: '保存比分模式'
+      },
+      timer: {
+        title: '倒计时',
+        minutes: '分钟',
+        seconds: '秒',
+        start: '开始',
+        pause: '暂停',
+        resume: '继续',
+        reset: '重置',
+        status: {
+          idle: '待开始',
+          running: '运行中',
+          paused: '已暂停',
+          finished: '已结束'
+        }
+      },
+      layout: {
+        title: 'OBS 布局',
+        desc: '选择并拖动四个固定组件；画布坐标对应 1920×1080 OBS 浏览器源。',
+        unapplied: '存在未应用修改',
+        syncing: '正在同步至 OBS',
+        onAirWarning: '正在播出',
+        componentList: '固定 OBS 组件',
+        fixedComponents: '仅支持以下四个固定组件，暂不支持手动添加。',
+        selectedComponent: '当前组件：{name}',
+        components: {
+          teamScore: '战队与比分',
+          mapSeries: '地图进度',
+          timerNotice: '倒计时与提示',
+          eventLogo: '右上角标志'
+        },
+        scale: '缩放（%）',
+        liveSync: '实时同步到 OBS',
+        undo: '撤销修改',
+        reset: '重置默认',
+        apply: '应用到 OBS',
+        selectionLabel: '{name}位置与缩放选择框',
+        resizeLabel: '缩放{name}'
+      },
+      toast: {
+        loadFailed: '赛间状态加载失败',
+        updateFailed: '赛间状态更新失败',
+        requestTimedOut: '操作超过 8 秒未完成，请重试',
+        layoutApplied: '布局已应用到 OBS',
+        urlCopied: '赛间播出地址已复制',
+        copyFailed: '复制地址失败'
       }
     },
     bp: {
@@ -166,7 +267,7 @@ const messages = {
       copyUrl: '复制 BP 展示地址',
       openOutput: '在浏览器中打开 BP 展示页',
       animation: '动画',
-      show: '显示',
+      startDisplay: '开始展示',
       hide: '隐藏',
       teamA: '战队 A',
       teamB: '战队 B',
@@ -188,7 +289,7 @@ const messages = {
         sidePending: '尚未设置开局阵营'
       },
       mapPool: '地图池',
-      mapHint: '每一步均可由导播自由选择禁用或选择。',
+      mapHint: '按当前赛制固定的禁用、选择与决胜图顺序完成 7 步。',
       deciderHint: '前六步已完成，请手动指定第七张决胜图。',
       added: '已加入',
       action: {
@@ -205,6 +306,7 @@ const messages = {
         noMatch: '请先在比赛页面设置并提交当前比赛。',
         stepCount: '需要完成全部 7 个 BP 步骤。',
         decider: '第 7 步必须是决胜图。',
+        actionOrder: '第 {step} 步必须为“{action}”。',
         actor: '第 {step} 步尚未选择执行战队。',
         side: '第 {step} 步尚未设置对方战队的开局阵营。'
       },

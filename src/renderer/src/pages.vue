@@ -11,9 +11,9 @@
       <SidebarContent class="w-full">
         <SidebarMenu>
           <SidebarMenuItem
-            class="w-auto group-data-[state=expanded]:w-full"
             v-for="item in indicatorItems"
             :key="item.path"
+            class="w-auto group-data-[state=expanded]:w-full"
           >
             <SidebarMenuButton
               class="w-full justify-center font-medium group-data-[state=expanded]:justify-start cursor-pointer"
@@ -33,23 +33,11 @@
 
     <SidebarInset class="pt-(--header-height) h-full w-full">
       <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in" appear>
-          <keep-alive>
-            <div :key="$route.path" class="h-full w-full">
-              <component :is="Component" />
-            </div>
-          </keep-alive>
-        </transition>
+        <component :is="Component" />
       </router-view>
     </SidebarInset>
   </SidebarProvider>
 </template>
-
-<style scoped lang="scss">
-.sidebar-indicator-label {
-  font-size: 0.9rem;
-}
-</style>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
@@ -67,7 +55,7 @@ import {
   SidebarRail,
   SidebarInset
 } from '@/components/ui/sidebar'
-import { Home, Trophy, Users, Settings, Map as MapIcon } from 'lucide-vue-next'
+import { Home, Trophy, Users, Settings, Map as MapIcon, TvMinimalPlay } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -75,6 +63,7 @@ const indicatorItems = ref([
   { label: 'indicator.menu', path: '/', icon: Home },
   { label: 'indicator.matchs', path: '/matchs', icon: Trophy },
   { label: 'indicator.bp', path: '/bp', icon: MapIcon },
+  { label: 'indicator.intermission', path: '/intermission', icon: TvMinimalPlay },
   { label: 'indicator.players', path: '/players', icon: Users },
   { label: 'indicator.teams', path: '/teams', icon: Users },
   { label: 'indicator.settings', path: '/settings', icon: Settings }
@@ -99,3 +88,9 @@ const navigate = (path: string) => {
 
 // 页面仅负责导航
 </script>
+
+<style scoped lang="scss">
+.sidebar-indicator-label {
+  font-size: 0.9rem;
+}
+</style>

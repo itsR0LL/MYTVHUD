@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ws://localhost:5031 http://localhost:5031"
+    />
+    <title>MYTVHUD 赛间信息条</title>
+    <link rel="stylesheet" href="/intermission/style.css" />
+  </head>
+  <body>
+    <main id="stage" aria-label="赛间播出画布">
+      <section
+        id="team-score-component"
+        class="overlay-component team-score-component"
+        aria-label="战队与系列赛比分"
+        aria-hidden="true"
+      >
+        <div class="team-visual team-a-visual">
+          <img class="team-logo team-a-logo" alt="" />
+          <strong class="team-name team-a-name"></strong>
+        </div>
+        <div class="series-score" aria-label="系列赛比分">
+          <span class="score-a">0</span>
+          <span class="score-separator">:</span>
+          <span class="score-b">0</span>
+        </div>
+        <div class="team-visual team-b-visual">
+          <img class="team-logo team-b-logo" alt="" />
+          <strong class="team-name team-b-name"></strong>
+        </div>
+      </section>
+
+      <section
+        id="map-series-component"
+        class="overlay-component map-series-component"
+        aria-label="系列赛地图进度"
+        aria-hidden="true"
+      >
+        <div id="map-list" class="map-list"></div>
+      </section>
+
+      <section
+        id="timer-notice-component"
+        class="overlay-component timer-notice-component"
+        aria-label="对阵提示与下一张地图倒计时"
+        aria-hidden="true"
+      >
+        <div class="matchup" aria-label="对阵双方">
+          <span class="footer-team-a"></span>
+          <span class="versus">VS</span>
+          <span class="footer-team-b"></span>
+        </div>
+        <div class="countdown" aria-label="下一张地图倒计时">
+          <span class="countdown-label">NEXT MAP IN</span>
+          <strong class="countdown-value">08:00</strong>
+        </div>
+      </section>
+
+      <section
+        id="event-logo-component"
+        class="overlay-component event-logo-component"
+        aria-label="Counter-Strike 2 标志"
+        aria-hidden="true"
+      >
+        <img
+          class="event-logo"
+          src="/intermission/assets/counter-strike-2.png"
+          alt="Counter-Strike 2"
+        />
+      </section>
+      <p id="live-status" class="sr-only" aria-live="polite"></p>
+    </main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/intermission/app.js"></script>
+  </body>
+</html>

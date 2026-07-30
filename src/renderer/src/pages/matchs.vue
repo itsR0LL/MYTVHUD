@@ -118,13 +118,20 @@
                 class="map-card"
                 :class="{ 'is-used': isMapUsed(map.id) }"
               >
-                <img v-if="map.image" class="map-image" :src="map.image" :alt="map.displayName" />
-                <div v-else class="map-placeholder" aria-hidden="true">{{ map.name }}</div>
+                <img
+                  class="map-image"
+                  :src="map.image"
+                  :alt="map.displayName"
+                  width="512"
+                  height="512"
+                  loading="lazy"
+                  decoding="async"
+                />
                 <div class="map-card-content">
                   <div class="map-name">{{ map.name }}</div>
                   <div class="map-cn">{{ chineseMapName(map.displayName) }}</div>
                   <div v-if="isMapUsed(map.id)" class="map-added">{{ t('bp.added') }}</div>
-                  <div v-else-if="bpSequence.length < 6" class="map-actions">
+                  <div v-else-if="nextRequiredAction === 'ban'" class="map-actions">
                     <Button
                       size="sm"
                       variant="destructive"
@@ -133,6 +140,8 @@
                     >
                       {{ t('bp.action.ban') }}
                     </Button>
+                  </div>
+                  <div v-else-if="nextRequiredAction === 'pick'" class="map-actions">
                     <Button
                       size="sm"
                       :disabled="!canAddAction('pick')"
@@ -141,8 +150,13 @@
                       {{ t('bp.action.pick') }}
                     </Button>
                   </div>
-                  <div v-else-if="bpSequence.length === 6" class="map-actions">
-                    <Button size="sm" class="decider-button" @click="addMap(map.id, 'decider')">
+                  <div v-else-if="nextRequiredAction === 'decider'" class="map-actions">
+                    <Button
+                      size="sm"
+                      class="decider-button"
+                      :disabled="!canAddAction('decider')"
+                      @click="addMap(map.id, 'decider')"
+                    >
                       {{ t('bp.action.decider') }}
                     </Button>
                   </div>
@@ -247,39 +261,62 @@
         <div v-if="!seriesMaps.length" class="sequence-empty compact">
           {{ t('multi.matchForm.score.empty') }}
         </div>
-        <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <article
-            v-for="(item, index) in seriesMaps"
-            :key="item.map"
-            class="rounded-lg border bg-card p-4 shadow-sm"
+        <template v-else>
+          <div
+            v-if="legacyMapsNeedStatusConfirmation"
+            class="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300"
           >
-            <div class="mb-3 flex items-center justify-between gap-2">
-              <div class="min-w-0">
-                <div class="text-xs text-muted-foreground">
-                  {{ t('multi.matchForm.mapNumber', { n: index + 1 }) }}
+            {{ t('multi.matchForm.score.legacyStatus') }}
+          </div>
+          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <article
+              v-for="(item, index) in seriesMaps"
+              :key="item.map"
+              class="rounded-lg border bg-card p-4 shadow-sm"
+            >
+              <div class="mb-3 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="text-xs text-muted-foreground">
+                    {{ t('multi.matchForm.mapNumber', { n: index + 1 }) }}
+                  </div>
+                  <div class="truncate font-semibold">{{ mapDisplayName(item.map) }}</div>
                 </div>
-                <div class="truncate font-semibold">{{ mapDisplayName(item.map) }}</div>
+                <span class="action-badge" :data-action="item.action">
+                  {{ actionName(item.action) }}
+                </span>
               </div>
-              <span class="action-badge" :data-action="item.action">
-                {{ actionName(item.action) }}
-              </span>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="space-y-2">
+              <div class="grid grid-cols-2 gap-3">
+                <label class="space-y-2">
+                  <span class="text-xs font-medium text-muted-foreground">
+                    {{ selectedTeamA?.name ?? t('matchForm.team_a.score') }}
+                  </span>
+                  <Input v-model="scoreByMap[item.map].ascore" type="number" :min="0" />
+                </label>
+                <label class="space-y-2">
+                  <span class="text-xs font-medium text-muted-foreground">
+                    {{ selectedTeamB?.name ?? t('matchForm.team_b.score') }}
+                  </span>
+                  <Input v-model="scoreByMap[item.map].bscore" type="number" :min="0" />
+                </label>
+              </div>
+              <label class="mt-3 block space-y-2">
                 <span class="text-xs font-medium text-muted-foreground">
-                  {{ selectedTeamA?.name ?? t('matchForm.team_a.score') }}
+                  {{ t('multi.matchForm.score.status') }}
                 </span>
-                <Input v-model="scoreByMap[item.map].ascore" type="number" :min="0" />
+                <Select v-model="scoreByMap[item.map].status">
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="status in MATCH_MAP_STATUSES" :key="status" :value="status">
+                      {{ t(`intermission.mapStatus.${status}`) }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </label>
-              <label class="space-y-2">
-                <span class="text-xs font-medium text-muted-foreground">
-                  {{ selectedTeamB?.name ?? t('matchForm.team_b.score') }}
-                </span>
-                <Input v-model="scoreByMap[item.map].bscore" type="number" :min="0" />
-              </label>
-            </div>
-          </article>
-        </div>
+            </article>
+          </div>
+        </template>
       </section>
 
       <div class="flex items-center justify-end gap-3 pb-4 pt-2">
@@ -312,6 +349,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import {
   BP_MAPS,
+  BP_SERIES_ACTION_ORDER,
   BP_SERIES_RULES,
   type BPAction,
   type BPMapId,
@@ -319,8 +357,13 @@ import {
   type BPStartingSide,
   type BPTeamSlot
 } from '../../../shared/bp'
+import {
+  MATCH_MAP_STATUSES,
+  normalizeMatchMapStatus,
+  type MatchMapStatus
+} from '../../../shared/intermission'
 
-type MapScore = { ascore: number; bscore: number }
+type MapScore = { ascore: number; bscore: number; status: MatchMapStatus }
 interface MatchTeam {
   id: string | number
   name: string
@@ -336,6 +379,7 @@ interface MatchMap {
   bscore: number
   aid: string | number
   bid: string | number
+  status: MatchMapStatus
 }
 
 interface MatchFormData {
@@ -358,6 +402,7 @@ const { t } = useI18n()
 const teams = ref<MatchTeam[]>([])
 const bpSequence = ref<BPSequenceItem[]>([])
 const scoreByMap = ref(createScoreState())
+const legacyMapsNeedStatusConfirmation = ref(false)
 let isRestoringMatch = false
 
 const types: Array<{ name: MatchFormData['type']; label: MatchFormData['type'] }> = [
@@ -386,6 +431,8 @@ const selectedTeamB = computed(() =>
   teams.value.find((team) => String(team.id) === String(matchForm.value.team_b.id))
 )
 const currentRule = computed(() => BP_SERIES_RULES[matchForm.value.type])
+const currentActionOrder = computed(() => BP_SERIES_ACTION_ORDER[matchForm.value.type])
+const nextRequiredAction = computed(() => currentActionOrder.value[bpSequence.value.length])
 const actionCounts = computed(() => ({
   ban: bpSequence.value.filter((item) => item.action === 'ban').length,
   pick: bpSequence.value.filter((item) => item.action === 'pick').length,
@@ -406,10 +453,9 @@ function createEmptyMatch(): MatchFormData {
 }
 
 function createScoreState(): Record<BPMapId, MapScore> {
-  return Object.fromEntries(BP_MAPS.map((map) => [map.id, { ascore: 0, bscore: 0 }])) as Record<
-    BPMapId,
-    MapScore
-  >
+  return Object.fromEntries(
+    BP_MAPS.map((map) => [map.id, { ascore: 0, bscore: 0, status: 'pending' }])
+  ) as Record<BPMapId, MapScore>
 }
 
 function normalizeMatchType(value: unknown): MatchFormData['type'] {
@@ -449,15 +495,16 @@ function isMapUsed(mapId: BPMapId): boolean {
   return bpSequence.value.some((item) => item.map === mapId)
 }
 
-function canAddAction(action: Exclude<BPAction, 'decider'>): boolean {
-  return bpSequence.value.length < 6 && actionCounts.value[action] < currentRule.value[action]
+function canAddAction(action: BPAction): boolean {
+  return (
+    nextRequiredAction.value === action &&
+    bpSequence.value.every((item, index) => item.action === currentActionOrder.value[index])
+  )
 }
 
 function addMap(map: BPMapId, action: BPAction): void {
   if (isMapUsed(map) || bpSequence.value.length >= 7) return
-  const isFinalStep = bpSequence.value.length === 6
-  if ((isFinalStep && action !== 'decider') || (!isFinalStep && action === 'decider')) return
-  if (action !== 'decider' && !canAddAction(action)) return
+  if (!canAddAction(action)) return
 
   bpSequence.value.push({ map, action, actor: '', startingSide: '' })
 }
@@ -501,7 +548,8 @@ function buildMatchMaps(): MatchMap[] {
     ascore: Math.max(0, Number(scoreByMap.value[item.map].ascore ?? 0) || 0),
     bscore: Math.max(0, Number(scoreByMap.value[item.map].bscore ?? 0) || 0),
     aid: matchForm.value.team_a.id,
-    bid: matchForm.value.team_b.id
+    bid: matchForm.value.team_b.id,
+    status: scoreByMap.value[item.map].status
   }))
 }
 
@@ -522,13 +570,27 @@ function validateForm(): string | null {
 
   for (let index = 0; index < bpSequence.value.length; index += 1) {
     const item = bpSequence.value[index]
-    if (index === 6 && item.action !== 'decider') return t('bp.validation.decider')
-    if (index < 6 && item.action === 'decider') return t('bp.validation.decider')
+    const requiredAction = currentActionOrder.value[index]
+    if (item.action !== requiredAction) {
+      return t('bp.validation.actionOrder', {
+        step: index + 1,
+        action: actionName(requiredAction)
+      })
+    }
     if (item.action !== 'decider' && !item.actor) {
       return t('bp.validation.actor', { step: index + 1 })
     }
     if (item.action === 'pick' && !item.startingSide) {
       return t('bp.validation.side', { step: index + 1 })
+    }
+  }
+
+  const liveMaps = seriesMaps.value.filter((item) => scoreByMap.value[item.map].status === 'live')
+  if (liveMaps.length > 1) return t('multi.matchForm.score.onlyOneLive')
+  for (const item of seriesMaps.value) {
+    const score = scoreByMap.value[item.map]
+    if (score.status === 'finished' && Number(score.ascore) === Number(score.bscore)) {
+      return t('multi.matchForm.score.finishedTie', { map: mapDisplayName(item.map) })
     }
   }
 
@@ -573,13 +635,18 @@ async function autoLoadMatch(): Promise<void> {
     if (!record) return
 
     const restoredScores = createScoreState()
+    legacyMapsNeedStatusConfirmation.value = false
     if (Array.isArray(record.maps)) {
       for (const map of record.maps as Array<Partial<MatchMap>>) {
         const mapId = map?.name as BPMapId
         if (!BP_MAPS.some((item) => item.id === mapId)) continue
         restoredScores[mapId] = {
           ascore: Math.max(0, Number(map?.ascore ?? 0) || 0),
-          bscore: Math.max(0, Number(map?.bscore ?? 0) || 0)
+          bscore: Math.max(0, Number(map?.bscore ?? 0) || 0),
+          status: normalizeMatchMapStatus(map?.status)
+        }
+        if (!MATCH_MAP_STATUSES.includes(map?.status as MatchMapStatus)) {
+          legacyMapsNeedStatusConfirmation.value = true
         }
       }
     }
@@ -622,6 +689,7 @@ function resetForm(): void {
   isRestoringMatch = false
   bpSequence.value = []
   scoreByMap.value = createScoreState()
+  legacyMapsNeedStatusConfirmation.value = false
   toast.info(t('common.resetSuccess'), { duration: 2000 })
 }
 
@@ -665,6 +733,7 @@ async function submitForm(): Promise<void> {
     await window.api.setBPContent({
       sequence: JSON.parse(JSON.stringify(bpSequence.value))
     })
+    legacyMapsNeedStatusConfirmation.value = false
     toast.success(didModify ? t('common.modifySuccess') : t('common.addSuccess'), {
       description: t('multi.matchForm.bp.prepared'),
       duration: 3500
@@ -743,33 +812,24 @@ onMounted(async () => {
   }
 }
 
-.map-image,
-.map-placeholder {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
 .map-image {
-  object-fit: cover;
-}
-
-.map-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.055);
-  font-size: clamp(1.5rem, 2.4vw, 2.8rem);
-  font-weight: 900;
-  line-height: 0.9;
-  text-align: center;
-  text-transform: uppercase;
-  transform: rotate(-8deg);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  top: 14px;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.42));
+  transform: translateX(-50%);
 }
 
 .map-card-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   min-height: 150px;
   align-items: center;

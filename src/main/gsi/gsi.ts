@@ -8,6 +8,7 @@ import { applyFilters } from './filters'
 import { app as electronApp, globalShortcut } from 'electron'
 import cors from 'cors'
 import { getBPPayload, setBPPublisher } from '../bp/bp'
+import { getIntermissionPayload, setIntermissionPublisher } from '../intermission/intermission'
 
 const expressApp = express()
 const GSI = new CSGOGSI()
@@ -21,9 +22,19 @@ const io = new Server(server, {
 
 // HUD 主动刷新使用的实时通信命名空间
 const realtime = io.of('/realtime')
+const GSI_BROADCAST_INTERVAL_MS = 33
+type GSIData = Parameters<typeof applyFilters>[0]
+
+let pendingGSIData: GSIData | null = null
+let gsiBroadcastRunning = false
+let lastGSIBroadcastAt = 0
 
 setBPPublisher((payload) => {
   io.emit('bp-state', payload)
+})
+
+setIntermissionPublisher((payload) => {
+  io.emit('intermission-state', payload)
 })
 
 export function emitOverlayRefresh(): void {
@@ -95,18 +106,59 @@ expressApp.get('/api/bp', async (_req, res) => {
   }
 })
 
+expressApp.get('/api/intermission', async (_req, res) => {
+  try {
+    res.json(await getIntermissionPayload())
+  } catch (error) {
+    res.status(500).json({ error: String(error) })
+  }
+})
+
 expressApp.use('/overlay', express.static(join(__dirname, 'overlay/file')))
 expressApp.get('/bp', (_req, res) => {
   res.sendFile(join(__dirname, 'bp/file/index.html'))
 })
 expressApp.use('/bp', express.static(join(__dirname, 'bp/file')))
+expressApp.get('/intermission', (_req, res) => {
+  res.sendFile(join(__dirname, 'intermission/file/index.html'))
+})
+expressApp.use('/intermission', express.static(join(__dirname, 'intermission/file')))
 
-// 处理 GSI 数据并通过 Socket.IO 推送给 HUD 页面
-GSI.on('data', async (data) => {
-  const settings = await databaseService.settings.getAll()
-  const match = await databaseService.matchs.getAll()
-  const gamedata = await applyFilters(data as any)
-  io.emit('gsi-data', { ...gamedata, settings, match })
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
+async function broadcastLatestGSIData(): Promise<void> {
+  if (gsiBroadcastRunning) return
+  gsiBroadcastRunning = true
+
+  try {
+    while (pendingGSIData) {
+      const remainingInterval = GSI_BROADCAST_INTERVAL_MS - (Date.now() - lastGSIBroadcastAt)
+      if (remainingInterval > 0) await wait(remainingInterval)
+
+      const data = pendingGSIData
+      pendingGSIData = null
+      const [settings, match, gamedata] = await Promise.all([
+        databaseService.settings.getAll(),
+        databaseService.matchs.getAll(),
+        applyFilters(data)
+      ])
+      lastGSIBroadcastAt = Date.now()
+      io.emit('gsi-data', { ...gamedata, settings, match })
+    }
+  } catch (error) {
+    console.error('处理 GSI 数据失败：', error)
+  } finally {
+    gsiBroadcastRunning = false
+    if (pendingGSIData) void broadcastLatestGSIData()
+  }
+}
+
+// 始终只保留尚未处理的最新一帧，避免 GSI 高频输入阻塞管理端 IPC。
+GSI.on('data', (data) => {
+  pendingGSIData = data as unknown as GSIData
+  void broadcastLatestGSIData()
 })
 
 const PORT = 5031

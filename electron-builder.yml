@@ -1,11 +1,16 @@
 appId: com.mytvhud.manager
 productName: MYTVHUD Manager
-buildNumber: '6'
+buildNumber: '7'
 directories:
   buildResources: build
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!AUDIO_BROADCAST_DEVELOPMENT_PLAN.md'
+  - '!components.json'
+  - '!package-win.ps1'
+  - '!pnpm-workspace.yaml'
+  - '!scripts/**'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
@@ -16,9 +21,9 @@ win:
   icon: build/icon.ico
   executableName: MYTVHUD Manager
 nsis:
-  artifactName: ${name}-${buildVersion}-setup.${ext}
+  artifactName: ${name}-${version}-setup.${ext}
   shortcutName: MYTVHUD Manager
-  uninstallDisplayName: MYTVHUD Manager ${buildVersion}
+  uninstallDisplayName: MYTVHUD Manager ${version}
   createDesktopShortcut: always
   installerIcon: build/icon.ico
   oneClick: false
@@ -32,7 +37,7 @@ mac:
     - NSDownloadsFolderUsageDescription: 应用需要访问下载文件夹。
   notarize: false
 dmg:
-  artifactName: ${name}-${buildVersion}.${ext}
+  artifactName: ${name}-${version}.${ext}
 linux:
   target:
     - AppImage
@@ -41,7 +46,7 @@ linux:
   maintainer: electronjs.org
   category: Utility
 appImage:
-  artifactName: ${name}-${buildVersion}.${ext}
+  artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

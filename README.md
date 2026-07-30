@@ -13,6 +13,8 @@ MYTVHUD Manager 是一套面向中文 CS2 赛事导播的本地 HUD 管理工具
 - 自动将 GSI 配置写入 CS2 配置目录。
 - 使用本地 JSON 文件保存数据。
 - 导出和导入战队、选手数据包，便于不同导播之间交接资料。
+- 独立控制 BP 选图和地图间歇阶段的赛间信息条。
+- 赛间播出支持地图状态、自动/人工系列赛比分、独立倒计时和所见即所得布局。
 - 通过 OBS 浏览器源完成转播画面合成。
 
 ## 安装
@@ -55,6 +57,18 @@ http://localhost:5031/overlay
 
 建议将浏览器源设置为 `1920 × 1080`，屏幕为2K用户设置为 `2560 × 1440`，并将其放置在场景的最上层。MYTVHUD Manager 必须保持运行，否则 OBS 无法访问本地 HUD 页面。
 
+三套独立浏览器源地址为：
+
+| 场景         | 地址                                 |
+| ------------ | ------------------------------------ |
+| 实时比赛 HUD | `http://localhost:5031/overlay`      |
+| BP 选图      | `http://localhost:5031/bp`           |
+| 赛间信息条   | `http://localhost:5031/intermission` |
+
+赛间信息条的浏览器源固定设置为 `1920 × 1080`。先在比赛页面维护各地图比分和“未开始/进行中/已结束”状态，再到“赛间播出”页面选择下一张地图、设置倒计时和调整信息条位置。布局修改默认只影响预览，点击“应用到 OBS”后才会写入正式播出状态；“实时同步到 OBS”默认关闭。
+
+MYTVHUD 重启后会恢复倒计时和布局，但会强制隐藏赛间信息条。每次重新启动后，导播需要在“赛间播出”页面确认下一张地图并手动点击“显示到 OBS”。
+
 ## 数据存储与迁移
 
 本地数据目录为：
@@ -65,13 +79,13 @@ http://localhost:5031/overlay
 
 目录内包含：
 
-| 文件 | 内容 |
-| --- | --- |
-| `matchs.json` | 比赛与地图数据 |
-| `teams.json` | 战队数据 |
-| `players.json` | 选手数据 |
-| `settings.json` | 管理器和 HUD 设置 |
-| `additional.json` | 扩展数据 |
+| 文件              | 内容              |
+| ----------------- | ----------------- |
+| `matchs.json`     | 比赛与地图数据    |
+| `teams.json`      | 战队数据          |
+| `players.json`    | 选手数据          |
+| `settings.json`   | 管理器和 HUD 设置 |
+| `additional.json` | 扩展数据          |
 
 旧版 `%APPDATA%\voidhud\Database` 中的数据会在首次启动时迁移到新目录，已存在的新数据不会被覆盖。
 
@@ -131,7 +145,7 @@ powershell.exe -ExecutionPolicy Bypass -File .\package-win.ps1
 
 ```text
 src/
-├─ main/                 Electron 主进程、GSI、本地服务和数据库
+├─ main/                 Electron 主进程、GSI、本地服务、赛间播出和数据库
 ├─ preload/              主进程与渲染进程之间的安全接口
 ├─ renderer/             Vue 管理界面
 └─ gamestate_integration_mytvhud.cfg
