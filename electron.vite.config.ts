@@ -21,8 +21,20 @@ export default defineConfig({
             dest: 'bp/file'
           },
           {
-            src: 'src/main/intermission/file/**/*',
-            dest: 'intermission/file'
+            src: 'src/main/intermission-next/file',
+            dest: 'intermission-next'
+          },
+          {
+            src: 'src/main/intermission-next/assets/brand',
+            dest: 'intermission-next/assets'
+          },
+          {
+            src: 'src/main/intermission-next/assets/maps',
+            dest: 'intermission-next/assets'
+          },
+          {
+            src: 'src/main/intermission-next/assets/backgrounds',
+            dest: 'intermission-next/assets'
           },
           {
             src: 'src/renderer/src/assets/chinese_fonts/HarmonyOS_Sans_SC_Regular.ttf',

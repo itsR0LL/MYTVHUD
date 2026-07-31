@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.web.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true
+  },
+  "include": [
+    "../../src/renderer/src/env.d.ts",
+    "../../src/renderer/src/components/intermission-next/IntermissionNextPreviewFrame.vue",
+    "../../src/shared/intermission-background-next/**/*.ts",
+    "../../src/shared/intermission-output-next/**/*.ts"
+  ]
+}

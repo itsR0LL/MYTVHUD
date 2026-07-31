@@ -1,12 +1,15 @@
 /// <reference types="vite/client" />
 
-type BPState = import('../../shared/bp').BPState
-type BPPayload = import('../../shared/bp').BPPayload
 type BPContentInput = import('../../shared/bp').BPContentInput
 type IntermissionPayload = import('../../shared/intermission').IntermissionPayload
 type IntermissionStateUpdate = import('../../shared/intermission').IntermissionStateUpdate
-type IntermissionMapStatusUpdate = import('../../shared/intermission').IntermissionMapStatusUpdate
-type IntermissionTimerCommand = import('../../shared/intermission').IntermissionTimerCommand
+type MatchRuntimeV1 = import('../../shared/match-session').MatchRuntimeV1
+type BroadcastRuntimeV1 = import('../../shared/broadcast-flow').BroadcastRuntimeV1
+type BroadcastDirectorSnapshot = import('../../shared/broadcast-director').BroadcastDirectorSnapshot
+type IntermissionTestModeStateV1 =
+  import('../../shared/intermission-test-mode').IntermissionTestModeStateV1
+type IntermissionNextCoordinatorResult =
+  import('../../main/intermission-next/state').IntermissionNextCoordinatorResult
 
 interface Window {
   api: {
@@ -45,18 +48,45 @@ interface Window {
       url: string
       id: number | null
     }>
-    getBPState: () => Promise<BPPayload>
-    setBPState: (state: BPState) => Promise<BPPayload>
-    setBPContent: (content: BPContentInput) => Promise<BPPayload>
-    resetMatchBroadcastState: () => Promise<void>
+    setBPContent: (content: BPContentInput) => Promise<import('../../shared/bp').BPPayload>
+    resetMatchBroadcastState: (confirmed: boolean) => Promise<void>
+    saveMatch: (value: { match: unknown; allowStructureInvalidation: boolean }) => Promise<{
+      match: import('../../shared/match-session').MatchRecord
+      runtimeInvalidated: boolean
+    }>
+    getMatchRuntimeState: () => Promise<MatchRuntimeV1>
+    finishMatchSeries: () => Promise<MatchRuntimeV1>
+    clearMatchRuntimeState: () => Promise<MatchRuntimeV1>
+    createNextMatch: (setup: {
+      teamAId: string | number
+      teamBId: string | number
+      type: import('../../shared/bp').BPMatchType
+    }) => Promise<{ id: string | number; [key: string]: any }>
     getIntermissionState: () => Promise<IntermissionPayload>
     updateIntermissionState: (update: IntermissionStateUpdate) => Promise<IntermissionPayload>
-    updateIntermissionMapStatus: (
-      update: IntermissionMapStatusUpdate
-    ) => Promise<IntermissionPayload>
-    sendIntermissionTimerCommand: (
-      command: IntermissionTimerCommand
-    ) => Promise<IntermissionPayload>
+    getBroadcastState: () => Promise<BroadcastRuntimeV1>
+    prepareBroadcastMapReport: (
+      mapId: import('../../shared/bp').BPMapId
+    ) => Promise<BroadcastRuntimeV1>
+    advanceBroadcastDirector: () => Promise<BroadcastDirectorSnapshot>
+    hideUnifiedBroadcast: () => Promise<BroadcastDirectorSnapshot>
+    playBroadcastDirectorBP: () => Promise<BroadcastDirectorSnapshot>
+    restoreBroadcastDirectorWarmup: () => Promise<BroadcastDirectorSnapshot>
+    jumpBroadcastDirector: (
+      request: import('../../shared/broadcast-director').BroadcastDirectorJumpRequest
+    ) => Promise<BroadcastDirectorSnapshot>
+    getIntermissionTestModeState: () => Promise<IntermissionTestModeStateV1>
+    setIntermissionTestModeEnabled: (enabled: boolean) => Promise<IntermissionTestModeStateV1>
+    setIntermissionTestStage: (stage: unknown) => Promise<IntermissionTestModeStateV1>
+    advanceIntermissionTestStage: () => Promise<IntermissionTestModeStateV1>
+    hideIntermissionTestOutput: () => Promise<IntermissionTestModeStateV1>
+    getIntermissionNextState: () => Promise<IntermissionNextCoordinatorResult>
+    updateIntermissionNextLayout: (
+      layout: import('../../shared/intermission-next').IntermissionNextLayoutState
+    ) => Promise<IntermissionNextCoordinatorResult>
+    updateIntermissionNextPageFlowTemplates: (
+      templates: import('../../shared/broadcast-page-flow-next/page-flow').BroadcastPageFlowTemplatesV3
+    ) => Promise<IntermissionNextCoordinatorResult>
   }
 }
 

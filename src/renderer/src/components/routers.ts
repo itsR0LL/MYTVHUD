@@ -5,7 +5,6 @@ import players from '../pages/players.vue'
 import settings from '../pages/settings.vue'
 import teams from '../pages/teams.vue'
 import menu from '../pages/menu.vue'
-import bp from '../pages/bp.vue'
 import intermission from '../pages/intermission.vue'
 
 const routes: RouteRecordRaw[] = [
@@ -24,10 +23,6 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/teams',
     component: teams
-  },
-  {
-    path: '/bp',
-    component: bp
   },
   {
     path: '/intermission',

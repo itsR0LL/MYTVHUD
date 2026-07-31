@@ -7,19 +7,28 @@ import { join } from 'path'
 import { applyFilters } from './filters'
 import { app as electronApp, globalShortcut } from 'electron'
 import cors from 'cors'
-import { getBPPayload, setBPPublisher } from '../bp/bp'
-import {
-  getIntermissionPayload,
-  publishIntermissionSnapshot,
-  setIntermissionPublisher
-} from '../intermission/intermission'
+import { setBPPublisher } from '../bp/bp'
+import { publishIntermissionSnapshot, setIntermissionPublisher } from '../intermission/intermission'
 import {
   activeMatchFromSnapshot,
-  buildActiveMatchScoreUpdate,
   resolveActiveMatchTeamSides,
   type GSIRuntimeContext,
   type ResolvedTeamSides
 } from './match-runtime'
+import { processActiveMatchFrame } from '../match-session/match-session'
+import { isBPSequenceComplete, normalizeBPSequence } from '../../shared/bp'
+import { isBPMatchType } from '../../shared/match-session'
+import {
+  getUtilityReplayCaptureDiagnostics,
+  initializeUtilityReplayCaptureState,
+  processUtilityReplayFrame
+} from './utility-replay'
+import { LatestFrameProcessor } from './latest-frame-processor'
+import { registerGSIResetHooks } from './reset-coordinator'
+import {
+  initializeIntermissionNextOutput,
+  publishIntermissionNextSnapshot
+} from '../intermission-next/integration'
 
 const expressApp = express()
 const GSI = new CSGOGSI()
@@ -48,25 +57,45 @@ type TeamResolutionStatus = {
   updatedAt: number | null
   teamCT: { id: string; name: string } | null
   teamT: { id: string; name: string } | null
+  reason: string
+  gsiMapId: string
+  plannedMapIds: string[]
+}
+type UtilityReplayQueuedFrame = {
+  data: GSIData
+  receivedAtMs: number
+}
+type PendingGSIFrame = {
+  data: GSIData
+  utilityReplaySequence: number
 }
 
-let pendingGSIData: GSIData | null = null
+let pendingGSIFrame: PendingGSIFrame | null = null
 let gsiBroadcastRunning = false
+let gsiInputSuspended = false
+let gsiBroadcastIdleWaiters: Array<() => void> = []
 let lastGSIBroadcastAt = 0
 let runtimeSnapshot: RuntimeSnapshot | null = null
 let teamResolutionStatus: TeamResolutionStatus = {
   state: 'waiting',
   updatedAt: null,
   teamCT: null,
-  teamT: null
+  teamT: null,
+  reason: '等待 CS2 GSI 数据',
+  gsiMapId: '',
+  plannedMapIds: []
 }
 
-setBPPublisher((payload) => {
-  io.emit('bp-state', payload)
+setBPPublisher(() => {
+  void publishIntermissionNextSnapshot().catch((error: unknown) => {
+    console.error('发布统一播出 BP 状态失败：', error)
+  })
 })
 
-setIntermissionPublisher((payload) => {
-  io.emit('intermission-state', payload)
+setIntermissionPublisher(() => {
+  void publishIntermissionNextSnapshot().catch((error: unknown) => {
+    console.error('发布新版赛间状态失败：', error)
+  })
 })
 
 export function emitOverlayRefresh(): void {
@@ -131,31 +160,20 @@ expressApp.get('/api/gsi/team-resolution', (_req, res) => {
   res.json(teamResolutionStatus)
 })
 
-expressApp.get('/api/bp', async (_req, res) => {
-  try {
-    res.json(await getBPPayload())
-  } catch (error) {
-    res.status(500).json({ error: String(error) })
-  }
-})
-
-expressApp.get('/api/intermission', async (_req, res) => {
-  try {
-    res.json(await getIntermissionPayload())
-  } catch (error) {
-    res.status(500).json({ error: String(error) })
-  }
+expressApp.get('/api/gsi/utility-replay-status', (_req, res) => {
+  res.json({
+    queue: utilityReplayFrameProcessor.getStats(),
+    capture: getUtilityReplayCaptureDiagnostics()
+  })
 })
 
 expressApp.use('/overlay', express.static(join(__dirname, 'overlay/file')))
-expressApp.get('/bp', (_req, res) => {
-  res.sendFile(join(__dirname, 'bp/file/index.html'))
+expressApp.use('/bp', express.static(join(__dirname, 'bp/file'), { index: false }))
+void initializeIntermissionNextOutput(expressApp, (eventName, payload) => {
+  io.emit(eventName, payload)
+}).catch((error: unknown) => {
+  console.error('初始化新版赛间输出失败：', error)
 })
-expressApp.use('/bp', express.static(join(__dirname, 'bp/file')))
-expressApp.get('/intermission', (_req, res) => {
-  res.sendFile(join(__dirname, 'intermission/file/index.html'))
-})
-expressApp.use('/intermission', express.static(join(__dirname, 'intermission/file')))
 
 function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
@@ -177,32 +195,109 @@ async function loadRuntimeSnapshot(): Promise<RuntimeSnapshot> {
   return runtimeSnapshot
 }
 
+function utilityReplayFramePriority(frame: UtilityReplayQueuedFrame): number {
+  if (frame.data.map?.phase === 'gameover') return 2
+  if (frame.data.round?.phase === 'freezetime') return 1
+  return 0
+}
+
+const utilityReplayFrameProcessor = new LatestFrameProcessor<UtilityReplayQueuedFrame>(
+  async ({ data, receivedAtMs }) => {
+    const snapshot = await loadRuntimeSnapshot()
+    const activeMatch = activeMatchFromSnapshot(snapshot.settings, snapshot.matches)
+    const context: GSIRuntimeContext = {
+      players: snapshot.players,
+      teams: snapshot.teams,
+      activeMatch
+    }
+    const resolvedSides = resolveActiveMatchTeamSides(data, context)
+    await processUtilityReplayFrame(data, activeMatch, resolvedSides, receivedAtMs)
+  },
+  (error) => {
+    console.error('处理前 30 秒道具回放数据失败：', error)
+  },
+  (pending, incoming) => {
+    const pendingPriority = utilityReplayFramePriority(pending)
+    const incomingPriority = utilityReplayFramePriority(incoming)
+    return (
+      pendingPriority > incomingPriority ||
+      (pendingPriority > 0 && pendingPriority === incomingPriority)
+    )
+  }
+)
+
 async function syncActiveMatchScore(
   data: GSIData,
   snapshot: RuntimeSnapshot,
   activeMatch: BaseEntity | null,
-  resolvedSides: ResolvedTeamSides | null
+  resolvedSides: ResolvedTeamSides | null,
+  utilityReplaySequence: number
 ): Promise<BaseEntity | null> {
-  const updatedMatch = buildActiveMatchScoreUpdate(data, activeMatch, resolvedSides)
-  if (!updatedMatch) return activeMatch
-
-  await databaseService.matchs.modify(String(updatedMatch.id), { maps: updatedMatch.maps })
-  snapshot.matches[String(updatedMatch.id)] = updatedMatch
+  if (data.map?.phase === 'gameover') {
+    await utilityReplayFrameProcessor.waitFor(utilityReplaySequence)
+  }
+  const result = await processActiveMatchFrame(data, activeMatch, resolvedSides, snapshot.players)
+  if (!result.match) return null
+  snapshot.matches[String(result.match.id)] = result.match
   snapshot.loadedAt = Date.now()
+  if (!result.scoreChanged) return result.match
   await publishIntermissionSnapshot()
-  return updatedMatch
+  return result.match
+}
+
+function queueUtilityReplayFrame(data: GSIData, receivedAtMs: number): number {
+  return utilityReplayFrameProcessor.submit({ data, receivedAtMs })
 }
 
 function updateTeamResolutionStatus(
+  data: GSIData,
   context: GSIRuntimeContext,
   resolvedSides: ResolvedTeamSides | null
 ): void {
-  if (!resolvedSides) {
+  const gsiMapId = typeof data.map?.name === 'string' ? data.map.name : ''
+  const plannedMapIds = Array.isArray(context.activeMatch?.maps)
+    ? context.activeMatch.maps
+        .map((map: unknown) =>
+          typeof map === 'object' &&
+          map !== null &&
+          typeof (map as Record<string, unknown>).name === 'string'
+            ? String((map as Record<string, unknown>).name)
+            : ''
+        )
+        .filter(Boolean)
+    : []
+  const activeMatchType = context.activeMatch?.type
+  const hasCompleteBP =
+    isBPMatchType(activeMatchType) &&
+    isBPSequenceComplete(normalizeBPSequence(context.activeMatch?.bpSequence), activeMatchType)
+  if (!context.activeMatch || !gsiMapId || !plannedMapIds.includes(gsiMapId) || !hasCompleteBP) {
+    let reason = '当前比赛 BP 尚未完整保存'
+    if (!context.activeMatch) reason = '当前没有合法比赛记录'
+    else if (!gsiMapId) reason = '当前 GSI 数据尚未包含地图名称'
+    else if (!plannedMapIds.includes(gsiMapId)) {
+      reason = `GSI 地图 ${gsiMapId} 不属于当前比赛计划`
+    }
     teamResolutionStatus = {
       state: 'unresolved',
       updatedAt: Date.now(),
       teamCT: null,
-      teamT: null
+      teamT: null,
+      reason,
+      gsiMapId,
+      plannedMapIds
+    }
+    return
+  }
+  if (!resolvedSides) {
+    const reason = '无法通过注册选手 SteamID 与所属战队解析 CT/T 对应关系'
+    teamResolutionStatus = {
+      state: 'unresolved',
+      updatedAt: Date.now(),
+      teamCT: null,
+      teamT: null,
+      reason,
+      gsiMapId,
+      plannedMapIds
     }
     return
   }
@@ -216,8 +311,24 @@ function updateTeamResolutionStatus(
   const teamT = teamSummary(resolvedSides.T)
   teamResolutionStatus =
     teamCT && teamT
-      ? { state: 'resolved', updatedAt: Date.now(), teamCT, teamT }
-      : { state: 'unresolved', updatedAt: Date.now(), teamCT: null, teamT: null }
+      ? {
+          state: 'resolved',
+          updatedAt: Date.now(),
+          teamCT,
+          teamT,
+          reason: '',
+          gsiMapId,
+          plannedMapIds
+        }
+      : {
+          state: 'unresolved',
+          updatedAt: Date.now(),
+          teamCT: null,
+          teamT: null,
+          reason: '已经解析战队 ID，但注册战队数据不完整',
+          gsiMapId,
+          plannedMapIds
+        }
 }
 
 async function broadcastLatestGSIData(): Promise<void> {
@@ -225,12 +336,13 @@ async function broadcastLatestGSIData(): Promise<void> {
   gsiBroadcastRunning = true
 
   try {
-    while (pendingGSIData) {
+    while (pendingGSIFrame) {
       const remainingInterval = GSI_BROADCAST_INTERVAL_MS - (Date.now() - lastGSIBroadcastAt)
       if (remainingInterval > 0) await wait(remainingInterval)
 
-      const data = pendingGSIData
-      pendingGSIData = null
+      const pendingFrame = pendingGSIFrame
+      pendingGSIFrame = null
+      const data = pendingFrame.data
       const snapshot = await loadRuntimeSnapshot()
       let activeMatch = activeMatchFromSnapshot(snapshot.settings, snapshot.matches)
       let context: GSIRuntimeContext = {
@@ -239,8 +351,14 @@ async function broadcastLatestGSIData(): Promise<void> {
         activeMatch
       }
       const resolvedSides = resolveActiveMatchTeamSides(data, context)
-      updateTeamResolutionStatus(context, resolvedSides)
-      activeMatch = await syncActiveMatchScore(data, snapshot, activeMatch, resolvedSides)
+      updateTeamResolutionStatus(data, context, resolvedSides)
+      activeMatch = await syncActiveMatchScore(
+        data,
+        snapshot,
+        activeMatch,
+        resolvedSides,
+        pendingFrame.utilityReplaySequence
+      )
       context = { ...context, activeMatch }
       const gamedata = await applyFilters(data, context)
       const match = activeMatch ? { [String(activeMatch.id)]: activeMatch } : {}
@@ -252,13 +370,42 @@ async function broadcastLatestGSIData(): Promise<void> {
     console.error('处理 GSI 数据失败：', error)
   } finally {
     gsiBroadcastRunning = false
-    if (pendingGSIData) void broadcastLatestGSIData()
+    const idleWaiters = gsiBroadcastIdleWaiters
+    gsiBroadcastIdleWaiters = []
+    for (const resolve of idleWaiters) resolve()
+    if (pendingGSIFrame) void broadcastLatestGSIData()
   }
 }
 
+function waitForGSIBroadcastIdle(): Promise<void> {
+  if (!gsiBroadcastRunning) return Promise.resolve()
+  return new Promise((resolve) => {
+    gsiBroadcastIdleWaiters.push(resolve)
+  })
+}
+
+registerGSIResetHooks({
+  suspend: async () => {
+    gsiInputSuspended = true
+    pendingGSIFrame = null
+    await utilityReplayFrameProcessor.suspendAndDrain()
+    await waitForGSIBroadcastIdle()
+    runtimeSnapshot = null
+  },
+  resume: () => {
+    pendingGSIFrame = null
+    runtimeSnapshot = null
+    utilityReplayFrameProcessor.resume()
+    gsiInputSuspended = false
+  }
+})
+
 // 始终只保留尚未处理的最新一帧，避免 GSI 高频输入阻塞管理端 IPC。
 GSI.on('data', (data) => {
-  pendingGSIData = data as unknown as GSIData
+  if (gsiInputSuspended) return
+  const frame = data as unknown as GSIData
+  const utilityReplaySequence = queueUtilityReplayFrame(frame, Date.now())
+  pendingGSIFrame = { data: frame, utilityReplaySequence }
   void broadcastLatestGSIData()
 })
 
@@ -280,6 +427,7 @@ const getShortcutKey = async () => {
 
 electronApp.whenReady().then(async () => {
   try {
+    await initializeUtilityReplayCaptureState()
     shortcutKey = await getShortcutKey()
     const ok = globalShortcut.register(shortcutKey, () => {
       emitOverlayRefresh()

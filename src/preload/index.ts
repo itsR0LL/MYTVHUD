@@ -5,8 +5,6 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   minimize: () => ipcRenderer.send('minimize'),
   close: () => ipcRenderer.send('close'),
-  openOverlay: () => ipcRenderer.send('openWindow'),
-  closeOverlay: () => ipcRenderer.send('closeWindow'),
   openWindow: () => ipcRenderer.send('openWindow'),
   closeWindow: () => ipcRenderer.send('closeWindow'),
   getOverlayStatus: () => ipcRenderer.invoke('getOverlayStatus'),
@@ -14,17 +12,38 @@ const api = {
   openDataDirectory: () => ipcRenderer.invoke('data:open-directory'),
   exportDataPackage: () => ipcRenderer.invoke('data:export'),
   importDataPackage: () => ipcRenderer.invoke('data:import'),
-  getBPState: () => ipcRenderer.invoke('bp:get-state'),
-  setBPState: (state: unknown) => ipcRenderer.invoke('bp:set-state', state),
   setBPContent: (content: unknown) => ipcRenderer.invoke('bp:set-content', content),
-  resetMatchBroadcastState: () => ipcRenderer.invoke('match:reset-broadcast-state'),
+  resetMatchBroadcastState: (confirmed: boolean) =>
+    ipcRenderer.invoke('match:reset-broadcast-state', confirmed),
+  saveMatch: (value: unknown) => ipcRenderer.invoke('match:save', value),
+  getMatchRuntimeState: () => ipcRenderer.invoke('match-runtime:get-state'),
+  finishMatchSeries: () => ipcRenderer.invoke('match-runtime:finish-series'),
+  clearMatchRuntimeState: () => ipcRenderer.invoke('match-runtime:clear'),
+  createNextMatch: (setup: unknown) => ipcRenderer.invoke('match:create-next', setup),
   getIntermissionState: () => ipcRenderer.invoke('intermission:get-state'),
   updateIntermissionState: (update: unknown) =>
     ipcRenderer.invoke('intermission:update-state', update),
-  updateIntermissionMapStatus: (update: unknown) =>
-    ipcRenderer.invoke('intermission:update-map-status', update),
-  sendIntermissionTimerCommand: (command: unknown) =>
-    ipcRenderer.invoke('intermission:timer-command', command)
+  getBroadcastState: () => ipcRenderer.invoke('broadcast:get-state'),
+  prepareBroadcastMapReport: (mapId: string) =>
+    ipcRenderer.invoke('broadcast:prepare-map-report', mapId),
+  advanceBroadcastDirector: () => ipcRenderer.invoke('broadcast-director:advance'),
+  hideUnifiedBroadcast: () => ipcRenderer.invoke('broadcast-director:hide'),
+  playBroadcastDirectorBP: () => ipcRenderer.invoke('broadcast-director:play-bp'),
+  restoreBroadcastDirectorWarmup: () => ipcRenderer.invoke('broadcast-director:restore-warmup'),
+  jumpBroadcastDirector: (request: unknown) =>
+    ipcRenderer.invoke('broadcast-director:jump', request),
+  getIntermissionTestModeState: () => ipcRenderer.invoke('intermission-next:test-mode-get'),
+  setIntermissionTestModeEnabled: (enabled: boolean) =>
+    ipcRenderer.invoke('intermission-next:test-mode-enabled', enabled),
+  setIntermissionTestStage: (stage: unknown) =>
+    ipcRenderer.invoke('intermission-next:test-mode-stage', stage),
+  advanceIntermissionTestStage: () => ipcRenderer.invoke('intermission-next:test-mode-advance'),
+  hideIntermissionTestOutput: () => ipcRenderer.invoke('intermission-next:test-mode-hide'),
+  getIntermissionNextState: () => ipcRenderer.invoke('intermission-next:get-state'),
+  updateIntermissionNextLayout: (layout: unknown) =>
+    ipcRenderer.invoke('intermission-next:update-layout', layout),
+  updateIntermissionNextPageFlowTemplates: (templates: unknown) =>
+    ipcRenderer.invoke('intermission-next:update-page-flow-templates', templates)
 }
 
 // 按存储类型封装数据库 IPC 调用

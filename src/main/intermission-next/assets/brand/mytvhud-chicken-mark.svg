@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  id="mytvhud-chicken-mark"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="48 4 160 155"
+  role="img"
+  aria-labelledby="mytvhud-chicken-mark-title mytvhud-chicken-mark-description"
+>
+  <title id="mytvhud-chicken-mark-title">MYTVHUD 小鸡标志</title>
+  <desc id="mytvhud-chicken-mark-description">
+    不含 MYTV HUD 字样与底板的透明矢量标志，由天线、电视外壳、橙色面板和小鸡轮廓组成。
+  </desc>
+
+  <defs>
+    <linearGradient id="mytvhud-tv-blue" x1="61" y1="56" x2="196" y2="151" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#229ee4" />
+      <stop offset="0.52" stop-color="#1a91db" />
+      <stop offset="1" stop-color="#1186cf" />
+    </linearGradient>
+    <linearGradient id="mytvhud-panel-orange" x1="60" y1="72" x2="126" y2="147" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f9ca5b" />
+      <stop offset="0.46" stop-color="#ecad37" />
+      <stop offset="1" stop-color="#e18e3c" />
+    </linearGradient>
+  </defs>
+
+  <g id="antenna" fill="#0a0a0a">
+    <path id="antenna-left" d="M82 14L109 43L103 45Z" />
+    <path id="antenna-right" d="M148 5L119 43L112 43Z" />
+    <path id="antenna-base" d="M106 42H121L126 52H101Z" />
+  </g>
+
+  <g id="television">
+    <path
+      id="television-shell"
+      fill="url(#mytvhud-tv-blue)"
+      d="
+        M197 62
+        C201 72 203 84 204 99
+        C205 114 202 132 198 144
+        C196 149 188 152 178 154
+        C170 156 164 156 155 156
+        L83 155
+        C75 155 71 154 67 152
+        C62 150 60 148 58 145
+        C55 137 53 129 52 121
+        C50 111 50 103 51 99
+        C52 87 53 75 57 64
+        C59 60 61 59 63 58
+        C68 55 74 54 82 53
+        C96 51 116 51 137 51
+        C153 51 168 52 181 54
+        C187 55 190 56 192 57
+        C194 58 196 60 197 62
+        Z
+      "
+    />
+    <path
+      id="television-panel-orange"
+      fill="url(#mytvhud-panel-orange)"
+      d="
+        M151 71
+        C146 68 141 66 137 64
+        C124 61 117 59 108 59
+        H79
+        C72 59 68 61 65 63
+        C62 65 61 68 60 72
+        C57 82 56 90 56 98
+        C56 109 57 121 58 131
+        C59 137 60 142 62 146
+        C65 149 68 150 72 151
+        C78 153 85 154 93 155
+        C102 142 111 130 121 118
+        C130 106 136 96 141 87
+        C145 79 148 74 151 71
+        Z
+      "
+    />
+  </g>
+
+  <g id="chicken" fill="#fcfcff">
+    <path
+      id="chicken-silhouette"
+      stroke="#fcfcff"
+      stroke-width="1.25"
+      stroke-linejoin="round"
+      d="
+        M165 63
+        L162 65
+        L160 61
+        L159 64
+        L157 63
+        L153 65
+        L158 69
+        L151 72
+        L143 79
+        L138 88
+        L133 104
+        L128 110
+        L121 113
+        L109 113
+        L105 111
+        L99 105
+        L92 90
+        L88 87
+        L86 88
+        L87 93
+        L81 97
+        L83 103
+        L82 109
+        L86 115
+        L84 116
+        L80 111
+        L81 120
+        L79 121
+        L79 124
+        L82 130
+        L90 135
+        L90 138
+        L93 138
+        L90 143
+        L93 152
+        L150 153
+        L156 148
+        L163 137
+        L166 126
+        L165 110
+        L159 86
+        L165 86
+        L167 84
+        L168 79
+        L174 80
+        L169 74
+        L171 70
+        L168 68
+        L168 66
+        L166 66
+        Z
+      "
+    />
+  </g>
+</svg>

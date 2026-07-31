@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MYTVHUD 赛间输出</title>
+    <link rel="stylesheet" href="/bp/style.css" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-output-mode="formal">
+    <main id="output-root" aria-live="off">
+      <div id="stage">
+        <div id="background-layer" aria-hidden="true">
+          <video id="background-video-a" class="background-video" playsinline></video>
+          <video id="background-video-b" class="background-video" playsinline></video>
+          <div class="background-shade"></div>
+        </div>
+        <section id="page-layer"></section>
+        <section id="brand-layer" aria-hidden="true">
+          <div class="brand-cover brand-cover-left"></div>
+          <div class="brand-cover brand-cover-right"></div>
+          <svg class="brand-vector-hook" viewBox="0 0 1920 1080" role="presentation">
+            <g data-brand-vector-hook></g>
+          </svg>
+        </section>
+        <div id="connection-state">等待赛间播出数据</div>
+      </div>
+    </main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./runtime.js"></script>
+    <script src="/bp/app.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

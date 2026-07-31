@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.node.json",
+  "compilerOptions": {
+    "composite": false,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noEmit": false,
+    "outDir": ".build",
+    "rootDir": "../..",
+    "types": ["node"]
+  },
+  "include": [
+    "../../src/main/intermission-next/state/**/*.ts",
+    "../../src/shared/**/*.ts",
+    "./**/*.test.ts"
+  ]
+}

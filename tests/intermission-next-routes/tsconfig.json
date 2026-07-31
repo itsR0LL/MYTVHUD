@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.tests.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "outDir": "../../.test-build-routes"
+  },
+  "include": [
+    "../../src/main/intermission-next/routes/**/*.ts",
+    "../../src/main/intermission-background-next/video-stream.ts",
+    "./**/*.ts",
+    "./**/*.d.ts"
+  ]
+}

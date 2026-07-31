@@ -1,6 +1,3 @@
-/* global io */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-
 const MAPS = {
   de_ancient: {
     name: 'Ancient',
@@ -97,24 +94,25 @@ const ACTION_LABELS = {
 }
 
 const BP_TITLE = 'BAN & PICK'
-const CARD_INTERVAL = 650
-const CARD_ANIMATION_DURATION = 950
+const CARD_INTERVAL = 850
+const CARD_ANIMATION_DURATION = 1200
 const WIDE_MAP_RATIO = 16 / 9
-const SERIES_FINALE_HOLD = 950
-const SERIES_FINALE_DURATION = 1100
-const SERIES_EXIT_DURATION = 520
+const SERIES_FINALE_HOLD = 1300
+const SERIES_FINALE_DURATION = 1500
+const SERIES_EXIT_DURATION = 700
 
-const stage = document.querySelector('#bp-stage')
-const title = document.querySelector('#bp-title')
-const cards = document.querySelector('#bp-cards')
-const masthead = document.querySelector('.bp-masthead')
-const matchup = document.querySelector('#bp-matchup')
-const teamA = document.querySelector('#bp-team-a')
-const teamB = document.querySelector('#bp-team-b')
+let mountedRoot = null
+let stage = null
+let title = null
+let cards = null
+let masthead = null
+let matchup = null
+let teamA = null
+let teamB = null
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 
 let lastRevision = -1
-let lastVisible = false
+let lastPlaybackStarted = false
 let revealTimers = []
 let lastPayloadSignature = ''
 
@@ -390,7 +388,8 @@ function createCard(item, index, state, matchType, match, shouldAnimate) {
   return card
 }
 
-function render(payload) {
+function render(payload, allowAnimation = true) {
+  if (!stage || !title || !cards || !masthead || !matchup || !teamA || !teamB) return
   if (!payload || !payload.state) return
 
   const payloadSignature = JSON.stringify(payload)
@@ -399,8 +398,10 @@ function render(payload) {
   const { state, match } = payload
   const matchType = match?.type || ''
   const shouldAnimate =
+    allowAnimation &&
     state.visible &&
-    (!lastVisible || state.revision !== lastRevision) &&
+    state.playbackStarted &&
+    (!lastPlaybackStarted || state.revision !== lastRevision) &&
     !reducedMotionQuery.matches
 
   for (const timer of revealTimers) window.clearTimeout(timer)
@@ -409,15 +410,16 @@ function render(payload) {
   cards.classList.remove('is-series-final')
 
   title.textContent = BP_TITLE
-  document.title = `MYTVHUD · ${BP_TITLE}`
   stage.dataset.series = matchType
   stage.classList.toggle('is-hidden', !state.visible)
   stage.setAttribute('aria-hidden', String(!state.visible))
   renderMatchup(match)
 
-  const renderedCards = state.sequence.map((item, index) =>
-    createCard(item, index, state, matchType, match, shouldAnimate)
-  )
+  const renderedCards = state.playbackStarted
+    ? state.sequence.map((item, index) =>
+        createCard(item, index, state, matchType, match, shouldAnimate)
+      )
+    : []
   cards.replaceChildren(...renderedCards)
 
   if (shouldAnimate && state.animationEnabled) {
@@ -440,7 +442,7 @@ function render(payload) {
 
   scheduleSeriesFinale(renderedCards, state, matchType, shouldAnimate)
 
-  lastVisible = state.visible
+  lastPlaybackStarted = state.playbackStarted
   lastRevision = state.revision
   lastPayloadSignature = payloadSignature
 }
@@ -462,6 +464,8 @@ function createPreviewPayload(matchType) {
       version: 1,
       sequence,
       visible: true,
+      playbackStarted: true,
+      playbackStartedAtMs: 0,
       animationEnabled: true,
       revision: 1
     },
@@ -482,23 +486,61 @@ function createPreviewPayload(matchType) {
   }
 }
 
-async function loadInitialState() {
-  try {
-    const response = await fetch('/api/bp', { cache: 'no-store' })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    await render(await response.json())
-  } catch (error) {
-    console.error('BP 状态加载失败：', error)
-  }
+function node(tagName, className, textContent) {
+  const result = document.createElement(tagName)
+  result.className = className
+  if (typeof textContent === 'string') result.textContent = textContent
+  return result
 }
 
-const previewParams = new URLSearchParams(window.location.search)
-const previewMatchType = previewParams.get('preview')?.toUpperCase()
-
-if (previewMatchType && Object.hasOwn(PREVIEW_ACTIONS, previewMatchType)) {
-  render(createPreviewPayload(previewMatchType))
-} else {
-  const socket = io()
-  socket.on('bp-state', render)
-  loadInitialState()
+function destroy() {
+  for (const timer of revealTimers) window.clearTimeout(timer)
+  revealTimers = []
+  stage?.getAnimations({ subtree: true }).forEach((animation) => animation.cancel())
+  if (mountedRoot) mountedRoot.replaceChildren()
+  mountedRoot = null
+  stage = null
+  title = null
+  cards = null
+  masthead = null
+  matchup = null
+  teamA = null
+  teamB = null
+  lastPayloadSignature = ''
 }
+
+function mount(root, payload, options = {}) {
+  if (!(root instanceof HTMLElement)) throw new Error('BP 渲染容器无效')
+  destroy()
+
+  const nextStage = node('main', 'bp-stage is-hidden')
+  nextStage.setAttribute('aria-live', 'polite')
+  nextStage.setAttribute('aria-hidden', 'true')
+  const shell = node('section', 'bp-shell')
+  const nextMasthead = node('header', 'bp-masthead')
+  const nextTitle = node('h1', 'bp-title', BP_TITLE)
+  const nextMatchup = node('div', 'bp-matchup')
+  nextMatchup.setAttribute('aria-label', '比赛双方')
+  const nextTeamA = node('span', 'bp-match-team bp-match-team-a', '战队 A')
+  const versus = node('strong', 'bp-versus', 'VS')
+  const nextTeamB = node('span', 'bp-match-team bp-match-team-b', '战队 B')
+  const nextCards = node('section', 'bp-cards')
+  nextCards.setAttribute('aria-label', '地图禁选结果')
+  nextMatchup.append(nextTeamA, versus, nextTeamB)
+  nextMasthead.append(nextTitle, nextMatchup)
+  shell.append(nextMasthead, nextCards)
+  nextStage.appendChild(shell)
+  root.replaceChildren(nextStage)
+
+  mountedRoot = root
+  stage = nextStage
+  title = nextTitle
+  cards = nextCards
+  masthead = nextMasthead
+  matchup = nextMatchup
+  teamA = nextTeamA
+  teamB = nextTeamB
+  render(payload, options.allowAnimation !== false)
+}
+
+window.MYTVHUDBPRenderer = Object.freeze({ mount, destroy, createPreviewPayload })

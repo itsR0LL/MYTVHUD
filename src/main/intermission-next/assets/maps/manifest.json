@@ -1,0 +1,1404 @@
+﻿{
+    "schemaVersion":  1,
+    "generatedAtUtc":  "2026-07-31T05:31:51.1035887Z",
+    "contractSource":  "src/shared/bp.ts",
+    "source":  {
+                   "repository":  "https://github.com/MurkyYT/cs2-map-icons",
+                   "branchAtAcquisition":  "main",
+                   "commit":  "7062c5213e7ce34c0fa4d015a777890f36ae353d",
+                   "commitUrl":  "https://github.com/MurkyYT/cs2-map-icons/commit/7062c5213e7ce34c0fa4d015a777890f36ae353d",
+                   "commitAuthor":  "MurkyYT",
+                   "commitAuthoredAtUtc":  "2026-07-29T02:41:20Z",
+                   "commitSubject":  "chore: manifest 7357001356549703767",
+                   "metadataRepoPath":  "data/available.json",
+                   "metadataSha256":  "a8bbe7ca59a028850a33b65fe1e4d0918de90713b2a3948eef96a17048316973",
+                   "rightsNotice":  "Map icons and thumbnails are property of Valve Corporation; the source repository provides automated access to game-depot assets."
+               },
+    "processing":  {
+                       "display":  "Original 1920x1080 PNG files retained without re-encoding.",
+                       "component":  "Derived from each display PNG at 640x360 with high-quality bicubic resampling and JPEG quality 84.",
+                       "fallback":  "Original 512x512 transparent map icon retained without re-encoding."
+                   },
+    "totals":  {
+                   "maps":  10,
+                   "displayAssets":  51,
+                   "componentAssets":  51,
+                   "fallbackAssets":  10,
+                   "bytes":  172274469
+               },
+    "maps":  [
+                 {
+                     "id":  "de_ancient",
+                     "name":  "Ancient",
+                     "displayName":  "Ancient(远古遗迹)",
+                     "sourceDisplayName":  "Ancient",
+                     "sourceIconHash":  "58e07755",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_ancient.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_ancient.png",
+                                      "localPath":  "de_ancient/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  212907,
+                                      "sha256":  "dee5f70476ac4237f735fce0d5f3470a0868fb5ad0976d30baaa23e9ed284485",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_ancient_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_ancient_1_png.png",
+                                                               "localPath":  "de_ancient/display/de_ancient_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  4008582,
+                                                               "sha256":  "76acdf1f5343656b55fddc553afd97ec288e3ec19929e7921b2060e468fdc296",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_ancient/component/de_ancient_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  63130,
+                                                                 "sha256":  "a567d5af31218fb83b1dd82b1365a1c3a5dfb86d3d4a22e5245dd3094d12ba59",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_ancient/display/de_ancient_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_ancient_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_ancient_2_png.png",
+                                                               "localPath":  "de_ancient/display/de_ancient_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  4119097,
+                                                               "sha256":  "d511d65c0c146ea84e19ca2f6489d7cf6148785bc547c63c242f993a0e313084",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_ancient/component/de_ancient_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  60266,
+                                                                 "sha256":  "90faf631478d0a431c8f8e20e71065dc5030d72f9829c33b785fdd0891352d2a",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_ancient/display/de_ancient_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_ancient_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_ancient_3_png.png",
+                                                               "localPath":  "de_ancient/display/de_ancient_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3988711,
+                                                               "sha256":  "b27f9db81b31026bba81cb886dd399dafca1c3601bc821eead95ab12988c2927",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_ancient/component/de_ancient_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  57267,
+                                                                 "sha256":  "f6ec38a8d63391e7b770b83cb6ed604ae3b4321584221d5a4b3bf0d72ef09082",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_ancient/display/de_ancient_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_ancient_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_ancient_4_png.png",
+                                                               "localPath":  "de_ancient/display/de_ancient_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3469110,
+                                                               "sha256":  "7f9b361bf25aec568df08f0d7fd9a2d6eb248e508e5c0468e9d8802b5cd64b6b",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_ancient/component/de_ancient_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  46631,
+                                                                 "sha256":  "42ca37aa312fd41f8db2e1856b7380732195bc7125c75729f76f2807ab9e8ed7",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_ancient/display/de_ancient_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_ancient_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_ancient_png.png",
+                                                               "localPath":  "de_ancient/display/de_ancient_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3137234,
+                                                               "sha256":  "2676e87a442f05afec3ca45f987545fea2227a96f014a4f20246e06a1fa21938",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_ancient/component/de_ancient.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  45211,
+                                                                 "sha256":  "713e4a45f4ca43ed6373a45c0dec93f0d8287efe7889f575aa7a1eae0e64f926",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_ancient/display/de_ancient_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  19208146
+                 },
+                 {
+                     "id":  "de_anubis",
+                     "name":  "Anubis",
+                     "displayName":  "Anubis(阿努比斯)",
+                     "sourceDisplayName":  "Anubis",
+                     "sourceIconHash":  "afc69351",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_anubis.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_anubis.png",
+                                      "localPath":  "de_anubis/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  69930,
+                                      "sha256":  "daee816e863c2ce063ad671ab24194fb1b3118e8bd36a8ecd0ddefa44bb91ae9",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_anubis_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_anubis_1_png.png",
+                                                               "localPath":  "de_anubis/display/de_anubis_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3395809,
+                                                               "sha256":  "f563cf1a2a8ef851212839d995ba87e0ae9be16466a5c6ba34c3a9c97be323d9",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_anubis/component/de_anubis_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  41441,
+                                                                 "sha256":  "e7082801effbdc8f5f7d3794a5dfb7bfd8362da1674bdd3dac08ad0f0cd1dcfc",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_anubis/display/de_anubis_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_anubis_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_anubis_2_png.png",
+                                                               "localPath":  "de_anubis/display/de_anubis_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3317147,
+                                                               "sha256":  "6708d7d05f2b379b969bc915d6c4fd7d1f753ea5221a7d3a9f8ecb80f594e5fa",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_anubis/component/de_anubis_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  45045,
+                                                                 "sha256":  "4da19c6b63ff079a58b59aebaf5722d04418b2c85a93952eefb0adedc9ac8193",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_anubis/display/de_anubis_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_anubis_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_anubis_3_png.png",
+                                                               "localPath":  "de_anubis/display/de_anubis_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3489407,
+                                                               "sha256":  "5c97df5b3db29e266ba308cd21d8fe25fd9e67ca43812f3207b5b932644e1ed2",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_anubis/component/de_anubis_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  45569,
+                                                                 "sha256":  "416f24949b1124ceb780c432cda7ec5116615dc3f2646d3227a536093701924c",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_anubis/display/de_anubis_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_anubis_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_anubis_4_png.png",
+                                                               "localPath":  "de_anubis/display/de_anubis_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3287548,
+                                                               "sha256":  "465a2e1ed405969bb9730214d257b504a8ca5eda6175f76247d9d598ec8166ad",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_anubis/component/de_anubis_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  40566,
+                                                                 "sha256":  "aec84c8732d0e30703c2b3fdd053c99df71da13ab151cdfa1dc7b47359eb1a2e",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_anubis/display/de_anubis_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_anubis_5_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_anubis_5_png.png",
+                                                               "localPath":  "de_anubis/display/de_anubis_5_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3299380,
+                                                               "sha256":  "2afb730fb5df93787198edfb711dcd8dde159e349d6839cb4c5f4b12fcd95b31",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_anubis/component/de_anubis_5.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  44965,
+                                                                 "sha256":  "f78db0b82f12d888ad690a94838c8801c4518fbe9859ba6556cec401ac1a68a0",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_anubis/display/de_anubis_5_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_anubis_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_anubis_png.png",
+                                                               "localPath":  "de_anubis/display/de_anubis_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3131692,
+                                                               "sha256":  "b5bdfefcb8af16b0cc0d6b0f2891c20b2296e813ea949438412c34df4c3065ce",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_anubis/component/de_anubis.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  42978,
+                                                                 "sha256":  "d10ac89eff12dde325f0881693e5752bbd9ef9d0b37abcd72946211d9bfdfcd9",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_anubis/display/de_anubis_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  20251477
+                 },
+                 {
+                     "id":  "de_dust2",
+                     "name":  "Dust2",
+                     "displayName":  "Dust2(炙热沙城2)",
+                     "sourceDisplayName":  "Dust II",
+                     "sourceIconHash":  "a9315262",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_dust2.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_dust2.png",
+                                      "localPath":  "de_dust2/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  219563,
+                                      "sha256":  "ce5379b87b3e6a8e8e486ea5ea6a54ea3981dba8aeba910622990d99e58814cf",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_dust2_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_dust2_1_png.png",
+                                                               "localPath":  "de_dust2/display/de_dust2_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3723742,
+                                                               "sha256":  "11efdb286c222462eaba735419db4c931c4cd4a5025752d16e07d65f7d33ed29",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_dust2/component/de_dust2_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  49649,
+                                                                 "sha256":  "71f083c36cfaeafa4cb6552ac6824f29f231fb791b519d94b37132c3b1049e48",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_dust2/display/de_dust2_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_dust2_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_dust2_2_png.png",
+                                                               "localPath":  "de_dust2/display/de_dust2_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3742450,
+                                                               "sha256":  "3611f95ce9322f9b23c071705499ac29cf35a0fc9a087947000eff4d27d71dc1",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_dust2/component/de_dust2_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  53579,
+                                                                 "sha256":  "ca691e5cf46f50af9a0656d10f393276ff61ce8111b0a7ad60afd97e675e44c8",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_dust2/display/de_dust2_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_dust2_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_dust2_3_png.png",
+                                                               "localPath":  "de_dust2/display/de_dust2_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  4142813,
+                                                               "sha256":  "44547d11fd4f9e8d119a923f8a4bf2841ab1c843f27110ecd3bc8d7c15c62ac3",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_dust2/component/de_dust2_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  58982,
+                                                                 "sha256":  "757e546d38e8d14563ce28ac86e8197749454eeee0a412852442bca4903589ca",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_dust2/display/de_dust2_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_dust2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_dust2_png.png",
+                                                               "localPath":  "de_dust2/display/de_dust2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3451240,
+                                                               "sha256":  "f6bc7213dc996968db5da50f837acd6be677d17d2fb1ef1658870fa2808bd700",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_dust2/component/de_dust2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  49984,
+                                                                 "sha256":  "9ec878cd6af3929a699122d7f48d9ce5aba822290de3e83cf8049237f2848a28",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_dust2/display/de_dust2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  15492002
+                 },
+                 {
+                     "id":  "de_inferno",
+                     "name":  "Inferno",
+                     "displayName":  "Inferno(炼狱小镇)",
+                     "sourceDisplayName":  "Inferno",
+                     "sourceIconHash":  "71321f75",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_inferno.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_inferno.png",
+                                      "localPath":  "de_inferno/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  143767,
+                                      "sha256":  "59de69d7feb5d24a74ad423eec83b5d87cb02521a9bb7990fccb31e4065f9666",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_inferno_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_inferno_1_png.png",
+                                                               "localPath":  "de_inferno/display/de_inferno_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3479503,
+                                                               "sha256":  "92afdffabd38b57ee667c785aa29bb7b36d8d3a3109d388a78769e5756e5ed3c",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_inferno/component/de_inferno_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  61444,
+                                                                 "sha256":  "711a8ff4d8b125a5c6df465fde8b40c81e50abb87598fcc4098fc9583ced12e3",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_inferno/display/de_inferno_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_inferno_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_inferno_2_png.png",
+                                                               "localPath":  "de_inferno/display/de_inferno_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3120098,
+                                                               "sha256":  "f161f14cff3695a1eec6b034c5c669d5920aceb03114e1b9b5c6d5f0eb9c8aec",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_inferno/component/de_inferno_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  46770,
+                                                                 "sha256":  "18ca5ecf6b59a435ee0595521a1abe10e3a02002905aa14749a4a126738a01cb",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_inferno/display/de_inferno_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_inferno_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_inferno_3_png.png",
+                                                               "localPath":  "de_inferno/display/de_inferno_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3422854,
+                                                               "sha256":  "a3f2bae40fc0e03985db3f48201d000b6b06b235603e4022255558b299c79a15",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_inferno/component/de_inferno_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  47709,
+                                                                 "sha256":  "c53f9a81b04b9c629193f8efcd5db6d6e2dfa19ab4185ae78edf768610a01270",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_inferno/display/de_inferno_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_inferno_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_inferno_4_png.png",
+                                                               "localPath":  "de_inferno/display/de_inferno_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3153643,
+                                                               "sha256":  "eb1c6e32ef14de463a43e43d4217ba3d83f9f854b6bbe1b1055e2282f753f121",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_inferno/component/de_inferno_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  38995,
+                                                                 "sha256":  "712c3d287f183b0db7ec4255511b1fc826c788dad546dd95dd371215ce156b34",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_inferno/display/de_inferno_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_inferno_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_inferno_png.png",
+                                                               "localPath":  "de_inferno/display/de_inferno_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3404161,
+                                                               "sha256":  "b485b23f7c9ac15649c81b312ccd02b3ca0a2f38535aa0a5ce1cccd858d86c7b",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_inferno/component/de_inferno.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  48066,
+                                                                 "sha256":  "74cb594e76ce77010b8663409bb22333c115cf132386115af5defc6d7a4bcc6e",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_inferno/display/de_inferno_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  16967010
+                 },
+                 {
+                     "id":  "de_mirage",
+                     "name":  "Mirage",
+                     "displayName":  "Mirage(荒漠迷城)",
+                     "sourceDisplayName":  "Mirage",
+                     "sourceIconHash":  "0440429f",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_mirage.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_mirage.png",
+                                      "localPath":  "de_mirage/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  109509,
+                                      "sha256":  "d69630ce1b554d8554a69bae6f7cf1b91e1ff10e5b3c3a2d50dc395e385fef56",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_mirage_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_mirage_1_png.png",
+                                                               "localPath":  "de_mirage/display/de_mirage_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3753479,
+                                                               "sha256":  "85e5a86c313175a08704b69f27aced2d53471e3b63fab311554aad9b71103428",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_mirage/component/de_mirage_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  52247,
+                                                                 "sha256":  "634f6a34301c19353790a5034ddecbcec7d809a2f6cc69604c3e53bf9ef79e58",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_mirage/display/de_mirage_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_mirage_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_mirage_2_png.png",
+                                                               "localPath":  "de_mirage/display/de_mirage_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3358690,
+                                                               "sha256":  "ce241de2d8a36553791aa42091131a11613370d20c1f741aa254514c21bb9261",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_mirage/component/de_mirage_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  49298,
+                                                                 "sha256":  "032be053cdaaacb11aec1fdb597042df5ba7253e4cb8c1e685249801545affd0",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_mirage/display/de_mirage_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_mirage_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_mirage_3_png.png",
+                                                               "localPath":  "de_mirage/display/de_mirage_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2619579,
+                                                               "sha256":  "d08b5c035916ba2732e2de657b5de4985882f7dfbbae0a7db86055f4a7ad289d",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_mirage/component/de_mirage_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  34840,
+                                                                 "sha256":  "b377aa6e1c96a4645a72fa15559daf4e2116db94319f4def23a3479de62199af",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_mirage/display/de_mirage_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_mirage_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_mirage_4_png.png",
+                                                               "localPath":  "de_mirage/display/de_mirage_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2554208,
+                                                               "sha256":  "9114f440ff65d82069c4e0ed59514a554aeb7ae4b751c486c8c265638206adb4",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_mirage/component/de_mirage_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  30231,
+                                                                 "sha256":  "e22d58e4aec346d3d59bf4e84f99052871f5f40a203c1489604d5a92b48b1492",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_mirage/display/de_mirage_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_mirage_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_mirage_png.png",
+                                                               "localPath":  "de_mirage/display/de_mirage_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3593812,
+                                                               "sha256":  "52dd759f9b5d56772b0e7a735ebee446d244ad4ce5820e672d9dbf9e649c084e",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_mirage/component/de_mirage.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  58859,
+                                                                 "sha256":  "9d97ef3ffdb595509c40e441429a5110c2d657d55518599f9300d2f3cae534ef",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_mirage/display/de_mirage_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  16214752
+                 },
+                 {
+                     "id":  "de_nuke",
+                     "name":  "Nuke",
+                     "displayName":  "Nuke(核子危机)",
+                     "sourceDisplayName":  "Nuke",
+                     "sourceIconHash":  "1fc2d02c",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_nuke.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_nuke.png",
+                                      "localPath":  "de_nuke/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  159208,
+                                      "sha256":  "254ae0d01465ca3d6251e5d161a572ae32d76c1749b12235a508b5fc193b5167",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_nuke_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_nuke_1_png.png",
+                                                               "localPath":  "de_nuke/display/de_nuke_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3100694,
+                                                               "sha256":  "01cbfea2ad51090b1738a4ee2049ae4872bda531fc9202edae76a356f5d4712e",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_nuke/component/de_nuke_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  47333,
+                                                                 "sha256":  "c3f3c2a29d96addfdaa149aa1f5c356e4bb592a13fdee412ce4ef530c69da43c",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_nuke/display/de_nuke_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_nuke_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_nuke_2_png.png",
+                                                               "localPath":  "de_nuke/display/de_nuke_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3656074,
+                                                               "sha256":  "9d25dac2514b72da883cc021501321b86b3f7554f54e6c568253b6741f1707a8",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_nuke/component/de_nuke_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  62307,
+                                                                 "sha256":  "69af2c88536e7d90b44684e43d1360da967ac7e510e7f9e8a96c24a22cc97230",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_nuke/display/de_nuke_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_nuke_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_nuke_3_png.png",
+                                                               "localPath":  "de_nuke/display/de_nuke_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2689944,
+                                                               "sha256":  "6c60e08b4b967c5fdf5456a2675c0115cf30259c6e3506aee4da8bcb745ef7ca",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_nuke/component/de_nuke_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  43361,
+                                                                 "sha256":  "dab5585fe3b9ae42c53c66eb8a935fb7fe70600ee06348b94ae05f44a403345b",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_nuke/display/de_nuke_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_nuke_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_nuke_4_png.png",
+                                                               "localPath":  "de_nuke/display/de_nuke_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2268523,
+                                                               "sha256":  "30c323aa9dbf9d2f94cccc406931f19d5d360b9383cac8fa550cba5271cfee3c",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_nuke/component/de_nuke_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  33794,
+                                                                 "sha256":  "fdba5c7d1f7d3c45bd7a54c50734ccddc7bf13d6c2a7fd5ff44e510a4dc254c7",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_nuke/display/de_nuke_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_nuke_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_nuke_png.png",
+                                                               "localPath":  "de_nuke/display/de_nuke_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2602348,
+                                                               "sha256":  "c5af3b2f89488afc65075d680416a6b39b078f66b5402b7f3c5dd5eb276cb4a6",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_nuke/component/de_nuke.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  44138,
+                                                                 "sha256":  "0bcafc396900ef4a1583817e3a155f3918c6ee34444b3b48d4bda96a02828c60",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_nuke/display/de_nuke_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  14707724
+                 },
+                 {
+                     "id":  "de_overpass",
+                     "name":  "Overpass",
+                     "displayName":  "Overpass(死亡游乐园)",
+                     "sourceDisplayName":  "Overpass",
+                     "sourceIconHash":  "19e7737b",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_overpass.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_overpass.png",
+                                      "localPath":  "de_overpass/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  215232,
+                                      "sha256":  "79bb4d76a2827c8ec985d98b1b7efdd6fc3210c7e12299c9d7ef3e7e15441293",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_overpass_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_overpass_1_png.png",
+                                                               "localPath":  "de_overpass/display/de_overpass_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3555915,
+                                                               "sha256":  "afa955020eeea51c06cde006b07b000e18ee5bfbf7014ace149608648d8d2ed6",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_overpass/component/de_overpass_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  52760,
+                                                                 "sha256":  "332c1858b1d8734287964ef6d8d6beeffffee79dde157e3557d8c5f0fc1afcc0",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_overpass/display/de_overpass_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_overpass_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_overpass_2_png.png",
+                                                               "localPath":  "de_overpass/display/de_overpass_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3455010,
+                                                               "sha256":  "0e2b483d32edaa7712c8afc2d4657c5d6719de37ac3c9e0adc6ed11dcbd9676f",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_overpass/component/de_overpass_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  50886,
+                                                                 "sha256":  "c4198737ea2b6d68e5d60128c7ed06ed305c3bbee175f7a53567400a76b23097",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_overpass/display/de_overpass_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_overpass_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_overpass_3_png.png",
+                                                               "localPath":  "de_overpass/display/de_overpass_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2969122,
+                                                               "sha256":  "2a5ebb94610a34fcbd150226078d64c03ad64de247d1014c17dd25eeda264be6",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_overpass/component/de_overpass_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  36154,
+                                                                 "sha256":  "290a883b6551193a2ffd56be7cbe77a613ce45c83ded219eef3982a35c6a0cb6",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_overpass/display/de_overpass_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_overpass_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_overpass_4_png.png",
+                                                               "localPath":  "de_overpass/display/de_overpass_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3410373,
+                                                               "sha256":  "407813ae5f3f9a6443b74a9adc251f4a73213096748e4f44e309625592db2983",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_overpass/component/de_overpass_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  53947,
+                                                                 "sha256":  "44a8f62682831eb3c29c8a3f522deb25e03f54a43b05e1e049320a0f05311366",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_overpass/display/de_overpass_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_overpass_5_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_overpass_5_png.png",
+                                                               "localPath":  "de_overpass/display/de_overpass_5_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3319515,
+                                                               "sha256":  "ad9eac98238e22697fe869d668225ee50c11556260c18248ed76af7c3591636c",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_overpass/component/de_overpass_5.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  53139,
+                                                                 "sha256":  "b7bf402d7710a6be1810e1925b5634f24d1ce0623c707d793baec34b6bb1c743",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_overpass/display/de_overpass_5_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_overpass_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_overpass_png.png",
+                                                               "localPath":  "de_overpass/display/de_overpass_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3391582,
+                                                               "sha256":  "9d391048b9d73c35ae10b4f861649d850485c9d07264c5ff004832ba736b74ca",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_overpass/component/de_overpass.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  50407,
+                                                                 "sha256":  "4ae3dffef4a94e9740d090d34da87ff182ef5d773085cfdbd19a18d1af73819e",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_overpass/display/de_overpass_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  20614042
+                 },
+                 {
+                     "id":  "de_vertigo",
+                     "name":  "Vertigo",
+                     "displayName":  "Vertigo(殒命大厦)",
+                     "sourceDisplayName":  "Vertigo",
+                     "sourceIconHash":  "4eec1850",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_vertigo.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_vertigo.png",
+                                      "localPath":  "de_vertigo/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  106231,
+                                      "sha256":  "762af8b8103928c5b44b66430dda3a12bbc55a889460071dcbd57b024f88ab32",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_vertigo_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_vertigo_1_png.png",
+                                                               "localPath":  "de_vertigo/display/de_vertigo_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2814718,
+                                                               "sha256":  "1a30e1ea6aeacea9c7f7bdfba8ba2918d5d97bb30f4147e1867848f0833025a5",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_vertigo/component/de_vertigo_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  43277,
+                                                                 "sha256":  "db0fdabb599af5c452aa3ea2f597631afe89dbde9d75f0988b764865f2bf71a5",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_vertigo/display/de_vertigo_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_vertigo_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_vertigo_2_png.png",
+                                                               "localPath":  "de_vertigo/display/de_vertigo_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3029989,
+                                                               "sha256":  "1548792870cafb0188b330c9a503bc72e95985b708ea96aeadcc021f1281aac4",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_vertigo/component/de_vertigo_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  51811,
+                                                                 "sha256":  "af44db24b2bf9cef958d53a2b764a0638a6328e164011f084327a4cb50279ae0",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_vertigo/display/de_vertigo_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_vertigo_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_vertigo_3_png.png",
+                                                               "localPath":  "de_vertigo/display/de_vertigo_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2913464,
+                                                               "sha256":  "bdd5715c7bb8a0e2c1c9f814f56cbd95f3e59a8583d45ed649b627e6f114ecb5",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_vertigo/component/de_vertigo_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  42229,
+                                                                 "sha256":  "640d038bf389c8a0fb79a5082ca22f0f987f3f478635a444c4f0d48dcfa45f3b",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_vertigo/display/de_vertigo_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_vertigo_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_vertigo_4_png.png",
+                                                               "localPath":  "de_vertigo/display/de_vertigo_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2846061,
+                                                               "sha256":  "7d37fdcae8960b9b806b7d37f102645f6113adf331b984c1b023f31d1fb00bf8",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_vertigo/component/de_vertigo_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  37012,
+                                                                 "sha256":  "efcad4059988640d93a15b1e89852dabb743c231e40344ed9806fb13c26d270a",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_vertigo/display/de_vertigo_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_vertigo_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_vertigo_png.png",
+                                                               "localPath":  "de_vertigo/display/de_vertigo_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2965706,
+                                                               "sha256":  "37e3cbf0f13974589bed03c048675533089489263e10ed23e778bd81e29e7950",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_vertigo/component/de_vertigo.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  54231,
+                                                                 "sha256":  "cbef185264b3c8e4f13ce94d3c9eedab4688a12f24f7c3985f79f95fba3c4f79",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_vertigo/display/de_vertigo_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  14904729
+                 },
+                 {
+                     "id":  "de_cache",
+                     "name":  "Cache",
+                     "displayName":  "Cache(死城之谜)",
+                     "sourceDisplayName":  "Cache",
+                     "sourceIconHash":  "996d4f04",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_cache.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_cache.png",
+                                      "localPath":  "de_cache/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  199760,
+                                      "sha256":  "ae7d5a2ab9cbb58036d698a06bb2feba9276a7ab32ffd61df3eec9a18173a006",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_cache_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_cache_1_png.png",
+                                                               "localPath":  "de_cache/display/de_cache_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3945455,
+                                                               "sha256":  "37ebfa75bd6f1a9701639517ed63abd72c9e8b719de248ad34856fcf4ca4f138",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_cache/component/de_cache_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  54599,
+                                                                 "sha256":  "3e19cdf73e860b75012c9fc0af8e3402656f088d781b46227f686583ddceb12b",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_cache/display/de_cache_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_cache_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_cache_2_png.png",
+                                                               "localPath":  "de_cache/display/de_cache_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3685734,
+                                                               "sha256":  "be57cda9bf8181e7fe8b81411dcfb8e13271345ac140201b6cce4f106e2fc888",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_cache/component/de_cache_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  51558,
+                                                                 "sha256":  "680b0ac30605a69d9ae805f26202766251097545ee41ebc8a3ee549f5e998e61",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_cache/display/de_cache_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_cache_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_cache_3_png.png",
+                                                               "localPath":  "de_cache/display/de_cache_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3545067,
+                                                               "sha256":  "c8397f78607b4d49e2726fc07b00bfbf380f430d5b94998c49de3c5c0436bd8a",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_cache/component/de_cache_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  49558,
+                                                                 "sha256":  "b9a9de70578695a8ebb3f3f4791d9a7637f7b1d1aab8546265fe95aadc6610fd",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_cache/display/de_cache_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_cache_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_cache_4_png.png",
+                                                               "localPath":  "de_cache/display/de_cache_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3341515,
+                                                               "sha256":  "ee7034336fdf32e9ebc4104e4ce78e1c67abf39fdeb7d14cb042413e87a1ae9e",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_cache/component/de_cache_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  47344,
+                                                                 "sha256":  "fe7be0aaafe283fce530fff6dfb867ebe6885f17d923802f8a07349fdddd51f2",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_cache/display/de_cache_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_cache_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_cache_png.png",
+                                                               "localPath":  "de_cache/display/de_cache_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3243942,
+                                                               "sha256":  "dbc914759bd25d1c4959bf9fb064bc8769ebe93cb12662df7aade167803d29bb",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_cache/component/de_cache.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  44743,
+                                                                 "sha256":  "489c158ed340e4ac497ba8d441b03c97482b2d0a02368625d03308457cdc9bb5",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_cache/display/de_cache_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  18209275
+                 },
+                 {
+                     "id":  "de_train",
+                     "name":  "Train",
+                     "displayName":  "Train(列车停放站)",
+                     "sourceDisplayName":  "Train",
+                     "sourceIconHash":  "c93ecbae",
+                     "fallback":  {
+                                      "sourceRepoPath":  "images/de_train.png",
+                                      "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/de_train.png",
+                                      "localPath":  "de_train/fallback.png",
+                                      "width":  512,
+                                      "height":  512,
+                                      "bytes":  118559,
+                                      "sha256":  "30bf36aceac35a4968b81d39621aaee344e719e9ec28df0de1e0494839e0f7b6",
+                                      "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                  },
+                     "displayAssets":  [
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_train_1_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_train_1_png.png",
+                                                               "localPath":  "de_train/display/de_train_1_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3072424,
+                                                               "sha256":  "6131b0a96e75436f044a525ec69121bdd328da65d8aa0d801b769bb83f333237",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_train/component/de_train_1.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  43779,
+                                                                 "sha256":  "acefb91fe7eb1a6865d0f89b21c236b374756f7b7df0db1eadedb84c4951316f",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_train/display/de_train_1_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_train_2_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_train_2_png.png",
+                                                               "localPath":  "de_train/display/de_train_2_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3617267,
+                                                               "sha256":  "193f53aca0be0d91728e66b904abb27cc117a4306d81659e36e4b915a21afa16",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_train/component/de_train_2.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  49864,
+                                                                 "sha256":  "009fe9b9a7e6560a3791afcfa8be29a129d7c564ffe374c32ab3d16205929a19",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_train/display/de_train_2_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_train_3_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_train_3_png.png",
+                                                               "localPath":  "de_train/display/de_train_3_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2884314,
+                                                               "sha256":  "3a026a32fbf3b3aec0f7251b0db3e374808f6c20f7a55e8f7f7667a597ad56c5",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_train/component/de_train_3.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  37427,
+                                                                 "sha256":  "1164c744187f1c41252fc2e10b482f09b50ef944130c32cd36ecba76fd5d4fb4",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_train/display/de_train_3_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_train_4_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_train_4_png.png",
+                                                               "localPath":  "de_train/display/de_train_4_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  3173604,
+                                                               "sha256":  "b02529ed591fbaf5a8f650ebcc62297fd1fc131627e72b1ac5096b93756f1532",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_train/component/de_train_4.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  37933,
+                                                                 "sha256":  "5d22c8bd8b95681a8029af638985b9470ef508012ac1eb26cb0f2e76dc24b73d",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_train/display/de_train_4_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           },
+                                           {
+                                               "display":  {
+                                                               "sourceRepoPath":  "images/thumbs/de_train_png.png",
+                                                               "sourceUrl":  "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/7062c5213e7ce34c0fa4d015a777890f36ae353d/images/thumbs/de_train_png.png",
+                                                               "localPath":  "de_train/display/de_train_png.png",
+                                                               "width":  1920,
+                                                               "height":  1080,
+                                                               "bytes":  2633504,
+                                                               "sha256":  "ff04aaccfa1b268589fd43d6dac7e5223262063afea2469e95043c123a8bd46a",
+                                                               "imageFormatGuid":  "b96b3caf-0728-11d3-9d7b-0000f81ef32e"
+                                                           },
+                                               "component":  {
+                                                                 "localPath":  "de_train/component/de_train.jpg",
+                                                                 "width":  640,
+                                                                 "height":  360,
+                                                                 "bytes":  36637,
+                                                                 "sha256":  "ea60e8820b5dafd3097044fd33e175fd68b84830012f4b57db3c902e4951646b",
+                                                                 "imageFormatGuid":  "b96b3cae-0728-11d3-9d7b-0000f81ef32e",
+                                                                 "derivedFrom":  "de_train/display/de_train_png.png",
+                                                                 "encoder":  "JPEG",
+                                                                 "quality":  84
+                                                             }
+                                           }
+                                       ],
+                     "totalBytes":  15705312
+                 }
+             ]
+}

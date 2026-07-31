@@ -1,9 +1,9 @@
 import type { IpcMain } from 'electron'
-import { databaseService } from '../database/database'
+import { databaseService, type BaseEntity } from '../database/database'
 import {
   createDefaultBPState,
   BP_MATCH_TYPES,
-  isBPSequenceActionOrderValid,
+  isBPSequenceComplete,
   normalizeBPSequence,
   normalizeBPState,
   type BPContentInput,
@@ -17,6 +17,10 @@ const BP_STATE_KEY = 'bpState'
 
 let publishPayload: ((payload: BPPayload) => void) | null = null
 let liveBPState = createDefaultBPState()
+let beforeShowOutput: (() => Promise<void>) | null = null
+let afterContentPrepared:
+  | ((match: BPMatch, sequence: ReturnType<typeof normalizeBPSequence>) => Promise<void>)
+  | null = null
 
 function normalizeTeam(value: unknown): BPTeam | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
@@ -33,12 +37,8 @@ function normalizeTeam(value: unknown): BPTeam | null {
 }
 
 async function getCurrentMatch(): Promise<BPMatch | null> {
-  const currentMatchId = await databaseService.settings.get('currentMatchId')
-  if (typeof currentMatchId !== 'string' && typeof currentMatchId !== 'number') return null
-
-  const match = await databaseService.matchs.get(String(currentMatchId))
-  if (typeof match !== 'object' || match === null || Array.isArray(match)) return null
-  if (!BP_MATCH_TYPES.includes(match.type)) return null
+  const match = await getCurrentMatchRecord()
+  if (!match || !BP_MATCH_TYPES.includes(match.type)) return null
 
   const teamA = normalizeTeam(match.team_a)
   const teamB = normalizeTeam(match.team_b)
@@ -57,39 +57,87 @@ async function getCurrentMatch(): Promise<BPMatch | null> {
   }
 }
 
+async function getCurrentMatchRecord(): Promise<BaseEntity | null> {
+  const currentMatchId = await databaseService.settings.get('currentMatchId')
+  if (typeof currentMatchId !== 'string' && typeof currentMatchId !== 'number') return null
+
+  const match = await databaseService.matchs.get(String(currentMatchId))
+  if (typeof match !== 'object' || match === null || Array.isArray(match)) return null
+  return match
+}
+
 export function getBPState(): BPState {
   return normalizeBPState(liveBPState)
 }
 
 export async function getBPPayload(): Promise<BPPayload> {
-  const [state, match] = await Promise.all([Promise.resolve(getBPState()), getCurrentMatch()])
-  return { state, match }
+  const [record, match] = await Promise.all([getCurrentMatchRecord(), getCurrentMatch()])
+  const sequence = normalizeBPSequence(record?.bpSequence)
+  liveBPState = { ...liveBPState, sequence }
+  return { state: getBPState(), match }
 }
 
 export async function saveBPState(value: unknown): Promise<BPPayload> {
   const nextState = normalizeBPState(value)
-  liveBPState = {
-    ...nextState,
-    sequence: liveBPState.sequence
+  const shouldStartPlayback =
+    nextState.visible &&
+    nextState.playbackStarted &&
+    (!liveBPState.playbackStarted || nextState.revision !== liveBPState.revision)
+  if (shouldStartPlayback) {
+    const [record, match] = await Promise.all([getCurrentMatchRecord(), getCurrentMatch()])
+    if (!match) throw new Error('当前比赛数据不完整，无法开始展示 BP')
+    const sequence = normalizeBPSequence(record?.bpSequence)
+    if (!isBPSequenceComplete(sequence, match.type)) {
+      throw new Error('完整七步 BP 尚未保存，无法开始展示')
+    }
+    await beforeShowOutput?.()
   }
-  const payload = { state: getBPState(), match: await getCurrentMatch() }
+  liveBPState = {
+    ...liveBPState,
+    visible: nextState.visible,
+    playbackStarted: nextState.playbackStarted,
+    playbackStartedAtMs: shouldStartPlayback
+      ? Date.now()
+      : nextState.playbackStarted
+        ? nextState.playbackStartedAtMs
+        : null,
+    animationEnabled: nextState.animationEnabled,
+    revision: shouldStartPlayback ? liveBPState.revision + 1 : liveBPState.revision
+  }
+  const payload = await getBPPayload()
+  publishPayload?.(payload)
+  return payload
+}
+
+export async function hideBPOutput(): Promise<BPPayload> {
+  if (!liveBPState.visible) return getBPPayload()
+  liveBPState = {
+    ...liveBPState,
+    visible: false
+  }
+  const payload = await getBPPayload()
   publishPayload?.(payload)
   return payload
 }
 
 export async function setBPContent(value: BPContentInput): Promise<BPPayload> {
   const sequence = normalizeBPSequence(value?.sequence)
-  const match = await getCurrentMatch()
-  if (match && !isBPSequenceActionOrderValid(sequence, match.type)) {
-    throw new Error('BP 动作顺序与当前赛制不一致')
+  const [record, match] = await Promise.all([getCurrentMatchRecord(), getCurrentMatch()])
+  if (!record || !match) throw new Error('当前比赛数据不完整，无法保存 BP')
+  if (!isBPSequenceComplete(sequence, match.type)) {
+    throw new Error('BP 内容不完整或动作顺序与当前赛制不一致')
   }
+  await databaseService.matchs.modify(String(record.id), { bpSequence: sequence })
 
   liveBPState = {
     ...liveBPState,
     sequence,
-    visible: false
+    visible: false,
+    playbackStarted: false,
+    playbackStartedAtMs: null
   }
   const payload = { state: getBPState(), match }
+  await afterContentPrepared?.(match, sequence)
   publishPayload?.(payload)
   return payload
 }
@@ -114,8 +162,16 @@ export function setBPPublisher(publisher: (payload: BPPayload) => void): void {
   publishPayload = publisher
 }
 
+export function setBPStartOutputGuard(guard: () => Promise<void>): void {
+  beforeShowOutput = guard
+}
+
+export function setBPContentPreparedHandler(
+  handler: (match: BPMatch, sequence: ReturnType<typeof normalizeBPSequence>) => Promise<void>
+): void {
+  afterContentPrepared = handler
+}
+
 export function registerBPIPC(ipc: IpcMain): void {
-  ipc.handle('bp:get-state', () => getBPPayload())
-  ipc.handle('bp:set-state', (_event, state: unknown) => saveBPState(state))
   ipc.handle('bp:set-content', (_event, content: BPContentInput) => setBPContent(content))
 }

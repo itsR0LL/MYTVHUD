@@ -22,7 +22,8 @@ Set-Location -LiteralPath $PSScriptRoot
 $env:ELECTRON_MIRROR = 'https://npmmirror.com/mirrors/electron/'
 $env:ELECTRON_BUILDER_BINARIES_MIRROR = 'https://npmmirror.com/mirrors/electron-builder-binaries/'
 
-$failedWinCodeSignCachePath = 'C:\Users\R0L1_\AppData\Local\electron-builder\Cache\winCodeSign'
+$localApplicationData = [Environment]::GetFolderPath('LocalApplicationData')
+$failedWinCodeSignCachePath = Join-Path $localApplicationData 'electron-builder\Cache\winCodeSign'
 $failedWinCodeSignArchivePath = Join-Path $failedWinCodeSignCachePath '163646911.7z'
 
 if (Test-Path -LiteralPath $failedWinCodeSignArchivePath) {
@@ -40,6 +41,12 @@ if (-not (Test-Path -LiteralPath '.\node_modules\electron\dist\electron.exe')) {
     if ($LASTEXITCODE -ne 0) {
         throw 'Electron installation failed.'
     }
+}
+
+Write-Host 'Checking release-only files...' -ForegroundColor Cyan
+& node '.\scripts\assert-release-ready.mjs'
+if ($LASTEXITCODE -ne 0) {
+    throw 'Release readiness check failed.'
 }
 
 Write-Host 'Checking Electron main process...' -ForegroundColor Cyan

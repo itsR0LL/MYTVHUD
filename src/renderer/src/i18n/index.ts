@@ -11,7 +11,7 @@ const messages = {
       menu: '菜单',
       matchs: '比赛',
       bp: 'BP 选图',
-      intermission: '赛间播出',
+      intermission: '播出控制',
       players: '选手',
       teams: '战队',
       settings: '设置'
@@ -166,27 +166,23 @@ const messages = {
         content2: '设置浏览器源的高度、宽度为你的屏幕宽度，单位为 px。',
         content3_prefix: '地图 BP 使用单独的浏览器源，URL 填写',
         content3_suffix: '。',
-        content4_prefix: '赛间信息条使用单独的浏览器源，URL 填写',
+        content4_prefix: '播出控制使用单独的浏览器源，URL 填写',
         content4_suffix: '。'
       }
     },
     intermission: {
-      title: '赛间播出控制',
-      loading: '正在读取赛间播出状态…',
+      title: '播出控制',
+      loading: '正在读取播出控制状态…',
       output: {
         visible: '正在显示',
         hidden: '当前隐藏',
         copy: '复制地址',
         open: '浏览器打开',
-        show: '显示到 OBS',
-        hide: '从 OBS 隐藏',
-        refresh: '刷新',
-        noValidMatch: '当前比赛数据不完整，请先在比赛页面完成设置。',
-        noNextMap: '显示前必须先选择下一张地图。'
+        refresh: '刷新'
       },
       noMatch: {
-        title: '尚无可用于赛间播出的当前比赛',
-        desc: '请先在比赛页面保存双方、赛制、实际比赛地图、比分和地图状态。',
+        title: '尚无可用于播出控制的比赛或冻结节目',
+        desc: '请先在比赛页面保存比赛与完整 BP；地图结束后系统会自动生成准备节目。',
         action: '前往比赛设置'
       },
       match: {
@@ -232,35 +228,12 @@ const messages = {
           finished: '已结束'
         }
       },
-      layout: {
-        title: 'OBS 布局',
-        desc: '选择并拖动四个固定组件；画布坐标对应 1920×1080 OBS 浏览器源。',
-        unapplied: '存在未应用修改',
-        syncing: '正在同步至 OBS',
-        onAirWarning: '正在播出',
-        componentList: '固定 OBS 组件',
-        fixedComponents: '仅支持以下四个固定组件，暂不支持手动添加。',
-        selectedComponent: '当前组件：{name}',
-        components: {
-          teamScore: '战队与比分',
-          mapSeries: '地图进度',
-          timerNotice: '倒计时与提示',
-          eventLogo: '右上角标志'
-        },
-        scale: '缩放（%）',
-        liveSync: '实时同步到 OBS',
-        undo: '撤销修改',
-        reset: '重置默认',
-        apply: '应用到 OBS',
-        selectionLabel: '{name}位置与缩放选择框',
-        resizeLabel: '缩放{name}'
-      },
       toast: {
-        loadFailed: '赛间状态加载失败',
-        updateFailed: '赛间状态更新失败',
+        loadFailed: '播出控制状态加载失败',
+        updateFailed: '播出控制状态更新失败',
         requestTimedOut: '操作超过 8 秒未完成，请重试',
         layoutApplied: '布局已应用到 OBS',
-        urlCopied: '赛间播出地址已复制',
+        urlCopied: '播出控制地址已复制',
         copyFailed: '复制地址失败'
       }
     },

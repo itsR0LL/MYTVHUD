@@ -4,18 +4,50 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import appIcon from './logo.png?asset'
 import { registerDatabaseIPC, removeDeprecatedRegistrationFields } from './database/database'
 import { registerDataTransferIPC } from './database/data-transfer'
-import { registerBPIPC, removeDeprecatedBPState } from './bp/bp'
-import { initializeIntermissionState, registerIntermissionIPC } from './intermission/intermission'
+import {
+  hideBPOutput,
+  registerBPIPC,
+  removeDeprecatedBPState,
+  setBPContentPreparedHandler,
+  setBPStartOutputGuard
+} from './bp/bp'
+import {
+  initializeIntermissionState,
+  registerIntermissionIPC,
+  resetIntermissionScoreOverride
+} from './intermission/intermission'
 import { registerMatchResetIPC } from './match-reset'
 import './gsi/gsi'
 import './overlay/overlay'
 import { registerAutoPlaceGSIIPC } from './gsi/auto-place'
+import {
+  initializeMatchRuntimeState,
+  registerMatchRuntimeIPC,
+  setNextMatchCreatedHandler
+} from './match-session/match-session'
+import {
+  initializeBroadcastRuntimeState,
+  hideBroadcastOutput,
+  registerBroadcastRuntimeIPC,
+  setBroadcastStartOutputGuard,
+  updatePreparedProgramNextMatch
+} from './intermission/broadcast-flow'
+import { isBPSequenceComplete } from '../shared/bp'
+import {
+  publishIntermissionNextSnapshot,
+  registerIntermissionNextIPC
+} from './intermission-next/integration'
+import {
+  initializeBroadcastDirectorRuntime,
+  registerBroadcastDirectorIPC,
+  setBroadcastDirectorPublisher
+} from './intermission/broadcast-director'
 
 function createWindow(): void {
   // 创建管理器主窗口
   const mainWindow = new BrowserWindow({
-    width: 1150,
-    height: 750,
+    width: 1500,
+    height: 890,
     show: false,
     frame: false,
     autoHideMenuBar: true,
@@ -79,15 +111,66 @@ app.whenReady().then(async () => {
   try {
     await initializeIntermissionState()
   } catch (error) {
-    console.error('初始化赛间播出状态失败：', error)
+    console.error('初始化播出控制状态失败：', error)
   }
+
+  try {
+    await initializeMatchRuntimeState()
+  } catch (error) {
+    console.error('初始化比赛运行状态失败：', error)
+  }
+
+  try {
+    await initializeBroadcastRuntimeState()
+  } catch (error) {
+    console.error('初始化播出运行状态失败：', error)
+  }
+
+  try {
+    await initializeBroadcastDirectorRuntime()
+  } catch (error) {
+    console.error('初始化统一播出导演台失败：', error)
+  }
+
+  setBroadcastDirectorPublisher(() => {
+    void publishIntermissionNextSnapshot().catch((error: unknown) => {
+      console.error('发布统一播出导演台状态失败：', error)
+    })
+  })
+
+  setBPStartOutputGuard(async () => {
+    await hideBroadcastOutput()
+  })
+  setBroadcastStartOutputGuard(async () => {
+    await hideBPOutput()
+  })
+  setBPContentPreparedHandler(async (match, sequence) => {
+    await updatePreparedProgramNextMatch({
+      matchId: match.id,
+      type: match.type,
+      team_a: match.team_a,
+      team_b: match.team_b,
+      bpReady: isBPSequenceComplete(sequence, match.type)
+    })
+  })
+  setNextMatchCreatedHandler(async () => {
+    await resetIntermissionScoreOverride()
+  })
 
   // 注册数据库 IPC 接口
   registerDatabaseIPC(ipcMain)
   // 注册 BP 控制与展示状态接口
   registerBPIPC(ipcMain)
-  // 注册赛间播出状态、地图状态与倒计时接口
+  // 注册播出控制状态、地图状态与倒计时接口
   registerIntermissionIPC(ipcMain)
+  // 注册自动播出流程接口
+  registerBroadcastRuntimeIPC(ipcMain)
+  // 注册统一播出阶段与主操作接口
+  registerBroadcastDirectorIPC(ipcMain)
+  // 注册统一播出、页面布局与背景输出接口
+  registerIntermissionNextIPC(ipcMain)
+  // 注册比赛运行状态接口
+  registerMatchRuntimeIPC(ipcMain)
   // 注册比赛结束后的播出状态联动重置接口
   registerMatchResetIPC(ipcMain)
   // 注册数据目录及赛事数据导入、导出接口

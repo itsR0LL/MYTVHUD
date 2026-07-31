@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": "../..",
+    "outDir": ".build",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "../../src/shared/intermission-next/**/*.ts",
+    "./**/*.test.ts"
+  ],
+  "exclude": [
+    "./.build"
+  ]
+}

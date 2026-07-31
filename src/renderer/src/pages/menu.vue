@@ -35,7 +35,7 @@
         >{{ t('menu.step3.content3_suffix') }}
       </div>
       <div class="menu-item-content">
-        {{ t('menu.step3.content4_prefix') }}<span>http://localhost:5031/intermission</span
+        {{ t('menu.step3.content4_prefix') }}<span>http://localhost:5031/intermission-next</span
         >{{ t('menu.step3.content4_suffix') }}
       </div>
       <div class="menu-item-content">{{ t('menu.step3.content2') }}</div>

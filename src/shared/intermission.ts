@@ -1,4 +1,6 @@
 import { BP_MAPS, BP_MATCH_TYPES, type BPMapId, type BPMatchType, type BPTeam } from './bp'
+import type { BroadcastRuntimeV1 } from './broadcast-flow'
+import type { MatchRuntimeV1 } from './match-session'
 
 export const MATCH_MAP_STATUSES = ['pending', 'live', 'finished'] as const
 export const INTERMISSION_TIMER_STATUSES = ['idle', 'running', 'paused', 'finished'] as const
@@ -107,16 +109,9 @@ export interface IntermissionPayload {
   state: IntermissionState
   match: IntermissionMatch | null
   seriesScore: IntermissionSeriesScore
+  runtime: BroadcastRuntimeV1
+  matchRuntime: MatchRuntimeV1
   serverNowMs: number
-}
-
-export const INTERMISSION_PREVIEW_MESSAGES = {
-  state: 'intermission-preview-state'
-} as const
-
-export type IntermissionPreviewMessage = {
-  type: typeof INTERMISSION_PREVIEW_MESSAGES.state
-  payload: IntermissionPayload
 }
 
 const BP_MAP_IDS = BP_MAPS.map((map) => map.id)

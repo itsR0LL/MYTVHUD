@@ -87,6 +87,7 @@ export const BP_ACTIONS = ['ban', 'pick', 'decider'] as const
 export const BP_TEAM_SLOTS = ['team_a', 'team_b'] as const
 export const BP_STARTING_SIDES = ['CT', 'T'] as const
 export const BP_MATCH_TYPES = ['BO1', 'BO3', 'BO5'] as const
+export const BP_BROADCAST_TIMELINE_DURATION_MS = 12_000
 
 export type BPMapId = (typeof BP_MAPS)[number]['id']
 export type BPAction = (typeof BP_ACTIONS)[number]
@@ -109,6 +110,8 @@ export interface BPState {
   version: 1
   sequence: BPSequenceItem[]
   visible: boolean
+  playbackStarted: boolean
+  playbackStartedAtMs: number | null
   animationEnabled: boolean
   revision: number
 }
@@ -152,11 +155,28 @@ export function isBPSequenceActionOrderValid(
   return sequence.every((item, index) => item.action === actionOrder[index])
 }
 
+export function isBPSequenceComplete(
+  sequence: readonly BPSequenceItem[],
+  matchType: BPMatchType
+): boolean {
+  if (sequence.length !== BP_SERIES_ACTION_ORDER[matchType].length) return false
+  if (!isBPSequenceActionOrderValid(sequence, matchType)) return false
+  return sequence.every((item) => {
+    if (item.action === 'decider') return item.actor === '' && item.startingSide === ''
+    if (!BP_TEAM_SLOTS.includes(item.actor as BPTeamSlot)) return false
+    if (item.action === 'pick')
+      return BP_STARTING_SIDES.includes(item.startingSide as BPStartingSide)
+    return item.startingSide === ''
+  })
+}
+
 export function createDefaultBPState(): BPState {
   return {
     version: 1,
     sequence: [],
     visible: false,
+    playbackStarted: false,
+    playbackStartedAtMs: null,
     animationEnabled: true,
     revision: 0
   }
@@ -208,11 +228,21 @@ export function normalizeBPSequence(value: unknown): BPSequenceItem[] {
 
 export function normalizeBPState(value: unknown): BPState {
   const source = isRecord(value) ? value : {}
+  const playbackStarted = source.playbackStarted === true
+  const playbackStartedAtMs = source.playbackStartedAtMs
 
   return {
     version: 1,
     sequence: normalizeBPSequence(source.sequence),
     visible: source.visible === true,
+    playbackStarted,
+    playbackStartedAtMs:
+      playbackStarted &&
+      typeof playbackStartedAtMs === 'number' &&
+      Number.isSafeInteger(playbackStartedAtMs) &&
+      playbackStartedAtMs >= 0
+        ? playbackStartedAtMs
+        : null,
     animationEnabled: source.animationEnabled !== false,
     revision: Math.max(0, Math.floor(Number(source.revision) || 0))
   }

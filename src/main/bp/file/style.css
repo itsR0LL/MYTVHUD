@@ -221,8 +221,8 @@ body {
   text-align: center;
   transform: translate3d(0, 0, 0);
   transition:
-    transform 460ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 220ms ease 220ms;
+    transform 650ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 320ms ease 300ms;
   will-change: transform, opacity;
 }
 
@@ -261,7 +261,7 @@ body {
   object-fit: cover;
   object-position: center;
   transform: scale(1.015);
-  transition: filter 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: filter 850ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: filter, transform;
 }
 
@@ -276,7 +276,7 @@ body {
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 3px 2px rgb(0 0 0 / 68%)) drop-shadow(0 8px 15px rgb(0 0 0 / 34%));
-  transition: filter 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: filter 850ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: filter, opacity, transform;
 }
 
@@ -318,8 +318,8 @@ body {
   text-align: center;
   transform: translate3d(0, -12px, 0);
   transition:
-    opacity 300ms ease 210ms,
-    transform 420ms cubic-bezier(0.16, 1, 0.3, 1) 170ms;
+    opacity 440ms ease 280ms,
+    transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 220ms;
   pointer-events: none;
   will-change: opacity, transform;
 }
