@@ -1,5 +1,9 @@
 <template>
-  <section class="bp-result-panel" aria-labelledby="bp-result-title">
+  <section
+    class="bp-result-panel"
+    :class="{ 'is-compact': compact }"
+    aria-labelledby="bp-result-title"
+  >
     <header class="result-header">
       <h3 id="bp-result-title">BP 结果</h3>
       <span>{{ sequence.length }} / 7</span>
@@ -43,6 +47,7 @@ const props = defineProps<{
   sequence: BPSequenceItem[]
   teamA: BPTeam | null
   teamB: BPTeam | null
+  compact?: boolean
 }>()
 const { t } = useI18n({ useScope: 'global' })
 
@@ -321,6 +326,64 @@ const BPResultCard = defineComponent({
 :deep(.side-text) {
   margin-top: auto;
   color: var(--foreground);
+}
+
+.bp-result-panel.is-compact {
+  gap: 0.65rem;
+  padding-top: 0.75rem;
+
+  .result-empty {
+    min-height: 6rem;
+  }
+
+  .result-rows,
+  .result-row {
+    gap: 0.5rem;
+  }
+
+  :deep(.result-card) {
+    border-top-width: 2px;
+  }
+
+  :deep(.card-header) {
+    padding: 0.35rem 0.45rem;
+  }
+
+  :deep(.sequence-index) {
+    width: 1.2rem;
+    height: 1.2rem;
+    font-size: 0.62rem;
+  }
+
+  :deep(.action-badge) {
+    padding: 0.15rem 0.35rem;
+    font-size: 0.6rem;
+  }
+
+  :deep(.card-art) {
+    height: 4.5rem;
+  }
+
+  :deep(.map-icon) {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  :deep(.card-content) {
+    min-height: 4.75rem;
+    gap: 0.25rem;
+    padding: 0.45rem;
+  }
+
+  :deep(.map-name) {
+    font-size: 0.7rem;
+  }
+
+  :deep(.result-text),
+  :deep(.side-text) {
+    font-size: 0.62rem;
+    line-height: 1.3;
+  }
 }
 
 @media (max-width: 960px) {

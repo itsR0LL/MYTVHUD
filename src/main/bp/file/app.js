@@ -288,6 +288,7 @@ function startSeriesFinale(renderedCards, matchType, shouldAnimate) {
 
 function scheduleSeriesFinale(renderedCards, state, matchType, shouldAnimate) {
   if (matchType !== 'BO1' && matchType !== 'BO3') return
+  if (!state.playbackStarted) return
 
   if (!shouldAnimate || !state.animationEnabled) {
     revealTimers.push(

@@ -280,6 +280,13 @@
                 </div>
               </article>
             </div>
+
+            <BPResultGrid
+              compact
+              :sequence="bpSequence"
+              :team-a="selectedTeamA ?? null"
+              :team-b="selectedTeamB ?? null"
+            />
           </div>
 
           <div class="space-y-3">
@@ -370,12 +377,6 @@
             </div>
           </div>
         </div>
-
-        <BPResultGrid
-          :sequence="bpSequence"
-          :team-a="selectedTeamA ?? null"
-          :team-b="selectedTeamB ?? null"
-        />
       </section>
 
       <div class="flex items-center justify-end gap-3 pb-4 pt-2">
