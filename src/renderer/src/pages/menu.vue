@@ -35,7 +35,6 @@
 
           <ul class="step-list">
             <li v-for="itemKey in step.itemKeys" :key="itemKey">
-              <CircleCheck aria-hidden="true" />
               <span>{{ t(itemKey) }}</span>
             </li>
           </ul>
@@ -83,7 +82,6 @@ import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import {
   BookOpenCheck,
-  CircleCheck,
   Database,
   Gamepad2,
   Info,
@@ -385,8 +383,8 @@ function handleAction(action: TutorialAction): void {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem 1.1rem;
-  border-color: color-mix(in srgb, #38bdf8 32%, var(--border));
-  background: color-mix(in srgb, #38bdf8 6%, var(--card));
+  border-color: var(--border);
+  background: var(--card);
 }
 
 .unified-output > svg {
@@ -394,7 +392,7 @@ function handleAction(action: TutorialAction): void {
   height: 1.15rem;
   margin-top: 0.15rem;
   flex: 0 0 auto;
-  color: #7dd3fc;
+  color: color-mix(in srgb, var(--primary) 74%, white);
 }
 
 .unified-output strong {
@@ -495,20 +493,10 @@ function handleAction(action: TutorialAction): void {
 }
 
 .step-list li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 0.55rem;
+  display: block;
   color: color-mix(in srgb, var(--foreground) 90%, var(--muted-foreground));
   font-size: 0.78rem;
   line-height: 1.55;
-}
-
-.step-list svg {
-  width: 0.92rem;
-  height: 0.92rem;
-  margin-top: 0.2rem;
-  color: #7dd3fc;
 }
 
 .code-list {
@@ -540,10 +528,10 @@ function handleAction(action: TutorialAction): void {
   align-items: start;
   gap: 0.5rem;
   padding: 0.65rem 0.75rem;
-  border: 1px solid color-mix(in srgb, #38bdf8 24%, var(--border));
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  color: color-mix(in srgb, #bae6fd 78%, var(--foreground));
-  background: color-mix(in srgb, #38bdf8 5%, transparent);
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted) 48%, transparent);
   font-size: 0.72rem;
   line-height: 1.5;
 }
@@ -552,6 +540,7 @@ function handleAction(action: TutorialAction): void {
   width: 0.9rem;
   height: 0.9rem;
   margin-top: 0.18rem;
+  color: color-mix(in srgb, var(--primary) 74%, white);
 }
 
 .card-actions {

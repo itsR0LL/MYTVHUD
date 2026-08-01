@@ -232,21 +232,6 @@ body {
   background: linear-gradient(90deg, rgba(3, 8, 14, 0.9), rgba(3, 8, 14, 0.3));
 }
 
-.panel-accent {
-  position: relative;
-}
-
-.panel-accent::before {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: max(2px, min(0.35cqw, 1.2cqh));
-  content: '';
-  background: linear-gradient(90deg, var(--blue), var(--cyan) 50%, var(--red));
-}
-
 .section-kicker {
   color: var(--cyan);
   font-size: var(--type-label);
@@ -363,8 +348,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid var(--line);
-  padding-top: max(8px, min(0.8cqw, 2cqh));
 }
 
 .series-score-line {
@@ -586,7 +569,6 @@ body {
   min-width: 0;
   flex: 1;
   overflow: hidden;
-  border-left: 1px solid rgba(255, 255, 255, 0.18);
   background: transparent;
 }
 
@@ -732,9 +714,17 @@ body {
   container-type: size;
 }
 
+.event-mark-wordmark-slot {
+  display: flex;
+  height: 82%;
+  flex: 0 1 auto;
+  align-items: center;
+  /* 电视主体中心位于矢量画布高度的 64.2%，补偿顶部天线造成的视觉偏移。 */
+  transform: translateY(14.2%);
+}
+
 .event-mark-wordmark {
   color: #fff;
-  flex: 0 1 auto;
   font-size: clamp(24px, calc(5cqw + 25cqh), 108px);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -757,7 +747,6 @@ body {
   justify-content: flex-start;
   gap: max(12px, min(3cqw, 10cqh));
   padding: max(12px, min(3cqw, 11cqh));
-  border-left: max(3px, min(0.55cqw, 2.5cqh)) solid var(--cyan);
   background: transparent;
 }
 
@@ -1000,14 +989,6 @@ body {
   gap: max(6px, min(1.6cqw, 4cqh));
 }
 
-.map-result-row.is-won-by-team-a {
-  border-left: max(3px, 0.5cqw) solid var(--blue);
-}
-
-.map-result-row.is-won-by-team-b {
-  border-left: max(3px, 0.5cqw) solid var(--red);
-}
-
 .map-result-row:last-child {
   border-bottom: 0;
 }
@@ -1108,8 +1089,6 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: clamp(10px, 1cqw, 24px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
-  padding-bottom: clamp(6px, 2cqh, 14px);
 }
 
 .series-stats-kicker {
@@ -1135,17 +1114,6 @@ body {
   min-height: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(14px, 2.4cqw, 52px);
-}
-
-.series-stats-comparison::after {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  content: '';
-  background: rgba(255, 255, 255, 0.22);
-  transform: translateX(-50%);
 }
 
 .series-stats .team-table {
@@ -1295,7 +1263,6 @@ body {
   flex-direction: column;
   justify-content: center;
   padding: max(14px, min(4cqw, 12cqh));
-  border-left: max(3px, min(0.6cqw, 2.5cqh)) solid var(--amber);
   background: transparent;
 }
 
@@ -1320,7 +1287,6 @@ body {
   display: grid;
   min-height: 116px;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   grid-template-columns: minmax(0, 1fr) 250px 690px;
   gap: 32px;
 }

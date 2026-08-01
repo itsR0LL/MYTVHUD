@@ -210,15 +210,17 @@
 
   function eventMark() {
     const root = element('div', 'event-mark')
+    const wordmarkSlot = element('span', 'event-mark-wordmark-slot')
     const wordmark = element('strong', 'event-mark-wordmark', 'MYTV')
     wordmark.dataset.eventMarkPart = 'wordmark'
+    wordmarkSlot.appendChild(wordmark)
     const mark = element('img', 'event-mark-icon')
     mark.src = EVENT_MARK_URL
     mark.alt = ''
     mark.width = 160
     mark.height = 155
     mark.dataset.eventMarkPart = 'icon'
-    append(root, wordmark, mark)
+    append(root, wordmarkSlot, mark)
     return root
   }
 
@@ -501,7 +503,7 @@
     const copy = element('div')
     append(
       copy,
-      element('div', 'section-kicker', 'MAP RESULT'),
+      element('div', 'section-kicker', '本图结果'),
       element(
         'div',
         'section-title',
@@ -674,7 +676,11 @@
       ? runtime.findMapMediaFrame(payload.mapMedia, data.nextMap.mapId, 'hero')
       : null
     const nextMap = markEnter(
-      component('map_break', 'nextMap', compactCard('NEXT MAP', nextMapValue, null, nextMapMedia)),
+      component(
+        'map_break',
+        'nextMap',
+        compactCard('下一张地图', nextMapValue, null, nextMapMedia)
+      ),
       'opening'
     )
     page.appendChild(nextMap)
@@ -717,7 +723,7 @@
       )
     )
     root.appendChild(copy)
-    root.appendChild(element('div', 'winner-trophy', winner ? 'SERIES WINNER' : 'FINAL RESULT'))
+    root.appendChild(element('div', 'winner-trophy', winner ? '系列赛获胜方' : '系列赛结果'))
     return root
   }
 
@@ -809,7 +815,7 @@
     const heading = element('div', 'series-stats-heading')
     append(
       heading,
-      element('span', 'series-stats-kicker', 'SERIES STATISTICS'),
+      element('span', 'series-stats-kicker', '系列赛数据'),
       element('strong', 'series-stats-title', '系列赛选手累计数据')
     )
     const comparison = element('div', 'series-stats-comparison')
@@ -887,7 +893,7 @@
   function createPreviousResult(data) {
     const root = panel()
     const body = element('div', 'previous-result')
-    body.appendChild(element('div', 'section-kicker', 'PREVIOUS SERIES'))
+    body.appendChild(element('div', 'section-kicker', '上一场系列赛'))
     if (!data.previousResult) {
       body.appendChild(element('div', 'section-title', '暂无上一场比赛结果'))
     } else {
@@ -948,7 +954,7 @@
     const root = element('div', 'standby-prompt')
     append(
       root,
-      element('div', 'section-kicker', knownDuration ? 'BROADCAST STANDBY' : '赛事待机'),
+      element('div', 'section-kicker', '赛事待机'),
       element('strong', '', knownDuration ? '下一阶段准备中' : '下一场时间待定')
     )
     return root
@@ -1027,13 +1033,13 @@
     const title = element('div', 'utility-title')
     append(
       title,
-      element('span', 'utility-kicker', 'FIRST 30 SECONDS'),
+      element('span', 'utility-kicker', '本图前 30 秒'),
       element('strong', 'utility-title-value', '')
     )
     const breakClock = element('div', 'utility-break-clock')
     append(
       breakClock,
-      element('span', '', 'NEXT MAP IN'),
+      element('span', '', '下一张地图倒计时'),
       element(
         'strong',
         '',
@@ -1066,7 +1072,7 @@
     )
     const roundCount = element('strong', 'utility-round-count')
     const pageClock = element('div', 'utility-page-clock')
-    append(pageClock, element('span', '', 'ROUND OPENING'), element('strong', '', '00:00 / 00:30'))
+    append(pageClock, element('span', '', '回合开局'), element('strong', '', '00:00 / 00:30'))
     const legend = element('div', 'utility-legend')
     for (const [type, label] of [
       ['smoke', '烟雾'],

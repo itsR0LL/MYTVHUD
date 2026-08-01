@@ -6,6 +6,7 @@ const path = require('node:path')
 
 const outputDirectory = path.resolve(__dirname, '../../src/main/intermission-next/file')
 const bpAssetDirectory = path.resolve(__dirname, '../../src/main/bp/file')
+const rendererPageDirectory = path.resolve(__dirname, '../../src/renderer/src/pages')
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function read(fileName) {
@@ -15,6 +16,11 @@ function read(fileName) {
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function readBPAsset(fileName) {
   return fs.readFileSync(path.join(bpAssetDirectory, fileName), 'utf8')
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function readRendererPage(fileName) {
+  return fs.readFileSync(path.join(rendererPageDirectory, fileName), 'utf8')
 }
 
 test('正式入口与管理端预览入口严格隔离', () => {
@@ -59,9 +65,51 @@ test('页面组件不绘制黑色底板并叠加于全局背景视频之上', ()
 
 test('页面赛事标志由 MYTV 字标和小鸡矢量标志组成', () => {
   const app = read('app.js')
+  const css = read('style.css')
   assert.match(app, /mytvhud-chicken-mark\.svg/)
   assert.match(app, /event-mark-wordmark', 'MYTV'/)
+  assert.match(app, /event-mark-wordmark-slot/)
   assert.match(app, /data-event-mark-part/)
+  assert.match(css, /\.event-mark-wordmark-slot[\s\S]*?transform:\s*translateY\(14\.2%\)/)
+})
+
+test('播出组件移除未经要求的英文功能眉题并保留赛事通用标识', () => {
+  const app = read('app.js')
+  for (const text of [
+    'MAP RESULT',
+    'NEXT MAP',
+    'SERIES WINNER',
+    'FINAL RESULT',
+    'SERIES STATISTICS',
+    'PREVIOUS SERIES',
+    'BROADCAST STANDBY',
+    'FIRST 30 SECONDS',
+    'NEXT MAP IN',
+    'ROUND OPENING'
+  ]) {
+    assert.equal(app.includes(`'${text}'`), false)
+  }
+  assert.match(app, /createEventBrand\('BAN & PICK'\)/)
+})
+
+test('播出组件不再绘制无语义的外沿装饰线', () => {
+  const css = read('style.css')
+  assert.doesNotMatch(css, /\.panel-accent::before/)
+  assert.doesNotMatch(css, /\.series-stats-comparison::after/)
+  assert.doesNotMatch(css, /\.map-result-row\.is-won-by-team-[ab]/)
+  for (const selector of ['.event-brand {', '.standby-prompt {', '.map-report-meta {']) {
+    const start = css.indexOf(selector)
+    const end = css.indexOf('\n}', start)
+    assert.notEqual(start, -1)
+    assert.doesNotMatch(css.slice(start, end), /border-(?:top|left):/)
+  }
+})
+
+test('菜单教程使用现有品牌色且不为每条说明添加勾号', () => {
+  const menu = readRendererPage('menu.vue')
+  assert.doesNotMatch(menu, /CircleCheck/)
+  assert.doesNotMatch(menu, /#38bdf8|#7dd3fc|#bae6fd/i)
+  assert.match(menu, /color-mix\(in srgb, var\(--primary\) 74%, white\)/)
 })
 
 test('本图数据板将双方选手表格上下排列', () => {
@@ -218,7 +266,7 @@ test('系列赛结束组件使用明确比分归属与镜像选手数据板', ()
   assert.match(seriesRenderer, /createPlayerTable\([\s\S]*?true,[\s\S]*?'b'/)
   assert.doesNotMatch(seriesRenderer, /\['MVP', 'mvps'\]/)
   assert.match(seriesStyles, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
-  assert.match(seriesStyles, /\.series-stats-comparison::after/)
+  assert.doesNotMatch(seriesStyles, /\.series-stats-comparison::after/)
   assert.match(seriesStyles, /\.final-series-team\.is-team-a[\s\S]*?justify-content:\s*flex-end/)
   assert.match(seriesStyles, /\.final-series-team\.is-team-b[\s\S]*?justify-content:\s*flex-start/)
 })
