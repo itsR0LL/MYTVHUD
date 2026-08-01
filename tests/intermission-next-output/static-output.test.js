@@ -27,6 +27,15 @@ test('正式入口与管理端预览入口严格隔离', () => {
   assert.equal(preview.includes('socket.io'), false)
 })
 
+test('正式与预览入口从无尾斜杠地址加载统一输出资源', () => {
+  for (const html of [read('index.html'), read('preview.html')]) {
+    assert.match(html, /href="\/intermission-next\/style\.css"/)
+    assert.match(html, /src="\/intermission-next\/runtime\.js"/)
+    assert.match(html, /src="\/intermission-next\/app\.js"/)
+    assert.doesNotMatch(html, /(?:href|src)="\.\/(?:style\.css|runtime\.js|app\.js)"/)
+  }
+})
+
 test('输出包含持续存在的双 video 背景层和独立品牌 SVG 挂点', () => {
   const html = read('index.html')
   assert.equal((html.match(/<video/g) || []).length, 2)
@@ -37,6 +46,194 @@ test('根页面保持透明并支持 reduced-motion', () => {
   const css = read('style.css')
   assert.match(css, /background:\s*transparent/)
   assert.match(css, /prefers-reduced-motion:\s*reduce/)
+})
+
+test('页面组件不绘制黑色底板并叠加于全局背景视频之上', () => {
+  const css = read('style.css')
+  const panelRule = css.slice(css.indexOf('.panel {'), css.indexOf('.map-media-visual,'))
+  assert.match(panelRule, /background:\s*transparent/)
+  assert.match(panelRule, /box-shadow:\s*none/)
+  assert.doesNotMatch(panelRule, /linear-gradient|rgba\(\s*0\s*,\s*0\s*,\s*0/)
+  assert.match(css, /\.utility-replay-page[\s\S]*?background:\s*transparent/)
+})
+
+test('页面赛事标志由 MYTV 字标和小鸡矢量标志组成', () => {
+  const app = read('app.js')
+  assert.match(app, /mytvhud-chicken-mark\.svg/)
+  assert.match(app, /event-mark-wordmark', 'MYTV'/)
+  assert.match(app, /data-event-mark-part/)
+})
+
+test('本图数据板将双方选手表格上下排列', () => {
+  const css = read('style.css')
+  const statsRule = css.slice(
+    css.indexOf('.dual-player-stats {'),
+    css.indexOf('.team-table-title {')
+  )
+  assert.match(statsRule, /grid-template-rows:\s*repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.match(statsRule, /border-top:/)
+  assert.doesNotMatch(statsRule, /border-left:/)
+})
+
+test('本图数据板只保留双方选手数据并删除真实比分时间线', () => {
+  const app = read('app.js')
+  const css = read('style.css')
+  const reportRule = css.slice(css.indexOf('.report-grid {'), css.indexOf('.player-stats-box {'))
+
+  assert.match(app, /grid\.appendChild\(statsBox\)/)
+  assert.doesNotMatch(app, /createTimeline|真实比分时间线|scoreTimeline'/)
+  assert.doesNotMatch(css, /\.timeline-box|\.timeline-track|\.timeline-point/)
+  assert.match(reportRule, /grid-template-columns:\s*minmax\(0, 1fr\)/)
+  assert.match(reportRule, /grid-template-rows:\s*minmax\(0, 1fr\)/)
+})
+
+test('选手数据最后一项使用爆头率而不是得分', () => {
+  const app = read('app.js')
+  const tableRenderer = app.slice(
+    app.indexOf('function createPlayerTable'),
+    app.indexOf('function mapStateText')
+  )
+  assert.match(tableRenderer, /\['爆头率', 'headshotRate'\]/)
+  assert.match(tableRenderer, /`\$\{statValue\(player\[key\]\)\}%`/)
+  assert.doesNotMatch(tableRenderer, /\['得分', 'score'\]/)
+})
+
+test('本图完整数据板不加载地图背景并使用高对比文字', () => {
+  const app = read('app.js')
+  const css = read('style.css')
+  const reportRenderer = app.slice(
+    app.indexOf('function createMapReport'),
+    app.indexOf('function compactCard')
+  )
+  const reportStyles = css.slice(css.indexOf('.map-report {'), css.indexOf('.map-strip {'))
+
+  assert.doesNotMatch(reportRenderer, /createMapMediaVisual|has-map-media|map-report-media/)
+  assert.match(reportStyles, /color:\s*#f8fbff/)
+  assert.match(reportStyles, /color:\s*#d7e2ee/)
+  assert.match(reportStyles, /color:\s*#f0f6fc/)
+})
+
+test('全部可编辑组件内容使用组件容器尺寸响应拉伸', () => {
+  const css = read('style.css')
+  const editableRules = css.slice(
+    css.indexOf('.broadcast-component {'),
+    css.indexOf('.utility-replay-page {')
+  )
+  const rendererFamilies = [
+    '.map-report',
+    '.map-strip',
+    '.compact-card',
+    '.event-mark',
+    '.event-brand',
+    '.warmup-teams-panel',
+    '.warmup-status-panel',
+    '.winner-panel',
+    '.final-series-score',
+    '.list-panel',
+    '.series-stats',
+    '.status-line',
+    '.previous-result',
+    '.next-teams',
+    '.large-countdown',
+    '.standby-prompt'
+  ]
+
+  assert.match(editableRules, /container-type:\s*size/)
+  assert.match(editableRules, /--fluid-space-md:/)
+  assert.match(editableRules, /--type-title:\s*clamp\([^;]*calc\([^;]*cqw[^;]*cqh/)
+  assert.match(
+    editableRules,
+    /\.event-mark-wordmark[\s\S]*?font-size:\s*clamp\([^;]*calc\([^;]*cqw[^;]*cqh/
+  )
+  assert.match(editableRules, /\.event-mark-icon[\s\S]*?height:\s*82%/)
+  assert.doesNotMatch(editableRules, /height:\s*min\(82%,\s*110px\)/)
+  assert.match(
+    editableRules,
+    /\.compact-card-value[\s\S]*?font-size:\s*clamp\([^;]*calc\([^;]*cqw[^;]*cqh/
+  )
+  assert.match(
+    editableRules,
+    /\.warmup-teams-panel \.team-avatar[\s\S]*?width:\s*clamp\([^;]*calc\([^;]*cqw[^;]*cqh/
+  )
+  assert.match(
+    editableRules,
+    /\.final-series-team-score[\s\S]*?font-size:\s*clamp\([^;]*calc\([^;]*cqw[^;]*cqh/
+  )
+  assert.match(
+    editableRules,
+    /\.next-teams \.team-avatar[\s\S]*?width:\s*clamp\([^;]*calc\([^;]*cqw[^;]*cqh/
+  )
+  assert.doesNotMatch(
+    editableRules,
+    /font-size:\s*max\([^;]*min\([^;]*(?:cqw[^;]*cqh|cqh[^;]*cqw)[^;]*\)[^;]*\)/
+  )
+  for (const selector of rendererFamilies)
+    assert.match(editableRules, new RegExp(selector.replace('.', '\\.')))
+})
+
+test('地图序列内容继承组件宽度并保持中心线对称', () => {
+  const css = read('style.css')
+  const mapStripRule = css.slice(css.indexOf('.map-strip {'), css.indexOf('.map-strip-card {'))
+  assert.match(mapStripRule, /width:\s*100%/)
+  assert.match(mapStripRule, /display:\s*flex/)
+})
+
+test('赛事待机上一场结果使用等宽三列并放大响应式文字', () => {
+  const css = read('style.css')
+  const resultStyles = css.slice(
+    css.indexOf('.previous-result .section-kicker {'),
+    css.indexOf('.next-teams {')
+  )
+
+  assert.match(resultStyles, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/)
+  assert.match(resultStyles, /\.team-name:first-child[\s\S]*?text-align:\s*right/)
+  assert.match(resultStyles, /\.team-name:last-child[\s\S]*?text-align:\s*left/)
+  assert.match(
+    resultStyles,
+    /\.team-name[\s\S]*?font-size:\s*clamp\(20px, calc\(1cqw \+ 10cqh\), 46px\)/
+  )
+  assert.match(
+    resultStyles,
+    /\.score[\s\S]*?font-size:\s*clamp\(42px, calc\(2cqw \+ 24cqh\), 96px\)/
+  )
+})
+
+test('系列赛结束组件使用明确比分归属与镜像选手数据板', () => {
+  const app = read('app.js')
+  const css = read('style.css')
+  const seriesRenderer = app.slice(
+    app.indexOf('function createFinalSeriesScore'),
+    app.indexOf('function nextMatchLabel')
+  )
+  const seriesStyles = css.slice(
+    css.indexOf('.final-series-score {'),
+    css.indexOf('.status-line {')
+  )
+
+  assert.match(seriesRenderer, /final-series-team is-team-a/)
+  assert.match(seriesRenderer, /final-series-team is-team-b/)
+  assert.match(seriesRenderer, /series-stats-heading/)
+  assert.match(seriesRenderer, /series-stats-comparison/)
+  assert.match(seriesRenderer, /createPlayerTable\([\s\S]*?true,[\s\S]*?'a'/)
+  assert.match(seriesRenderer, /createPlayerTable\([\s\S]*?true,[\s\S]*?'b'/)
+  assert.doesNotMatch(seriesRenderer, /\['MVP', 'mvps'\]/)
+  assert.match(seriesStyles, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.match(seriesStyles, /\.series-stats-comparison::after/)
+  assert.match(seriesStyles, /\.final-series-team\.is-team-a[\s\S]*?justify-content:\s*flex-end/)
+  assert.match(seriesStyles, /\.final-series-team\.is-team-b[\s\S]*?justify-content:\s*flex-start/)
+})
+
+test('地图序列按BLAST信息层级展示战队端点、动态地图图像和单图比分', () => {
+  const app = read('app.js')
+  const css = read('style.css')
+
+  assert.match(app, /createMapStripTeam\(data\.teamA, 'a'\)/)
+  assert.match(app, /createMapStripTeam\(data\.teamB, 'b'\)/)
+  assert.match(app, /findMapMediaFrame\(payload\.mapMedia, map\.mapId, 'sequence'\)/)
+  assert.match(app, /'map-strip-score score'/)
+  assert.match(css, /\.map-strip-team\.has-team-avatar \.map-strip-team-name/)
+  assert.match(css, /\.map-strip-card\.is-won-by-team-a::after/)
+  assert.match(css, /\.map-strip-card\.is-won-by-team-b::after/)
 })
 
 test('正式脚本只监听共享合同定义的状态事件', () => {
@@ -74,8 +271,8 @@ test('正式载荷严格遵守版本而预览草稿允许同版本内容刷新',
 test('背景转场从正式矢量资源加载三段字标并按从右到左顺序组合', () => {
   const app = read('app.js')
   const html = read('index.html')
-  assert.match(app, /data-event-mark-vector-hook/)
-  assert.match(app, /data-event-brand-vector-hook/)
+  assert.match(app, /data-transition-brand-logo/)
+  assert.match(app, /brandLayer\.querySelector\('\[data-brand-vector-hook\]'\)/)
   assert.match(app, /counter-strike-2-wordmark\.svg/)
   assert.match(app, /\{ id: 'number-2', start: 0 \}/)
   assert.match(app, /\{ id: 'strike', start: 0\.12 \}/)
@@ -97,7 +294,13 @@ test('静态输出按合同执行地图回退且不在待机页推断地图', ()
   const app = read('app.js')
   assert.match(app, /runtime\.nextMapMediaSource/)
   assert.match(app, /image\.src = fallbackSource/)
-  assert.match(app, /visual\.classList\.add\('is-text-only'\)/)
+  assert.match(app, /visual\.classList\.toggle\('is-text-only'/)
+  const css = read('style.css')
+  assert.match(css, /\.map-media-fallback-text\s*\{[\s\S]*?display:\s*none/)
+  assert.match(
+    css,
+    /\.map-media-visual\.is-text-only \.map-media-fallback-text\s*\{[\s\S]*?display:\s*block/
+  )
   const standbyStart = app.indexOf('function renderStandby')
   const standbyEnd = app.indexOf('function renderPage', standbyStart)
   const standbyRenderer = app.slice(standbyStart, standbyEnd)
@@ -110,7 +313,28 @@ test('每个地图展示位最多创建 current 与 preload 两张图片', () =>
   const visualEnd = app.indexOf('function createPlayerTable', visualStart)
   const visualRenderer = app.slice(visualStart, visualEnd)
   assert.equal((visualRenderer.match(/createMapMediaImage\(/g) || []).length, 2)
-  assert.match(visualRenderer, /if \(frame\.preload\)/)
+  assert.match(visualRenderer, /createMapMediaImage\(frame\.preload, 'preload', visual\)/)
+})
+
+test('地图轮播复用双图片槽位并等待预载完成后交叉淡化', () => {
+  const app = read('app.js')
+  const runtime = read('runtime.js')
+  assert.match(app, /function syncMapMediaVisualFiles/)
+  assert.match(app, /image\.dataset\.mapMediaReady === 'true'/)
+  assert.match(app, /setMapMediaImageRole\(desiredCurrent, 'current'\)/)
+  assert.match(app, /if \(currentReady && preloadReady\)/)
+  assert.match(runtime, /function mapMediaSlot/)
+  assert.doesNotMatch(runtime, /function mapMediaPair/)
+})
+
+test('系列赛地图历史不降低地图图片透明度', () => {
+  const css = read('style.css')
+  const historyStyles = css.slice(
+    css.indexOf('.history-map-media .map-media-fallback-text'),
+    css.indexOf('.series-stats {')
+  )
+  assert.doesNotMatch(css, /\.history-map-media\s*\{/)
+  assert.doesNotMatch(historyStyles, /opacity:/)
 })
 
 test('页面和背景不叠加固定 CSS 转场时长', () => {
@@ -146,10 +370,9 @@ test('三类赛后页面只通过正式 page_enter 进度更新且选手行双�
   const runtime = read('runtime.js')
   assert.match(app, /runtime\.internalEnterProgress/)
   assert.match(app, /markInterleavedRows\(teamATable, teamBTable, 'playerRows'\)/)
-  assert.match(app, /'scoreTimeline'/)
   assert.match(runtime, /transitionFrame\?\.phase !== 'page_enter'/)
   assert.match(runtime, /transitionFrame\?\.phase === 'hold'/)
-  assert.match(app, /timeline-score is-final/)
+  assert.doesNotMatch(app, /'scoreTimeline'|timeline-score is-final/)
 })
 
 test('组件独立缩放时保持队名、比分、表格和地图边界', () => {
@@ -160,7 +383,8 @@ test('组件独立缩放时保持队名、比分、表格和地图边界', () =>
   assert.match(css, /\.team-name[\s\S]*text-overflow:\s*ellipsis/)
   assert.match(css, /\.stat-table[\s\S]*table-layout:\s*fixed/)
   assert.match(css, /\.map-media-image[\s\S]*object-fit:\s*cover/)
-  assert.match(css, /@container\s*\(max-width:\s*1100px\)/)
+  assert.match(css, /--fluid-space-md:\s*max\([^;]*cqw[^;]*cqh/)
+  assert.doesNotMatch(css, /@container\s*\(max-width:\s*1100px\)/)
   assert.match(app, /const columnGroup = element\('colgroup'\)/)
   assert.match(
     app,
@@ -206,4 +430,5 @@ test('BP 卡片与收尾动画使用放慢后的固定时长', () => {
   assert.match(bpApp, /const SERIES_FINALE_HOLD = 1300/)
   assert.match(bpApp, /const SERIES_FINALE_DURATION = 1500/)
   assert.match(bpApp, /const SERIES_EXIT_DURATION = 700/)
+  assert.match(bpApp, /if \(!state\.playbackStarted\) return/)
 })

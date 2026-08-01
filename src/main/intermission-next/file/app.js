@@ -31,6 +31,7 @@
   const UTILITY_REPLAY_FLASH_DURATION_MS = 250
   const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
   const TRANSITION_BRAND_URL = '/intermission-next/assets/brand/counter-strike-2-wordmark.svg'
+  const EVENT_MARK_URL = '/intermission-next/assets/brand/mytvhud-chicken-mark.svg'
   const TRANSITION_BRAND_PARTS = [
     { id: 'number-2', start: 0 },
     { id: 'strike', start: 0.12 },
@@ -183,38 +184,105 @@
 
   function eventMark() {
     const root = element('div', 'event-mark')
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    svg.setAttribute('viewBox', '0 0 360 96')
-    svg.setAttribute('aria-hidden', 'true')
-    const hook = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    hook.setAttribute('data-event-mark-vector-hook', '')
-    svg.appendChild(hook)
-    root.appendChild(svg)
+    const wordmark = element('strong', 'event-mark-wordmark', 'MYTV')
+    wordmark.dataset.eventMarkPart = 'wordmark'
+    const mark = element('img', 'event-mark-icon')
+    mark.src = EVENT_MARK_URL
+    mark.alt = ''
+    mark.width = 160
+    mark.height = 155
+    mark.dataset.eventMarkPart = 'icon'
+    append(root, wordmark, mark)
     return root
   }
 
-  function createMapMediaImage(file, role, opacity, visual) {
-    const image = element('img', `map-media-image is-${role}`)
-    image.alt = ''
+  function refreshMapMediaVisualState(visual) {
+    const images = [...visual.querySelectorAll('.map-media-image')]
+    const hasLoadedMedia = images.some((image) => image.dataset.mapMediaReady === 'true')
+    const configuredImages = images.filter((image) => image.dataset.mapMediaFileUrl)
+    const allConfiguredMediaFailed =
+      configuredImages.length > 0 &&
+      configuredImages.every((image) => image.dataset.mapMediaFailed === 'true')
+    visual.classList.toggle('has-loaded-media', hasLoadedMedia)
+    visual.classList.toggle('is-text-only', !hasLoadedMedia && allConfiguredMediaFailed)
+  }
+
+  function configureMapMediaImage(image, file) {
+    const fileUrl = file ? file.url : ''
+    if (image.dataset.mapMediaFileUrl === fileUrl) return
+    image.mapMediaFile = file
+    image.dataset.mapMediaFileUrl = fileUrl
+    image.dataset.mapMediaSource = fileUrl
+    image.dataset.mapMediaReady = 'false'
+    image.dataset.mapMediaFailed = 'false'
+    image.style.opacity = '0'
+    if (!file) {
+      image.removeAttribute('src')
+      return
+    }
     image.width = file.width
     image.height = file.height
-    image.dataset.mapMediaSource = file.url
     image.src = file.url
-    image.style.opacity = String(opacity)
-    image.addEventListener('load', () => visual.classList.add('has-loaded-media'))
+  }
+
+  function createMapMediaImage(file, role, visual) {
+    const image = element('img', `map-media-image is-${role}`)
+    image.alt = ''
+    image.dataset.mapMediaRole = role
+    image.addEventListener('load', () => {
+      image.dataset.mapMediaReady = 'true'
+      image.dataset.mapMediaFailed = 'false'
+      refreshMapMediaVisualState(visual)
+    })
     image.addEventListener('error', () => {
-      const fallbackSource = runtime.nextMapMediaSource(file, image.dataset.mapMediaSource)
+      const configuredFile = image.mapMediaFile
+      if (!configuredFile) return
+      const fallbackSource = runtime.nextMapMediaSource(
+        configuredFile,
+        image.dataset.mapMediaSource
+      )
       if (fallbackSource) {
         image.dataset.mapMediaSource = fallbackSource
         image.src = fallbackSource
         return
       }
-      image.remove()
-      const remainingImage = visual.querySelector('.map-media-image')
-      if (remainingImage) remainingImage.style.opacity = '1'
-      else visual.classList.add('is-text-only')
+      image.dataset.mapMediaReady = 'false'
+      image.dataset.mapMediaFailed = 'true'
+      image.style.opacity = '0'
+      refreshMapMediaVisualState(visual)
     })
+    configureMapMediaImage(image, file)
     return image
+  }
+
+  function setMapMediaImageRole(image, role) {
+    image.classList.toggle('is-current', role === 'current')
+    image.classList.toggle('is-preload', role === 'preload')
+    image.dataset.mapMediaRole = role
+  }
+
+  function syncMapMediaVisualFiles(visual, frame) {
+    const images = [...visual.querySelectorAll('.map-media-image')]
+    if (images.length !== 2) return false
+    const desiredCurrent = images.find(
+      (image) => image.dataset.mapMediaFileUrl === frame.current.url
+    )
+    const currentSlot = images.find((image) => image.classList.contains('is-current')) ?? images[0]
+    const preloadSlot = images.find((image) => image !== currentSlot) ?? images[1]
+
+    if (!desiredCurrent) {
+      configureMapMediaImage(preloadSlot, frame.current)
+      currentSlot.style.opacity = currentSlot.dataset.mapMediaReady === 'true' ? '1' : '0'
+      preloadSlot.style.opacity = '0'
+      return false
+    }
+
+    const desiredPreloadSlot = images.find((image) => image !== desiredCurrent) ?? preloadSlot
+    setMapMediaImageRole(desiredCurrent, 'current')
+    setMapMediaImageRole(desiredPreloadSlot, 'preload')
+    configureMapMediaImage(desiredPreloadSlot, frame.preload)
+    refreshMapMediaVisualState(visual)
+    return desiredCurrent.dataset.mapMediaReady === 'true'
   }
 
   function createMapMediaVisual(frame, mapName, extraClass) {
@@ -222,11 +290,8 @@
     visual.dataset.mapMediaMapId = frame.mapId
     visual.dataset.mapMediaPurpose = frame.purpose
     const images = element('div', 'map-media-images')
-    const opacities = runtime.mapMediaOpacitiesAt(frame, serverNowMs())
-    images.appendChild(createMapMediaImage(frame.current, 'current', opacities.current, visual))
-    if (frame.preload) {
-      images.appendChild(createMapMediaImage(frame.preload, 'preload', opacities.preload, visual))
-    }
+    images.appendChild(createMapMediaImage(frame.current, 'current', visual))
+    images.appendChild(createMapMediaImage(frame.preload, 'preload', visual))
     visual.appendChild(images)
     visual.appendChild(element('div', 'map-media-fallback-text', mapName))
     return visual
@@ -236,36 +301,60 @@
     return value === null || value === undefined ? '—' : String(value)
   }
 
-  function createPlayerTable(team, players, highlightedSteamid, series) {
-    const root = element('div', 'team-table')
-    root.appendChild(element('div', 'team-table-title', team.name))
+  function createTeamTableTitle(team, side) {
+    const title = element('div', `team-table-title is-team-${side}`)
+    const name = element('strong', 'team-table-name', team.name)
+    if (team.avatar) {
+      const image = element('img', 'team-table-avatar')
+      image.src = team.avatar
+      image.alt = ''
+      image.addEventListener('error', () => image.remove(), { once: true })
+      append(title, image, name)
+    } else {
+      title.appendChild(name)
+    }
+    return title
+  }
+
+  function createPlayerTable(team, players, highlightedSteamid, series, side = 'a') {
+    const root = element('div', `team-table${series ? ` series-team-table is-team-${side}` : ''}`)
+    root.appendChild(createTeamTableTitle(team, side))
     const table = element('table', 'stat-table')
     const head = element('thead')
     const headRow = element('tr')
     const columns = series
-      ? [
-          ['选手', 'name'],
-          ['K', 'kills'],
-          ['A', 'assists'],
-          ['D', 'deaths'],
-          ['MVP', 'mvps'],
-          ['得分', 'score'],
-          ['地图', 'mapsPlayed']
-        ]
+      ? side === 'b'
+        ? [
+            ['地图', 'mapsPlayed'],
+            ['爆头率', 'headshotRate'],
+            ['D', 'deaths'],
+            ['A', 'assists'],
+            ['K', 'kills'],
+            ['选手', 'name']
+          ]
+        : [
+            ['选手', 'name'],
+            ['K', 'kills'],
+            ['A', 'assists'],
+            ['D', 'deaths'],
+            ['爆头率', 'headshotRate'],
+            ['地图', 'mapsPlayed']
+          ]
       : [
           ['选手', 'name'],
           ['K', 'kills'],
           ['A', 'assists'],
           ['D', 'deaths'],
           ['ADR', 'adr'],
-          ['得分', 'score']
+          ['爆头率', 'headshotRate']
         ]
     const columnGroup = element('colgroup')
-    const nameColumnWidth = series ? 32 : 38
+    const nameColumnWidth = series ? 34 : 38
     const metricColumnWidth = (100 - nameColumnWidth) / (columns.length - 1)
     for (let index = 0; index < columns.length; index += 1) {
       const column = element('col')
-      column.style.width = `${index === 0 ? nameColumnWidth : metricColumnWidth}%`
+      const isNameColumn = columns[index][1] === 'name'
+      column.style.width = `${isNameColumn ? nameColumnWidth : metricColumnWidth}%`
       columnGroup.appendChild(column)
     }
     table.appendChild(columnGroup)
@@ -275,7 +364,10 @@
     const body = element('tbody')
     for (const player of players) {
       const row = element('tr', player.steamid === highlightedSteamid ? 'is-highlighted' : '')
-      for (const [, key] of columns) row.appendChild(element('td', '', statValue(player[key])))
+      for (const [, key] of columns) {
+        const value = key === 'headshotRate' ? `${statValue(player[key])}%` : statValue(player[key])
+        row.appendChild(element('td', '', value))
+      }
       body.appendChild(row)
     }
     table.appendChild(body)
@@ -296,81 +388,71 @@
     return '待进行'
   }
 
+  function mapSelectionText(map, teamA, teamB) {
+    if (map.decider) return '决胜图'
+    if (map.pickedByTeamId === teamA.id) return `${teamA.name} 选用`
+    if (map.pickedByTeamId === teamB.id) return `${teamB.name} 选用`
+    return map.status === 'live' ? '进行中' : '待进行'
+  }
+
+  function createMapStripTeam(team, side) {
+    const root = element('div', `map-strip-team is-team-${side}`)
+    const name = element('strong', 'map-strip-team-name', team.name)
+    root.appendChild(name)
+    if (team.avatar) {
+      const image = element('img', 'map-strip-team-avatar')
+      image.alt = ''
+      image.addEventListener('load', () => root.classList.add('has-team-avatar'))
+      image.addEventListener('error', () => image.remove(), { once: true })
+      image.src = team.avatar
+      root.appendChild(image)
+    }
+    return root
+  }
+
   function createMapStrip(data) {
     const strip = element('div', 'map-strip')
+    strip.appendChild(createMapStripTeam(data.teamA, 'a'))
     for (const map of data.maps) {
       const card = element('div', `map-strip-card is-${map.status}`)
-      card.appendChild(element('div', 'map-strip-name', map.name))
-      card.appendChild(element('div', 'map-strip-state', mapStateText(map, data.teamA, data.teamB)))
+      const mediaFrame = runtime.findMapMediaFrame(payload.mapMedia, map.mapId, 'sequence')
+      if (mediaFrame) {
+        card.classList.add('has-map-media')
+        card.appendChild(createMapMediaVisual(mediaFrame, map.name, 'map-sequence-media'))
+      }
+      if (map.status === 'finished' && map.teamAScore !== null && map.teamBScore !== null) {
+        if (map.teamAScore > map.teamBScore) card.classList.add('is-won-by-team-a')
+        if (map.teamBScore > map.teamAScore) card.classList.add('is-won-by-team-b')
+      }
+      const meta = element('div', 'map-strip-meta')
+      append(
+        meta,
+        element('strong', 'map-strip-name', map.name),
+        element('span', 'map-strip-pick', mapSelectionText(map, data.teamA, data.teamB))
+      )
+      card.appendChild(meta)
+      if (map.status === 'finished') {
+        card.appendChild(
+          element(
+            'strong',
+            'map-strip-score score',
+            map.teamAScore === null || map.teamBScore === null
+              ? '已结束'
+              : `${map.teamAScore}-${map.teamBScore}`
+          )
+        )
+      } else if (map.status === 'live') {
+        card.appendChild(element('strong', 'map-strip-live', '进行中'))
+      }
       strip.appendChild(card)
     }
+    strip.appendChild(createMapStripTeam(data.teamB, 'b'))
     return strip
   }
 
-  function createTimeline(data) {
-    const box = element('div', 'timeline-box')
-    const title = element('div', 'subhead')
-    title.appendChild(element('span', '', '真实比分时间线'))
-    if (!data.scoreTimelineComplete) {
-      title.appendChild(element('span', 'section-note', '回合记录不完整'))
-    }
-    box.appendChild(title)
-    const body = element('div', 'timeline')
-    if (data.scoreTimeline.length === 0 || !data.scoreTimelineComplete) {
-      append(
-        body,
-        element(
-          'strong',
-          'timeline-score is-final',
-          `${data.finalScore.teamA}:${data.finalScore.teamB}`
-        ),
-        element(
-          'div',
-          'timeline-empty',
-          data.scoreTimeline.length === 0
-            ? '暂无逐回合比分，保留最终比分展示'
-            : '逐回合记录不完整，最终比分仍按已确认数据展示'
-        )
-      )
-    } else {
-      const track = element('div', 'timeline-track')
-      for (let index = 0; index < data.scoreTimeline.length; index += 1) {
-        const point = data.scoreTimeline[index]
-        const pointNode = element(
-          'div',
-          `timeline-point${point.winnerTeamId === data.teamB.id ? ' is-team-b' : ''}`
-        )
-        markEnter(pointNode, 'scoreTimeline', index, data.scoreTimeline.length)
-        append(
-          pointNode,
-          element('span', 'timeline-score', `${point.teamAScore}:${point.teamBScore}`),
-          element('span', 'timeline-dot'),
-          element('span', 'timeline-round', `R${point.roundIndex}`)
-        )
-        track.appendChild(pointNode)
-      }
-      body.appendChild(track)
-    }
-    box.appendChild(body)
-    return box
-  }
-
-  function createMapReport(data, mediaFrame) {
+  function createMapReport(data) {
     const root = panel('panel-accent')
     const sourceMap = data.maps.find((map) => map.mapId === data.sourceMapId)
-    if (mediaFrame) {
-      root.classList.add('has-map-media')
-      root.appendChild(
-        markEnter(
-          createMapMediaVisual(
-            mediaFrame,
-            sourceMap ? sourceMap.name : data.sourceMapId,
-            'map-report-media'
-          ),
-          'opening'
-        )
-      )
-    }
     const report = element('div', 'map-report')
     const head = element('div', 'map-report-head')
     markEnter(head, 'teams')
@@ -407,7 +489,6 @@
     report.appendChild(meta)
 
     const grid = element('div', 'report-grid')
-    grid.appendChild(createTimeline(data))
     const statsBox = element('div', 'player-stats-box')
     statsBox.appendChild(element('div', 'subhead', '本图选手数据'))
     const dual = element('div', 'dual-player-stats')
@@ -415,13 +496,15 @@
       data.teamA,
       data.teamAPlayers,
       data.highlightedSteamid,
-      false
+      false,
+      'a'
     )
     const teamBTable = createPlayerTable(
       data.teamB,
       data.teamBPlayers,
       data.highlightedSteamid,
-      false
+      false,
+      'b'
     )
     markInterleavedRows(teamATable, teamBTable, 'playerRows')
     append(dual, teamATable, teamBTable)
@@ -502,8 +585,23 @@
     const page = element('article', 'broadcast-page page-bp')
     const core = element('div', 'bp-core-root')
     const coreComponent = component('bp', 'bpCore', core)
-    page.appendChild(coreComponent)
-    page.appendChild(markEnter(component('bp', 'eventMark', eventMark()), 'opening'))
+    const status = panel('warmup-status-panel')
+    append(
+      status,
+      element('strong', 'warmup-status-title', `${data.matchType} · BP 已完成`),
+      element('span', 'warmup-status-copy', data.playbackStarted ? '正在播放' : '等待导播开始')
+    )
+    const timer = element('strong', 'countdown', '--:--')
+    timer.dataset.clockOutput = ''
+    append(
+      page,
+      coreComponent,
+      markEnter(component('bp', 'eventBrand', createEventBrand('BAN & PICK')), 'opening'),
+      markEnter(component('bp', 'matchTeams', createWarmupTeams(data)), 'opening'),
+      markEnter(component('bp', 'matchStatus', status), 'opening'),
+      markEnter(component('bp', 'bpTimer', compactCard('BP 播放', '展示进度', timer)), 'opening'),
+      markEnter(component('bp', 'eventMark', eventMark()), 'opening')
+    )
 
     const bpRenderer = window.MYTVHUDBPRenderer
     if (bpRenderer && typeof bpRenderer.mount === 'function') {
@@ -536,12 +634,11 @@
 
   function renderMapBreak(data) {
     const page = element('article', 'broadcast-page page-map-break')
-    const currentMapMedia = runtime.findMapMediaFrame(payload.mapMedia, data.sourceMapId, 'hero')
     const mapSequence = markEnter(
       component('map_break', 'mapSequence', createMapStrip(data)),
       'opening'
     )
-    const mapReport = component('map_break', 'mapReport', createMapReport(data, currentMapMedia))
+    const mapReport = component('map_break', 'mapReport', createMapReport(data))
     append(page, mapSequence, mapReport)
     const nextMapValue = data.nextMap ? data.nextMap.name : '系列赛已结束'
     const nextMapMedia = data.nextMap
@@ -573,7 +670,14 @@
   function createWinner(data) {
     const root = panel('panel-accent winner-panel')
     const winner = winnerTeam(data)
-    const copy = element('div')
+    if (winner?.avatar) {
+      const image = element('img', 'winner-avatar')
+      image.src = winner.avatar
+      image.alt = ''
+      image.addEventListener('error', () => image.remove(), { once: true })
+      root.appendChild(image)
+    }
+    const copy = element('div', 'winner-copy')
     append(
       copy,
       element('div', 'winner-label', winner ? '系列赛获胜方' : '系列赛结束'),
@@ -585,19 +689,25 @@
     )
     root.appendChild(copy)
     root.appendChild(element('div', 'winner-trophy', winner ? 'SERIES WINNER' : 'FINAL RESULT'))
-    root.appendChild(winner ? teamBlock(winner, true) : element('div'))
     return root
   }
 
   function createFinalSeriesScore(data) {
     const root = panel()
     const score = element('div', 'final-series-score score')
+    const teamA = element('div', 'final-series-team is-team-a')
+    const teamB = element('div', 'final-series-team is-team-b')
     append(
-      score,
-      element('span', '', data.finalSeriesScore.teamA),
-      element('span', 'divider', ':'),
-      element('span', '', data.finalSeriesScore.teamB)
+      teamA,
+      element('span', 'final-series-team-name', data.teamA.name),
+      element('strong', 'final-series-team-score', data.finalSeriesScore.teamA)
     )
+    append(
+      teamB,
+      element('strong', 'final-series-team-score', data.finalSeriesScore.teamB),
+      element('span', 'final-series-team-name', data.teamB.name)
+    )
+    append(score, teamA, element('span', 'divider', ':'), teamB)
     root.appendChild(score)
     return root
   }
@@ -612,9 +722,19 @@
     } else {
       for (const map of finishedMaps) {
         const row = element('div', 'map-result-row')
+        if (map.teamAScore !== null && map.teamBScore !== null) {
+          if (map.teamAScore > map.teamBScore) row.classList.add('is-won-by-team-a')
+          if (map.teamBScore > map.teamAScore) row.classList.add('is-won-by-team-b')
+        }
+        const copy = element('div', 'map-result-copy')
+        append(
+          copy,
+          element('strong', 'map-result-name', map.name),
+          element('span', 'map-result-detail', mapSelectionText(map, data.teamA, data.teamB))
+        )
         append(
           row,
-          element('div', 'map-result-name', map.name),
+          copy,
           element(
             'div',
             'map-result-score score',
@@ -657,20 +777,30 @@
   function createSeriesPlayerStats(data) {
     const root = panel()
     const stats = element('div', 'series-stats')
+    const heading = element('div', 'series-stats-heading')
+    append(
+      heading,
+      element('span', 'series-stats-kicker', 'SERIES STATISTICS'),
+      element('strong', 'series-stats-title', '系列赛选手累计数据')
+    )
+    const comparison = element('div', 'series-stats-comparison')
     const teamATable = createPlayerTable(
       data.teamA,
       data.teamAPlayers,
       data.highlightedSteamid,
-      true
+      true,
+      'a'
     )
     const teamBTable = createPlayerTable(
       data.teamB,
       data.teamBPlayers,
       data.highlightedSteamid,
-      true
+      true,
+      'b'
     )
     markInterleavedRows(teamATable, teamBTable, 'playerRows')
-    append(stats, teamATable, teamBTable)
+    append(comparison, teamATable, teamBTable)
+    append(stats, heading, comparison)
     root.appendChild(stats)
     return root
   }
@@ -718,16 +848,10 @@
     return page
   }
 
-  function createEventBrand() {
+  function createEventBrand(label) {
     const root = element('div', 'event-brand')
-    root.appendChild(element('div', 'event-brand-label', '赛事播出待机'))
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    svg.setAttribute('viewBox', '0 0 760 160')
-    svg.setAttribute('aria-hidden', 'true')
-    const hook = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    hook.setAttribute('data-event-brand-vector-hook', '')
-    svg.appendChild(hook)
-    root.appendChild(svg)
+    root.appendChild(element('div', 'event-brand-label', label || '赛事播出待机'))
+    root.appendChild(eventMark())
     return root
   }
 
@@ -1244,16 +1368,29 @@
         visual.dataset.mapMediaPurpose
       )
       if (!frame) continue
+      const currentReady = syncMapMediaVisualFiles(visual, frame)
       const currentImage = visual.querySelector('.map-media-image.is-current')
       const preloadImage = visual.querySelector('.map-media-image.is-preload')
-      if (currentImage && preloadImage) {
+      const currentMotion = runtime.mapMediaMotionAt(frame, nowMs, reducedMotionQuery.matches)
+      const preloadMotion = runtime.mapMediaMotionAt(frame, nowMs, true)
+      const preloadReady =
+        frame.preload &&
+        preloadImage &&
+        preloadImage.dataset.mapMediaFileUrl === frame.preload.url &&
+        preloadImage.dataset.mapMediaReady === 'true'
+      if (currentReady && preloadReady) {
         const opacities = runtime.mapMediaOpacitiesAt(frame, nowMs)
         currentImage.style.opacity = String(opacities.current)
         preloadImage.style.opacity = String(opacities.preload)
-      } else if (currentImage) {
-        currentImage.style.opacity = '1'
-      } else if (preloadImage) {
-        preloadImage.style.opacity = '1'
+      } else {
+        if (currentImage && currentReady) currentImage.style.opacity = '1'
+        if (preloadImage) preloadImage.style.opacity = '0'
+      }
+      if (currentImage) {
+        currentImage.style.transform = `translate3d(${currentMotion.translateX}%, ${currentMotion.translateY}%, 0) scale(${currentMotion.scale})`
+      }
+      if (preloadImage) {
+        preloadImage.style.transform = `translate3d(${preloadMotion.translateX}%, ${preloadMotion.translateY}%, 0) scale(${preloadMotion.scale})`
       }
     }
   }
@@ -1341,6 +1478,20 @@
       node.style.opacity = String(progress)
       node.style.transform = `translateY(${(1 - progress) * 16}px)`
       node.style.filter = `blur(${(1 - progress) * 2}px)`
+      for (const mark of node.querySelectorAll('.event-mark')) {
+        const wordmark = mark.querySelector('[data-event-mark-part="wordmark"]')
+        const icon = mark.querySelector('[data-event-mark-part="icon"]')
+        const wordmarkProgress = reducedMotion ? 1 : easeOutCubic(progress / 0.72)
+        const iconProgress = reducedMotion ? 1 : easeOutCubic((progress - 0.12) / 0.72)
+        if (wordmark) {
+          wordmark.style.opacity = String(wordmarkProgress)
+          wordmark.style.transform = `translateX(${(1 - wordmarkProgress) * 72}px)`
+        }
+        if (icon) {
+          icon.style.opacity = String(iconProgress)
+          icon.style.transform = `translateX(${(1 - iconProgress) * 128}px) scale(${0.9 + iconProgress * 0.1})`
+        }
+      }
     }
   }
 
