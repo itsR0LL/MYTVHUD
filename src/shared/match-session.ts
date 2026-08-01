@@ -46,6 +46,7 @@ export interface PlayerFinalStats {
   deaths: number
   mvps: number
   score: number
+  headshots: number
   adr: number | null
 }
 
@@ -200,6 +201,7 @@ export function aggregateSeriesPlayerStats(
         current.deaths += player.deaths
         current.mvps += player.mvps
         current.score += player.score
+        current.headshots += player.headshots
         current.mapsPlayed += 1
         continue
       }
@@ -270,6 +272,7 @@ function normalizePlayerFinalStats(value: unknown): PlayerFinalStats | null {
     deaths: nonNegativeInteger(value.deaths),
     mvps: nonNegativeInteger(value.mvps),
     score: nonNegativeInteger(value.score),
+    headshots: nonNegativeInteger(value.headshots),
     adr: Number.isFinite(adr) && adr >= 0 ? adr : null
   }
 }

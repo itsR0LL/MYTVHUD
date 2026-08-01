@@ -15,7 +15,7 @@ import {
   type GSIRuntimeContext,
   type ResolvedTeamSides
 } from './match-runtime'
-import { processActiveMatchFrame } from '../match-session/match-session'
+import { capturePlayerHeadshotFrame, processActiveMatchFrame } from '../match-session/match-session'
 import { isBPSequenceComplete, normalizeBPSequence } from '../../shared/bp'
 import { isBPMatchType } from '../../shared/match-session'
 import {
@@ -404,6 +404,7 @@ registerGSIResetHooks({
 GSI.on('data', (data) => {
   if (gsiInputSuspended) return
   const frame = data as unknown as GSIData
+  capturePlayerHeadshotFrame(frame)
   const utilityReplaySequence = queueUtilityReplayFrame(frame, Date.now())
   pendingGSIFrame = { data: frame, utilityReplaySequence }
   void broadcastLatestGSIData()

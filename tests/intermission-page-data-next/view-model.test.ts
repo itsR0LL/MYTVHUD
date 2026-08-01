@@ -59,6 +59,7 @@ function player(
     deaths: 8,
     mvps: 2,
     score,
+    headshots: Math.round(kills / 2),
     adr: 80
   }
 }
@@ -141,6 +142,7 @@ test('地图间数据只播放完整的真实逐回合比分', () => {
   assert.equal(data.scoreTimelineComplete, false)
   assert.deepEqual(data.scoreTimeline, [])
   assert.equal(data.highlightedSteamid, 'a-1')
+  assert.equal(data.teamAPlayers[0].headshotRate, 50)
 })
 
 test('同分时不自行指定突出选手', () => {

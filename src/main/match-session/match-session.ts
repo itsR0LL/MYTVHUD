@@ -37,6 +37,7 @@ import {
 import { normalizeBroadcastScoreOverride } from '../../shared/broadcast-flow'
 import { resetBPBroadcastState } from '../bp/bp'
 import { getFinalizedMapUtilityReplay, resetUtilityReplayCaptureState } from '../gsi/utility-replay'
+import { PlayerHeadshotTracker } from '../../shared/player-headshot-tracker'
 
 interface NewMatchSetupInput {
   teamAId: string | number
@@ -68,6 +69,7 @@ let initialized = false
 let initializePromise: Promise<void> | null = null
 let mutationQueue: Promise<void> = Promise.resolve()
 const latestPlayersByMap = new Map<string, PlayerFinalStats[]>()
+const playerHeadshots = new PlayerHeadshotTracker()
 let afterNextMatchCreated: (() => Promise<void>) | null = null
 
 function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
@@ -87,6 +89,15 @@ function entityId(value: unknown): string | null {
 
 function runtimeMapKey(matchId: string | number, mapId: BPMapId): string {
   return `${String(matchId)}:${mapId}`
+}
+
+function clearTransientPlayerStats(): void {
+  latestPlayersByMap.clear()
+  playerHeadshots.clear()
+}
+
+export function capturePlayerHeadshotFrame(data: CSGO): void {
+  playerHeadshots.capture(data)
 }
 
 function nonNegativeInteger(value: unknown): number | null {
@@ -140,6 +151,7 @@ function buildPlayerFrame(
       deaths,
       mvps,
       score,
+      headshots: Math.min(kills, playerHeadshots.total(data.map.name, steamid)),
       adr: Number.isFinite(adr) && adr >= 0 ? adr : null
     })
     seenSteamIds.add(steamid)
@@ -186,7 +198,7 @@ async function persistRuntime(): Promise<void> {
 function ensureRuntimeMatch(matchId: string | number): boolean {
   if (String(liveRuntime.matchId ?? '') === String(matchId)) return false
   liveRuntime = createDefaultMatchRuntime(matchId)
-  latestPlayersByMap.clear()
+  clearTransientPlayerStats()
   return true
 }
 
@@ -349,7 +361,7 @@ export async function saveCurrentMatchRecord(value: unknown): Promise<SaveMatchR
         ...createDefaultMatchRuntime(match.id),
         revision: liveRuntime.revision + 1
       }
-      latestPlayersByMap.clear()
+      clearTransientPlayerStats()
       await resetUtilityReplayCaptureState(match.id)
       await persistRuntime()
       runtimeInvalidated = true
@@ -358,7 +370,7 @@ export async function saveCurrentMatchRecord(value: unknown): Promise<SaveMatchR
         ...createDefaultMatchRuntime(match.id),
         revision: liveRuntime.revision + 1
       }
-      latestPlayersByMap.clear()
+      clearTransientPlayerStats()
       await resetUtilityReplayCaptureState(match.id)
       await persistRuntime()
     }
@@ -408,7 +420,7 @@ export async function createNextMatchRecord(value: unknown): Promise<BaseEntity>
       ...createDefaultMatchRuntime(match.id),
       revision: liveRuntime.revision + 1
     }
-    latestPlayersByMap.clear()
+    clearTransientPlayerStats()
     await resetUtilityReplayCaptureState(match.id)
     await persistRuntime()
     return match
@@ -513,7 +525,7 @@ export async function resetMatchRuntimeState(): Promise<MatchRuntimeV1> {
       ...createDefaultMatchRuntime(),
       revision: liveRuntime.revision + 1
     }
-    latestPlayersByMap.clear()
+    clearTransientPlayerStats()
     await resetUtilityReplayCaptureState()
     await persistRuntime()
     return normalizeMatchRuntime(liveRuntime)
@@ -529,7 +541,7 @@ export async function clearCurrentMatchRuntimeState(): Promise<MatchRuntimeV1> {
       ...createDefaultMatchRuntime(matchId),
       revision: liveRuntime.revision + 1
     }
-    latestPlayersByMap.clear()
+    clearTransientPlayerStats()
     await resetUtilityReplayCaptureState(matchId)
     await persistRuntime()
     if (matchId !== null) await discardPreparedProgramForMatch(matchId)
@@ -575,6 +587,7 @@ export async function processActiveMatchFrame(
     if (!currentMaps || !currentMap) return emptyResult
 
     let runtimeChanged = ensureRuntimeMatch(activeMatch.id)
+    capturePlayerHeadshotFrame(data)
     if (liveRuntime.seriesEnded) {
       if (runtimeChanged) {
         liveRuntime.revision += 1

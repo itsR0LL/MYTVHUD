@@ -39,6 +39,7 @@ export interface IntermissionPagePlayer {
   deaths: number
   mvps: number
   score: number
+  headshotRate: number
   adr: number | null
   mapsPlayed: number | null
 }
@@ -159,6 +160,7 @@ function playerView(
     deaths: player.deaths,
     mvps: player.mvps,
     score: player.score,
+    headshotRate: player.kills > 0 ? Math.round((player.headshots / player.kills) * 100) : 0,
     adr: player.adr,
     mapsPlayed
   }

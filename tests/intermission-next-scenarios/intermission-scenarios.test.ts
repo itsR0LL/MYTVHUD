@@ -73,6 +73,7 @@ function playerStats(mapIndex: number, team: 'teamA' | 'teamB'): PlayerFinalStat
     deaths: (isTeamA ? 10 : 12) + mapIndex,
     mvps: (isTeamA ? 3 : 2) + mapIndex,
     score: (isTeamA ? 40 : 32) + mapIndex,
+    headshots: (isTeamA ? 11 : 8) + mapIndex,
     adr: (isTeamA ? 80 : 70) + mapIndex
   }
 }
