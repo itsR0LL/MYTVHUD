@@ -48,6 +48,7 @@ export class IntermissionNextMapMediaProviderConfigurationError extends Error {
 interface MapMediaTarget {
   mapId: BPMapId
   purpose: MapMediaPurpose
+  animated: boolean
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -106,16 +107,16 @@ function mapMediaTargets(program: Readonly<BroadcastProgram> | null): MapMediaTa
 
   const targets: MapMediaTarget[] = []
   if (program.type === 'map_break') {
-    if (program.sourceMapId !== '') {
-      targets.push({ mapId: program.sourceMapId, purpose: 'hero' })
-    }
     if (program.snapshot.nextMapId !== '') {
-      targets.push({ mapId: program.snapshot.nextMapId, purpose: 'hero' })
+      targets.push({ mapId: program.snapshot.nextMapId, purpose: 'hero', animated: true })
+    }
+    for (const map of program.snapshot.match.maps) {
+      targets.push({ mapId: map.name, purpose: 'sequence', animated: true })
     }
   } else {
     for (const map of program.snapshot.match.maps) {
       if (map.status === 'finished') {
-        targets.push({ mapId: map.name, purpose: 'sequence' })
+        targets.push({ mapId: map.name, purpose: 'sequence', animated: false })
       }
     }
   }
@@ -153,9 +154,8 @@ class VerifiedIntermissionNextMapMediaProviderImplementation
     request: IntermissionNextMapMediaProviderRequest
   ): Promise<readonly IntermissionNextMapMediaOutputFrame[]> {
     return mapMediaTargets(request.onAirProgram).map((target) =>
-      target.purpose === 'sequence'
-        ? stableSequenceFrame(this.manifest, target.mapId, this.timeline.mediaRevision)
-        : createIntermissionNextMapMediaOutputFrame(
+      target.animated
+        ? createIntermissionNextMapMediaOutputFrame(
             mapMediaTimelineFrameAt(
               this.manifest,
               target.mapId,
@@ -165,6 +165,7 @@ class VerifiedIntermissionNextMapMediaProviderImplementation
             ),
             this.timeline
           )
+        : stableSequenceFrame(this.manifest, target.mapId, this.timeline.mediaRevision)
     )
   }
 }

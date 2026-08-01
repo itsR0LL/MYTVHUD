@@ -279,6 +279,30 @@
     return { current: 1 - crossfadeProgress, preload: crossfadeProgress }
   }
 
+  function mapMediaMotionAt(frame, nowMs, stationary) {
+    const resting = { scale: 1.025, translateX: 0, translateY: 0 }
+    if (
+      stationary ||
+      !isRecord(frame) ||
+      !isFiniteNumber(frame.frameStartedAtMs) ||
+      !isFiniteNumber(frame.frameEndAtMs) ||
+      frame.frameEndAtMs <= frame.frameStartedAtMs ||
+      !isFiniteNumber(nowMs)
+    ) {
+      return resting
+    }
+    const progress = clamp(
+      (nowMs - frame.frameStartedAtMs) / (frame.frameEndAtMs - frame.frameStartedAtMs),
+      0,
+      1
+    )
+    return {
+      scale: resting.scale + progress * 0.045,
+      translateX: progress * -1.4,
+      translateY: progress * -0.6
+    }
+  }
+
   function dueMapMediaFrameEnds(frames, requestedFrameEnds, nowMs) {
     if (!Array.isArray(frames) || !(requestedFrameEnds instanceof Set) || !isFiniteNumber(nowMs)) {
       return []
@@ -423,13 +447,11 @@
     return JSON.stringify(value)
   }
 
-  function mapMediaPair(frame) {
+  function mapMediaSlot(frame) {
     if (!isRecord(frame)) return null
     return {
       mapId: frame.mapId,
-      purpose: frame.purpose,
-      current: frame.current,
-      preload: frame.preload
+      purpose: frame.purpose
     }
   }
 
@@ -439,15 +461,24 @@
     }
     const data = value.pageData
     if (data.page === 'map_break') {
-      const mapIds = [data.sourceMapId]
+      const pairs = []
       if (isRecord(data.nextMap) && typeof data.nextMap.mapId === 'string') {
-        mapIds.push(data.nextMap.mapId)
+        pairs.push(mapMediaSlot(findMapMediaFrame(value.mapMedia, data.nextMap.mapId, 'hero')))
       }
-      return mapIds.map((mapId) => mapMediaPair(findMapMediaFrame(value.mapMedia, mapId, 'hero')))
+      if (Array.isArray(data.maps)) {
+        for (const map of data.maps) {
+          pairs.push(
+            mapMediaSlot(
+              isRecord(map) ? findMapMediaFrame(value.mapMedia, map.mapId, 'sequence') : null
+            )
+          )
+        }
+      }
+      return pairs
     }
     if (data.page === 'series_end' && Array.isArray(data.maps)) {
       return data.maps.map((map) =>
-        mapMediaPair(
+        mapMediaSlot(
           isRecord(map) ? findMapMediaFrame(value.mapMedia, map.mapId, 'sequence') : null
         )
       )
@@ -495,7 +526,6 @@
     map_break: Object.freeze({
       opening: [0, 0.22],
       teams: [0.16, 0.42],
-      scoreTimeline: [0.34, 0.74],
       playerRows: [0.58, 1]
     }),
     series_end: Object.freeze({
@@ -583,6 +613,7 @@
     findMapMediaFrame,
     mapMediaOpacities,
     mapMediaOpacitiesAt,
+    mapMediaMotionAt,
     dueMapMediaFrameEnds,
     nextMapMediaSource,
     transitionStateForPayload,

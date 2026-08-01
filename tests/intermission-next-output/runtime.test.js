@@ -267,6 +267,19 @@ test('地图媒体交叉淡化由绝对时间持续计算并在帧截止时稳�
   })
 })
 
+test('地图媒体平滑移动只使用绝对时间且预载图保持稳定起点', () => {
+  const frame = mapFrame()
+  const moving = runtime.mapMediaMotionAt(frame, 6000, false)
+  assert.ok(Math.abs(moving.scale - 1.0475) < 0.000001)
+  assert.equal(moving.translateX, -0.7)
+  assert.equal(moving.translateY, -0.3)
+  assert.deepEqual(runtime.mapMediaMotionAt(frame, 6000, true), {
+    scale: 1.025,
+    translateX: 0,
+    translateY: 0
+  })
+})
+
 test('整页对同一个地图媒体绝对截止时间只请求一次', () => {
   const requested = new Set()
   const frames = [
@@ -301,8 +314,12 @@ test('背景 B 完成淡入后保留在原槽位且不重新加载或重置进�
   ])
 })
 
-test('页面渲染签名忽略时钟背景转场和媒体时间但响应相关媒体文件变化', () => {
-  const original = outputPayload()
+test('页面渲染签名忽略时钟背景转场和媒体文件变化以保持图片槽位', () => {
+  const nextMapHero = mapFrame({ mapId: 'de_anubis' })
+  const original = outputPayload({
+    pageData: { page: 'map_break', sourceMapId: 'de_ancient', nextMap: { mapId: 'de_anubis' } },
+    mapMedia: [nextMapHero]
+  })
   const runtimeOnly = outputPayload({
     payloadRevision: 5,
     serverNowMs: 9000,
@@ -319,8 +336,10 @@ test('页面渲染签名忽略时钟背景转场和媒体时间但响应相关�
       deadlineAtMs: null,
       pausedRemainingMs: 3200
     },
+    pageData: original.pageData,
     mapMedia: [
       mapFrame({
+        mapId: 'de_anubis',
         crossfadeProgress: 1,
         frameStartedAtMs: 8000,
         frameEndAtMs: 10000,
@@ -331,16 +350,49 @@ test('页面渲染签名忽略时钟背景转场和媒体时间但响应相关�
   assert.equal(runtime.pageRenderSignature(original), runtime.pageRenderSignature(runtimeOnly))
 
   const changedMedia = outputPayload({
+    pageData: original.pageData,
     mapMedia: [
       mapFrame({
+        mapId: 'de_anubis',
         current: {
-          ...mapFrame().current,
-          url: '/intermission-next/assets/maps/de_ancient/display/de_ancient_3_png.png'
+          ...nextMapHero.current,
+          url: '/intermission-next/assets/maps/de_anubis/display/de_anubis_3_png.png'
         }
       })
     ]
   })
-  assert.notEqual(runtime.pageRenderSignature(original), runtime.pageRenderSignature(changedMedia))
+  assert.equal(runtime.pageRenderSignature(original), runtime.pageRenderSignature(changedMedia))
+})
+
+test('地图间页面渲染签名只响应sequence媒体槽位增减而不响应文件轮换', () => {
+  const sequence = mapFrame({ mapId: 'de_anubis', purpose: 'sequence' })
+  const original = outputPayload({
+    pageData: {
+      page: 'map_break',
+      sourceMapId: 'de_ancient',
+      nextMap: null,
+      maps: [{ mapId: 'de_anubis' }]
+    },
+    mapMedia: [mapFrame(), sequence]
+  })
+  const changed = outputPayload({
+    pageData: original.pageData,
+    mapMedia: [
+      mapFrame(),
+      {
+        ...sequence,
+        current: {
+          ...sequence.current,
+          url: '/intermission-next/assets/maps/de_anubis/component/de_anubis_2.jpg'
+        }
+      }
+    ]
+  })
+  assert.equal(runtime.pageRenderSignature(original), runtime.pageRenderSignature(changed))
+  assert.notEqual(
+    runtime.pageRenderSignature(original),
+    runtime.pageRenderSignature(outputPayload({ pageData: original.pageData, mapMedia: [mapFrame()] }))
+  )
 })
 
 test('API 与 Socket 竞态只允许更高版本覆盖且相同版本仅幂等接受相同内容', () => {

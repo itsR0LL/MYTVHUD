@@ -77,12 +77,17 @@ function program(
   }
 }
 
-test('map_break输出当前地图和明确下一张地图的hero帧', async () => {
+test('map_break只为下一张地图输出hero帧并为全系列赛输出动态sequence帧', async () => {
   const value = await provider()
   const frames = await value.getMapMedia({
     onAirProgram: program('map_break', {
       sourceMapId: 'de_mirage',
-      nextMapId: 'de_nuke'
+      nextMapId: 'de_nuke',
+      maps: [
+        matchMap('de_mirage', 'finished'),
+        matchMap('de_nuke', 'pending'),
+        matchMap('de_dust2', 'pending')
+      ]
     }),
     nowMs: 9_500
   })
@@ -90,20 +95,24 @@ test('map_break输出当前地图和明确下一张地图的hero帧', async () =
   assert.deepEqual(
     frames.map((frame) => [frame.mapId, frame.purpose]),
     [
-      ['de_mirage', 'hero'],
-      ['de_nuke', 'hero']
+      ['de_nuke', 'hero'],
+      ['de_mirage', 'sequence'],
+      ['de_nuke', 'sequence'],
+      ['de_dust2', 'sequence']
     ]
   )
   assert.deepEqual(
     frames.map((frame) => [frame.current.width, frame.current.height]),
     [
       [1920, 1080],
-      [1920, 1080]
+      [640, 360],
+      [640, 360],
+      [640, 360]
     ]
   )
   assert.deepEqual(
     frames.map((frame) => frame.crossfadeProgress),
-    [0.25, 0.25]
+    [0.25, 0.25, 0.25, 0.25]
   )
   assert.deepEqual(
     frames.map((frame) => [
@@ -114,12 +123,14 @@ test('map_break输出当前地图和明确下一张地图的hero帧', async () =
     ]),
     [
       [1_000, 11_000, 9_000, 2_000],
+      [1_000, 11_000, 9_000, 2_000],
+      [1_000, 11_000, 9_000, 2_000],
       [1_000, 11_000, 9_000, 2_000]
     ]
   )
 })
 
-test('map_break没有nextMapId时只输出sourceMapId且按mapId与purpose去重', async () => {
+test('map_break没有nextMapId时不输出hero帧，有nextMapId时仅输出该地图hero帧', async () => {
   const value = await provider()
   const withoutNextMap = await value.getMapMedia({
     onAirProgram: program('map_break', { sourceMapId: 'de_dust2' }),
@@ -135,9 +146,12 @@ test('map_break没有nextMapId时只输出sourceMapId且按mapId与purpose去重
 
   assert.deepEqual(
     withoutNextMap.map((frame) => [frame.mapId, frame.purpose]),
+    []
+  )
+  assert.deepEqual(
+    duplicateTarget.map((frame) => [frame.mapId, frame.purpose]),
     [['de_dust2', 'hero']]
   )
-  assert.deepEqual(duplicateTarget, withoutNextMap)
 })
 
 test('series_end只按比赛顺序输出finished地图的sequence帧', async () => {
