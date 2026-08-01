@@ -120,7 +120,8 @@
             <div>
               <h3 id="timeline-title" class="text-sm font-semibold">页面时间轴</h3>
               <p class="text-xs text-muted-foreground">
-                点击轨道可移动预览时间。转场组件固定播放 1.4 秒。
+                点击轨道可移动预览时间。页内定时转场固定播放
+                {{ transitionDurationLabel }}。
               </p>
             </div>
             <span>{{ formatTime(pageDurationMs) }}</span>
@@ -152,8 +153,8 @@
               </div>
             </div>
           </div>
-          <p v-if="timelineHasErrors" class="timeline-error" role="alert">
-            存在超出页面总时长或互相重叠的时间片段，请修正后保存。
+          <p v-if="timelineError" class="timeline-error" role="alert">
+            {{ timelineError }}
           </p>
         </section>
       </div>
@@ -177,22 +178,27 @@
               type="button"
               :disabled="
                 definition.required ||
-                (definition.kind !== 'transition' && isComponentAdded(definition.id))
+                (definition.kind === 'transition'
+                  ? !canAddTransitionAtCursor
+                  : isComponentAdded(definition.id))
               "
               @click="addDefinition(definition.id)"
             >
               <span>{{ definition.label }}</span>
               <small v-if="definition.required">固定内容</small>
-              <small v-else-if="definition.kind === 'transition'"
-                >插入到 {{ formatTime(cursorMs) }}</small
-              >
+              <small v-else-if="definition.kind === 'transition'">{{
+                transitionCatalogHint
+              }}</small>
               <small v-else-if="isComponentAdded(definition.id)">已添加</small>
               <Plus v-else aria-hidden="true" />
             </button>
           </div>
 
-          <div v-if="addedDefinitions.length === 0" class="component-empty">
-            当前页面没有普通组件。
+          <div
+            v-if="addedDefinitions.length === 0 && currentPage.transitions.length === 0"
+            class="component-empty"
+          >
+            当前页面没有组件。
           </div>
           <div v-else class="component-list">
             <button
@@ -205,6 +211,19 @@
               <span>{{ definition.label }}</span>
               <small v-if="definition.required">固定显示</small>
               <small v-else>{{ activeAtCursor(definition.id) ? '当前显示' : '当前未显示' }}</small>
+            </button>
+            <button
+              v-for="transition in currentPage.transitions"
+              :key="transition.id"
+              type="button"
+              :data-selected="selectedTransitionId === transition.id"
+              @click="selectTransition(transition.id)"
+            >
+              <span>页内定时转场</span>
+              <small
+                >{{ formatTime(transition.startOffsetMs) }} · 固定
+                {{ transitionDurationLabel }}</small
+              >
             </button>
           </div>
         </section>
@@ -233,7 +252,7 @@
               <Input
                 type="number"
                 :model-value="roundedSelectedLayout[field.key]"
-                @change="updateFrameField(field.key, $event)"
+                @update:model-value="updateFrameField(field.key, $event)"
               />
             </label>
           </div>
@@ -258,9 +277,11 @@
               <Input
                 type="number"
                 min="0"
-                step="0.001"
+                :max="utilityStartMaximumMinutes"
+                step="1"
+                inputmode="decimal"
                 :model-value="millisecondsToMinutes(selectedWindows[0]?.startOffsetMs ?? 0)"
-                @change="updateUtilityStart"
+                @update:model-value="updateUtilityStart"
               />
             </label>
             <span>固定播放 2 分钟</span>
@@ -275,6 +296,12 @@
               <Plus aria-hidden="true" />添加时间片段
             </Button>
           </div>
+          <p
+            v-if="!selectedDefinition.required && selectedDefinition.kind !== 'utility_replay'"
+            class="time-input-help"
+          >
+            可直接输入分钟；输入框箭头每次调整 1 分钟。
+          </p>
           <div
             v-if="!selectedDefinition.required && selectedDefinition.kind !== 'utility_replay'"
             class="window-list"
@@ -285,9 +312,11 @@
                 <Input
                   type="number"
                   min="0"
-                  step="0.001"
+                  :max="pageDurationMinutes"
+                  step="1"
+                  inputmode="decimal"
                   :model-value="millisecondsToMinutes(window.startOffsetMs)"
-                  @change="updateWindowStart(window.id, $event)"
+                  @update:model-value="updateWindowStart(window.id, $event)"
                 />
               </label>
               <label>
@@ -295,10 +324,12 @@
                 <Input
                   type="number"
                   min="0"
-                  step="0.001"
+                  :max="pageDurationMinutes"
+                  step="1"
+                  inputmode="decimal"
                   :disabled="window.endOffsetMs === null"
                   :model-value="millisecondsToMinutes(window.endOffsetMs ?? pageDurationMs)"
-                  @change="updateWindowEnd(window.id, $event)"
+                  @update:model-value="updateWindowEnd(window.id, $event)"
                 />
               </label>
               <label class="until-end-control">
@@ -329,32 +360,38 @@
           </Button>
         </section>
 
-        <section v-if="currentPage.transitions.length > 0" class="inspector-section">
-          <h3 class="text-sm font-semibold">转场组件</h3>
-          <article
-            v-for="transition in currentPage.transitions"
-            :key="transition.id"
-            class="transition-row"
-          >
+        <section v-if="selectedTransition" class="inspector-section">
+          <div class="section-heading">
+            <h3 class="text-sm font-semibold">页内定时转场</h3>
+            <Button
+              size="icon"
+              variant="destructive"
+              title="删除页内定时转场"
+              @click="removeTransition(selectedTransition.id)"
+            >
+              <Trash2 aria-hidden="true" />
+            </Button>
+          </div>
+          <p class="fixed-component-note">
+            此组件按页面时间轴播放，与切换页面时自动执行的转场互不替代。播出时长固定，不可调整。
+          </p>
+          <article class="transition-row">
             <label>
               <span>开始（分钟）</span>
               <Input
                 type="number"
-                min="0"
-                step="0.001"
-                :model-value="millisecondsToMinutes(transition.startOffsetMs)"
-                @change="updateTransitionStart(transition.id, $event)"
+                min="0.001"
+                step="1"
+                inputmode="decimal"
+                :max="transitionStartMaximumMinutes"
+                :model-value="millisecondsToMinutes(selectedTransition.startOffsetMs)"
+                @update:model-value="updateTransitionStart(selectedTransition.id, $event)"
               />
             </label>
-            <span>1秒</span>
-            <Button
-              size="icon"
-              variant="ghost"
-              title="删除转场"
-              @click="removeTransition(transition.id)"
-            >
-              <Trash2 aria-hidden="true" />
-            </Button>
+            <label>
+              <span>播出时长</span>
+              <Input :model-value="transitionDurationLabel" disabled />
+            </label>
           </article>
         </section>
 
@@ -379,6 +416,7 @@ import {
   INTERMISSION_NEXT_CANVAS_WIDTH,
   INTERMISSION_NEXT_PAGE_IDS,
   INTERMISSION_NEXT_RESIZE_HANDLES,
+  INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS,
   addIntermissionNextComponent,
   createDefaultIntermissionNextLayoutState,
   getIntermissionNextComponentDefinition,
@@ -397,7 +435,8 @@ import {
   type IntermissionNextComponentWindow,
   type IntermissionNextLayoutState,
   type IntermissionNextPageId,
-  type IntermissionNextResizeHandle
+  type IntermissionNextResizeHandle,
+  type IntermissionNextTransitionComponent
 } from '../../../../shared/intermission-next'
 import type { IntermissionNextOutputPayloadV1 } from '../../../../shared/intermission-output-next/output'
 import { UTILITY_REPLAY_TOTAL_DURATION_MS } from '../../../../shared/utility-replay'
@@ -419,6 +458,7 @@ type TimelineRow = {
   label: string
   kind: 'component' | 'transition'
   componentId?: string
+  transitionId?: string
   clips: TimelineClip[]
 }
 type Interaction = {
@@ -451,6 +491,7 @@ const appliedState = ref(
 const draftState = ref(cloneIntermissionNextLayoutState(appliedState.value))
 const selectedPage = ref<IntermissionNextPageId>('map_break')
 const selectedComponentId = ref<string | null>(null)
+const selectedTransitionId = ref<string | null>(null)
 const cursorByPage = ref<Record<IntermissionNextPageId, number>>({
   warmup: 0,
   bp: 0,
@@ -472,6 +513,10 @@ const frameFields: ReadonlyArray<{ key: FrameField; label: string }> = [
 const currentPage = computed(() => draftState.value.pages[selectedPage.value])
 const appliedPage = computed(() => appliedState.value.pages[selectedPage.value])
 const pageDurationMs = computed(() => Math.max(1_000, props.pageDurations[selectedPage.value] || 0))
+const pageDurationMinutes = computed(() => millisecondsToMinutes(pageDurationMs.value))
+const utilityStartMaximumMinutes = computed(() =>
+  millisecondsToMinutes(Math.max(0, pageDurationMs.value - UTILITY_REPLAY_TOTAL_DURATION_MS))
+)
 const cursorMs = computed(() =>
   Math.min(pageDurationMs.value, cursorByPage.value[selectedPage.value])
 )
@@ -502,6 +547,40 @@ const selectedWindows = computed<IntermissionNextComponentWindow[]>(() =>
     ? (currentPage.value.componentWindows[selectedComponentId.value] ?? [])
     : []
 )
+const selectedTransition = computed<IntermissionNextTransitionComponent | null>(() =>
+  selectedTransitionId.value
+    ? (currentPage.value.transitions.find(
+        (transition) => transition.id === selectedTransitionId.value
+      ) ?? null)
+    : null
+)
+const transitionDurationLabel = `${(INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS / 1_000).toFixed(1)} 秒`
+const transitionStartMaximumMinutes = computed(() => {
+  const maximumStartOffsetMs = Math.max(
+    0,
+    pageDurationMs.value - INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS
+  )
+  return Number((Math.floor(maximumStartOffsetMs / 60) / 1_000).toFixed(3))
+})
+const canAddTransitionAtCursor = computed(() => {
+  if (
+    cursorMs.value === 0 ||
+    cursorMs.value + INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS > pageDurationMs.value
+  )
+    return false
+  const endOffsetMs = cursorMs.value + INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS
+  return !currentPage.value.transitions.some((transition) => {
+    const transitionEndOffsetMs = transition.startOffsetMs + transition.durationMs
+    return cursorMs.value < transitionEndOffsetMs && endOffsetMs > transition.startOffsetMs
+  })
+})
+const transitionCatalogHint = computed(() => {
+  if (cursorMs.value === 0) return '先移动时间轴光标'
+  if (cursorMs.value + INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS > pageDurationMs.value)
+    return '剩余时长不足'
+  if (!canAddTransitionAtCursor.value) return '此时刻与现有转场重叠'
+  return `插入到 ${formatTime(cursorMs.value)}`
+})
 const roundedSelectedLayout = computed(() => ({
   x: Math.round(selectedLayout.value?.x ?? 0),
   y: Math.round(selectedLayout.value?.y ?? 0),
@@ -514,8 +593,9 @@ const isCurrentPageDirty = computed(
 const timelineRows = computed<TimelineRow[]>(() => {
   const rows: TimelineRow[] = currentPage.value.transitions.map((transition) => ({
     key: transition.id,
-    label: '转场组件',
+    label: '页内定时转场',
     kind: 'transition',
+    transitionId: transition.id,
     clips: [
       {
         id: transition.id,
@@ -539,8 +619,11 @@ const timelineRows = computed<TimelineRow[]>(() => {
   }
   return rows
 })
-const timelineHasErrors = computed(() => {
+const timelineError = computed(() => {
   const transitions = currentPage.value.transitions
+  if (transitions.some((transition) => transition.startOffsetMs === 0)) {
+    return '页内定时转场不能设置在页面开始时，切换页面已自带一次转场。'
+  }
   const invalidTransition = transitions.some((transition, index) => {
     const end = transition.startOffsetMs + transition.durationMs
     return (
@@ -548,14 +631,17 @@ const timelineHasErrors = computed(() => {
       transitions.slice(index + 1).some((other) => other.startOffsetMs < end)
     )
   })
+  if (invalidTransition) return '页内定时转场超出页面总时长或互相重叠，请调整开始时刻。'
   const invalidWindow = Object.values(currentPage.value.componentWindows).some((windows) =>
     (windows ?? []).some((window) => {
       const end = window.endOffsetMs ?? pageDurationMs.value
       return window.startOffsetMs >= end || end > pageDurationMs.value
     })
   )
-  return invalidTransition || invalidWindow
+  if (invalidWindow) return '组件显示时间超出页面总时长或起止时刻无效，请修正后保存。'
+  return ''
 })
+const timelineHasErrors = computed(() => timelineError.value !== '')
 const editorPreviewPayload = computed(() =>
   createEditorPreviewPayload(
     props.previewPayload,
@@ -580,9 +666,10 @@ function formatTime(value: number): string {
 function millisecondsToMinutes(value: number): number {
   return Number((value / 60_000).toFixed(3))
 }
-function minutesFromEvent(event: Event): number {
-  const value = Number((event.target as HTMLInputElement).value)
-  return Number.isFinite(value) && value >= 0 ? Math.round(value * 60_000) : 0
+function millisecondsFromMinutes(value: string | number): number | null {
+  if (typeof value === 'string' && value.trim() === '') return null
+  const minutes = Number(value)
+  return Number.isFinite(minutes) && minutes >= 0 ? Math.round(minutes * 60_000) : null
 }
 function replaceDraft(value: unknown): void {
   draftState.value = cloneIntermissionNextLayoutState(value)
@@ -594,10 +681,16 @@ function selectPage(pageId: IntermissionNextPageId): void {
   if (isCurrentPageDirty.value && selectedPage.value !== pageId) return
   selectedPage.value = pageId
   selectedComponentId.value = null
+  selectedTransitionId.value = null
   catalogOpen.value = false
 }
 function selectComponent(componentId: string): void {
   selectedComponentId.value = componentId
+  selectedTransitionId.value = null
+}
+function selectTransition(transitionId: string): void {
+  selectedComponentId.value = null
+  selectedTransitionId.value = transitionId
 }
 function selectionStyle(componentId: string) {
   return intermissionNextSelectionStyle(currentPage.value.components[componentId]!)
@@ -633,15 +726,32 @@ function clipStyle(start: number, end: number): Record<string, string> {
 }
 function selectTimelineRow(row: TimelineRow): void {
   if (row.componentId) selectComponent(row.componentId)
+  if (row.transitionId) selectTransition(row.transitionId)
   if (row.clips[0]) setCursor(row.clips[0].startOffsetMs)
 }
 
 function addDefinition(componentId: string): void {
-  replaceDraft(
-    addIntermissionNextComponent(draftState.value, selectedPage.value, componentId, cursorMs.value)
-  )
   const definition = getIntermissionNextComponentDefinition(selectedPage.value, componentId)
-  if (definition?.kind !== 'transition') selectedComponentId.value = componentId
+  if (!definition) return
+  if (definition.kind === 'transition' && !canAddTransitionAtCursor.value) return
+  const previousTransitionIds = new Set(
+    currentPage.value.transitions.map((transition) => transition.id)
+  )
+  const nextState = addIntermissionNextComponent(
+    draftState.value,
+    selectedPage.value,
+    componentId,
+    cursorMs.value
+  )
+  replaceDraft(nextState)
+  if (definition.kind === 'transition') {
+    const addedTransition = nextState.pages[selectedPage.value].transitions.find(
+      (transition) => !previousTransitionIds.has(transition.id)
+    )
+    if (addedTransition) selectTransition(addedTransition.id)
+  } else {
+    selectComponent(componentId)
+  }
   catalogOpen.value = false
 }
 function removeSelectedComponent(): void {
@@ -654,22 +764,26 @@ function removeSelectedComponent(): void {
 function clearCurrentPage(): void {
   replaceDraft(resetIntermissionNextPage(draftState.value, selectedPage.value))
   selectedComponentId.value = null
+  selectedTransitionId.value = null
 }
 function discardCurrentPage(): void {
+  const applied = cloneIntermissionNextLayoutState(appliedState.value)
   draftState.value = {
     ...draftState.value,
-    pages: { ...draftState.value.pages, [selectedPage.value]: structuredClone(appliedPage.value) }
+    pages: { ...draftState.value.pages, [selectedPage.value]: applied.pages[selectedPage.value] }
   }
   selectedComponentId.value = null
+  selectedTransitionId.value = null
 }
 function saveCurrentPage(): void {
+  const current = cloneIntermissionNextLayoutState(draftState.value)
   emit(
     'save',
     cloneIntermissionNextLayoutState({
       ...appliedState.value,
       pages: {
         ...appliedState.value.pages,
-        [selectedPage.value]: structuredClone(currentPage.value)
+        [selectedPage.value]: current.pages[selectedPage.value]
       }
     })
   )
@@ -695,9 +809,9 @@ function setAspectRatioLocked(value: boolean): void {
       )
     )
 }
-function updateFrameField(field: FrameField, event: Event): void {
+function updateFrameField(field: FrameField, inputValue: string | number): void {
   if (!selectedComponentId.value) return
-  const value = Number((event.target as HTMLInputElement).value)
+  const value = Number(inputValue)
   if (!Number.isFinite(value)) return
   replaceDraft(
     setIntermissionNextComponentFrame(
@@ -738,9 +852,10 @@ function addSelectedWindow(): void {
     }
   ])
 }
-function updateUtilityStart(event: Event): void {
+function updateUtilityStart(inputValue: string | number): void {
   if (!selectedComponentId.value || selectedDefinition.value?.kind !== 'utility_replay') return
-  const startOffsetMs = minutesFromEvent(event)
+  const startOffsetMs = millisecondsFromMinutes(inputValue)
+  if (startOffsetMs === null) return
   const existing = selectedWindows.value[0]
   setSelectedWindows([
     {
@@ -750,16 +865,18 @@ function updateUtilityStart(event: Event): void {
     }
   ])
 }
-function updateWindowStart(id: string, event: Event): void {
-  const value = minutesFromEvent(event)
+function updateWindowStart(id: string, inputValue: string | number): void {
+  const value = millisecondsFromMinutes(inputValue)
+  if (value === null) return
   setSelectedWindows(
     selectedWindows.value.map((window) =>
       window.id === id ? { ...window, startOffsetMs: value } : window
     )
   )
 }
-function updateWindowEnd(id: string, event: Event): void {
-  const value = minutesFromEvent(event)
+function updateWindowEnd(id: string, inputValue: string | number): void {
+  const value = millisecondsFromMinutes(inputValue)
+  if (value === null) return
   setSelectedWindows(
     selectedWindows.value.map((window) =>
       window.id === id ? { ...window, endOffsetMs: value } : window
@@ -776,18 +893,17 @@ function setWindowUntilEnd(id: string, untilEnd: boolean): void {
 function removeWindow(id: string): void {
   setSelectedWindows(selectedWindows.value.filter((window) => window.id !== id))
 }
-function updateTransitionStart(id: string, event: Event): void {
+function updateTransitionStart(id: string, inputValue: string | number): void {
+  const startOffsetMs = millisecondsFromMinutes(inputValue)
+  if (startOffsetMs === null || startOffsetMs === 0) return
   replaceDraft(
-    setIntermissionNextTransitionStart(
-      draftState.value,
-      selectedPage.value,
-      id,
-      minutesFromEvent(event)
-    )
+    setIntermissionNextTransitionStart(draftState.value, selectedPage.value, id, startOffsetMs)
   )
+  setCursor(startOffsetMs)
 }
 function removeTransition(id: string): void {
   replaceDraft(removeIntermissionNextTransition(draftState.value, selectedPage.value, id))
+  if (selectedTransitionId.value === id) selectedTransitionId.value = null
 }
 
 function canvasPoint(event: PointerEvent): IntermissionNextCanvasPoint | null {
@@ -1207,6 +1323,11 @@ onBeforeUnmount(stopInteraction)
   color: #f87171;
   font-size: 0.75rem;
 }
+.time-input-help {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
 .fixed-component-note {
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, #38bdf8 35%, var(--border));
@@ -1324,7 +1445,7 @@ onBeforeUnmount(stopInteraction)
 }
 .transition-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
   gap: 0.5rem;
 }

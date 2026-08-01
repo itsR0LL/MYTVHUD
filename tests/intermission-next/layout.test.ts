@@ -2,10 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   INTERMISSION_NEXT_RESIZE_HANDLES,
+  INTERMISSION_NEXT_PAGE_IDS,
   INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS,
   addIntermissionNextComponent,
   createDefaultIntermissionNextLayoutState,
   getIntermissionNextComponentDefinition,
+  getIntermissionNextComponentDefinitions,
   intermissionNextBoundsAreInsideCanvas,
   normalizeIntermissionNextLayoutState,
   removeIntermissionNextComponent,
@@ -16,7 +18,11 @@ import {
   setIntermissionNextComponentFrame,
   setIntermissionNextComponentPosition,
   setIntermissionNextComponentWindows,
-  snapIntermissionNextComponentPosition
+  setIntermissionNextTransitionStart,
+  snapIntermissionNextComponentPosition,
+  type IntermissionNextComponentLayout,
+  type IntermissionNextLayoutState,
+  type IntermissionNextPageId
 } from '../../src/shared/intermission-next'
 import { UTILITY_REPLAY_TOTAL_DURATION_MS } from '../../src/shared/utility-replay'
 
@@ -27,6 +33,17 @@ function mapBreakWithReport() {
     'mapReport',
     0
   )
+}
+
+function componentLayoutAt(
+  state: IntermissionNextLayoutState,
+  pageId: IntermissionNextPageId,
+  componentId: string
+): IntermissionNextComponentLayout | undefined {
+  const page = state.pages[pageId] as unknown as {
+    components: Record<string, IntermissionNextComponentLayout | undefined>
+  }
+  return page.components[componentId]
 }
 
 test('默认布局只固定保留 BP 核心展示，其他页面保持为空', () => {
@@ -61,6 +78,21 @@ test('BP 核心展示不能移动、缩放、改时间或删除', () => {
   assert.deepEqual(state.pages.bp, initial.pages.bp)
 })
 
+test('BP 页面除核心展示外可独立添加和删除其他组件', () => {
+  const initial = createDefaultIntermissionNextLayoutState()
+  const withBrand = addIntermissionNextComponent(initial, 'bp', 'eventBrand', 0)
+  const withTeams = addIntermissionNextComponent(withBrand, 'bp', 'matchTeams', 0)
+
+  assert.ok(withTeams.pages.bp.components.bpCore)
+  assert.ok(withTeams.pages.bp.components.eventBrand)
+  assert.ok(withTeams.pages.bp.components.matchTeams)
+  assert.deepEqual(withTeams.pages.warmup.components, {})
+
+  const removed = removeIntermissionNextComponent(withTeams, 'bp', 'eventBrand')
+  assert.equal(removed.pages.bp.components.eventBrand, undefined)
+  assert.ok(removed.pages.bp.components.bpCore)
+})
+
 test('普通组件添加后建立默认布局和独立显示时间', () => {
   const state = mapBreakWithReport()
   const definition = getIntermissionNextComponentDefinition('map_break', 'mapReport')
@@ -70,6 +102,111 @@ test('普通组件添加后建立默认布局和独立显示时间', () => {
     { id: 'mapReport-window-1', startOffsetMs: 0, endOffsetMs: null }
   ])
   assert.deepEqual(state.pages.series_end.components, {})
+})
+
+test('地图序列默认使用横向数据板尺寸并允许扩大高度', () => {
+  const definition = getIntermissionNextComponentDefinition('map_break', 'mapSequence')
+  assert.ok(definition)
+  assert.deepEqual(definition.defaultLayout, {
+    x: 180,
+    y: 40,
+    width: 1560,
+    height: 160,
+    aspectRatioLocked: false
+  })
+  assert.equal(definition.sizeConstraints.minimumHeight, 110)
+  assert.equal(definition.sizeConstraints.maximumHeight, 300)
+})
+
+test('系列赛密集数据组件保留可读的最小画布尺寸', () => {
+  const finalScore = getIntermissionNextComponentDefinition('series_end', 'finalScore')
+  const playerStats = getIntermissionNextComponentDefinition('series_end', 'seriesPlayerStats')
+
+  assert.ok(finalScore)
+  assert.ok(playerStats)
+  assert.equal(finalScore.sizeConstraints.minimumWidth, 520)
+  assert.deepEqual(playerStats.defaultLayout, {
+    x: 120,
+    y: 650,
+    width: 1680,
+    height: 320,
+    aspectRatioLocked: false
+  })
+  assert.equal(playerStats.sizeConstraints.minimumHeight, 280)
+  assert.equal(playerStats.sizeConstraints.maximumHeight, 560)
+})
+
+test('旧地图序列默认尺寸迁移到新版且保留自定义布局', () => {
+  const state = addIntermissionNextComponent(
+    createDefaultIntermissionNextLayoutState(),
+    'map_break',
+    'mapSequence',
+    0
+  )
+  state.pages.map_break.components.mapSequence = {
+    x: 180,
+    y: 80,
+    width: 1180,
+    height: 110,
+    aspectRatioLocked: false
+  }
+  const migrated = normalizeIntermissionNextLayoutState(state)
+  assert.deepEqual(
+    migrated.pages.map_break.components.mapSequence,
+    getIntermissionNextComponentDefinition('map_break', 'mapSequence')?.defaultLayout
+  )
+
+  state.pages.map_break.components.mapSequence.x = 220
+  const preserved = normalizeIntermissionNextLayoutState(state)
+  assert.equal(preserved.pages.map_break.components.mapSequence?.x, 220)
+  assert.equal(preserved.pages.map_break.components.mapSequence?.width, 1180)
+})
+
+test('全部画布可编辑组件具有有效最小尺寸并默认允许万向拉伸', () => {
+  for (const pageId of INTERMISSION_NEXT_PAGE_IDS) {
+    for (const definition of getIntermissionNextComponentDefinitions(pageId)) {
+      if (definition.canvasEditable === false || definition.required) continue
+      assert.equal(definition.defaultLayout.aspectRatioLocked, false, `${pageId}.${definition.id}`)
+      assert.ok(definition.sizeConstraints.minimumWidth > 0, `${pageId}.${definition.id}`)
+      assert.ok(definition.sizeConstraints.minimumHeight > 0, `${pageId}.${definition.id}`)
+      assert.ok(
+        definition.defaultLayout.width >= definition.sizeConstraints.minimumWidth,
+        `${pageId}.${definition.id}`
+      )
+      assert.ok(
+        definition.defaultLayout.height >= definition.sizeConstraints.minimumHeight,
+        `${pageId}.${definition.id}`
+      )
+      assert.ok(
+        definition.defaultLayout.width <= definition.sizeConstraints.maximumWidth,
+        `${pageId}.${definition.id}`
+      )
+      assert.ok(
+        definition.defaultLayout.height <= definition.sizeConstraints.maximumHeight,
+        `${pageId}.${definition.id}`
+      )
+    }
+  }
+})
+
+test('旧赛事标志和最终比分默认锁定迁移为万向拉伸且保留自定义锁定', () => {
+  let state = createDefaultIntermissionNextLayoutState()
+  state = addIntermissionNextComponent(state, 'warmup', 'eventMark', 0)
+  state = addIntermissionNextComponent(state, 'series_end', 'finalScore', 0)
+  const oldEventMark = state.pages.warmup.components.eventMark
+  const oldFinalScore = state.pages.series_end.components.finalScore
+  assert.ok(oldEventMark)
+  assert.ok(oldFinalScore)
+  oldEventMark.aspectRatioLocked = true
+  oldFinalScore.aspectRatioLocked = true
+
+  const migrated = normalizeIntermissionNextLayoutState(state)
+  assert.equal(migrated.pages.warmup.components.eventMark?.aspectRatioLocked, false)
+  assert.equal(migrated.pages.series_end.components.finalScore?.aspectRatioLocked, false)
+
+  oldEventMark.x += 10
+  const preserved = normalizeIntermissionNextLayoutState(state)
+  assert.equal(preserved.pages.warmup.components.eventMark?.aspectRatioLocked, true)
 })
 
 test('转场组件可重复插入且使用固定的放慢时长', () => {
@@ -88,6 +225,21 @@ test('转场组件可重复插入且使用固定的放慢时长', () => {
       durationMs: INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS
     }
   ])
+})
+
+test('页内定时转场不能插入或移动到页面零时刻', () => {
+  const initial = createDefaultIntermissionNextLayoutState()
+  const unchanged = addIntermissionNextComponent(initial, 'map_break', 'brandTransition', 0)
+  assert.deepEqual(unchanged.pages.map_break.transitions, [])
+
+  const added = addIntermissionNextComponent(initial, 'map_break', 'brandTransition', 60_000)
+  const moved = setIntermissionNextTransitionStart(
+    added,
+    'map_break',
+    added.pages.map_break.transitions[0].id,
+    0
+  )
+  assert.equal(moved.pages.map_break.transitions[0].startOffsetMs, 60_000)
 })
 
 test('道具回放组件固定建立两分钟时间片段', () => {
@@ -138,6 +290,55 @@ test('八方向缩放保持组件位于画布内', () => {
     ).pages.map_break.components.mapReport
     assert.ok(resized)
     assert.equal(intermissionNextBoundsAreInsideCanvas(resized), true)
+  }
+})
+
+test('全部可编辑组件分别响应横向与纵向拉伸并遵守最小尺寸', () => {
+  for (const pageId of INTERMISSION_NEXT_PAGE_IDS) {
+    for (const definition of getIntermissionNextComponentDefinitions(pageId)) {
+      if (definition.canvasEditable === false || definition.required) continue
+      const added = addIntermissionNextComponent(
+        createDefaultIntermissionNextLayoutState(),
+        pageId,
+        definition.id,
+        0
+      )
+      const minimumState = setIntermissionNextComponentFrame(added, pageId, definition.id, {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1
+      })
+      const minimum = componentLayoutAt(minimumState, pageId, definition.id)
+      assert.ok(minimum, `${pageId}.${definition.id}`)
+      assert.equal(minimum.width, definition.sizeConstraints.minimumWidth)
+      assert.equal(minimum.height, definition.sizeConstraints.minimumHeight)
+
+      const horizontalState = resizeIntermissionNextComponent(
+        added,
+        pageId,
+        definition.id,
+        'east',
+        40,
+        0
+      )
+      const verticalState = resizeIntermissionNextComponent(
+        added,
+        pageId,
+        definition.id,
+        'south',
+        0,
+        40
+      )
+      const horizontal = componentLayoutAt(horizontalState, pageId, definition.id)
+      const vertical = componentLayoutAt(verticalState, pageId, definition.id)
+      assert.ok(horizontal, `${pageId}.${definition.id}`)
+      assert.ok(vertical, `${pageId}.${definition.id}`)
+      assert.equal(horizontal.height, definition.defaultLayout.height)
+      assert.ok(horizontal.width > definition.defaultLayout.width)
+      assert.equal(vertical.width, definition.defaultLayout.width)
+      assert.ok(vertical.height > definition.defaultLayout.height)
+    }
   }
 })
 

@@ -75,7 +75,7 @@ export interface IntermissionNextComponentDefinition<Id extends string = string>
 const WARMUP_COMPONENT_DEFINITIONS = [
   {
     id: 'brandTransition',
-    label: '页面内转场组件',
+    label: '页内定时转场',
     kind: 'transition',
     canvasEditable: false,
     defaultLayout: {
@@ -168,7 +168,7 @@ const WARMUP_COMPONENT_DEFINITIONS = [
       y: 60,
       width: 340,
       height: 90,
-      aspectRatioLocked: true
+      aspectRatioLocked: false
     },
     sizeConstraints: {
       minimumWidth: 240,
@@ -182,7 +182,7 @@ const WARMUP_COMPONENT_DEFINITIONS = [
 const BP_COMPONENT_DEFINITIONS = [
   {
     id: 'brandTransition',
-    label: '页面内转场组件',
+    label: '页内定时转场',
     kind: 'transition',
     canvasEditable: false,
     defaultLayout: {
@@ -219,6 +219,74 @@ const BP_COMPONENT_DEFINITIONS = [
     }
   },
   {
+    id: 'eventBrand',
+    label: '赛事品牌展示',
+    defaultLayout: {
+      x: 120,
+      y: 80,
+      width: 760,
+      height: 160,
+      aspectRatioLocked: false
+    },
+    sizeConstraints: {
+      minimumWidth: 480,
+      minimumHeight: 120,
+      maximumWidth: 1560,
+      maximumHeight: 420
+    }
+  },
+  {
+    id: 'matchTeams',
+    label: '当前比赛双方战队',
+    defaultLayout: {
+      x: 260,
+      y: 800,
+      width: 1400,
+      height: 180,
+      aspectRatioLocked: false
+    },
+    sizeConstraints: {
+      minimumWidth: 800,
+      minimumHeight: 140,
+      maximumWidth: 1800,
+      maximumHeight: 420
+    }
+  },
+  {
+    id: 'matchStatus',
+    label: 'BP 播放状态',
+    defaultLayout: {
+      x: 60,
+      y: 930,
+      width: 600,
+      height: 90,
+      aspectRatioLocked: false
+    },
+    sizeConstraints: {
+      minimumWidth: 360,
+      minimumHeight: 72,
+      maximumWidth: 1100,
+      maximumHeight: 220
+    }
+  },
+  {
+    id: 'bpTimer',
+    label: 'BP 播放倒计时',
+    defaultLayout: {
+      x: 1320,
+      y: 930,
+      width: 540,
+      height: 90,
+      aspectRatioLocked: false
+    },
+    sizeConstraints: {
+      minimumWidth: 360,
+      minimumHeight: 72,
+      maximumWidth: 900,
+      maximumHeight: 220
+    }
+  },
+  {
     id: 'eventMark',
     label: '页面内赛事标志',
     defaultLayout: {
@@ -226,7 +294,7 @@ const BP_COMPONENT_DEFINITIONS = [
       y: 60,
       width: 340,
       height: 90,
-      aspectRatioLocked: true
+      aspectRatioLocked: false
     },
     sizeConstraints: {
       minimumWidth: 240,
@@ -240,7 +308,7 @@ const BP_COMPONENT_DEFINITIONS = [
 const MAP_BREAK_COMPONENT_DEFINITIONS = [
   {
     id: 'brandTransition',
-    label: '页面内转场组件',
+    label: '页内定时转场',
     kind: 'transition',
     canvasEditable: false,
     defaultLayout: {
@@ -288,7 +356,7 @@ const MAP_BREAK_COMPONENT_DEFINITIONS = [
     },
     sizeConstraints: {
       minimumWidth: 960,
-      minimumHeight: 480,
+      minimumHeight: 620,
       maximumWidth: 1800,
       maximumHeight: 820
     }
@@ -298,16 +366,16 @@ const MAP_BREAK_COMPONENT_DEFINITIONS = [
     label: '地图序列展示',
     defaultLayout: {
       x: 180,
-      y: 80,
-      width: 1180,
-      height: 110,
+      y: 40,
+      width: 1560,
+      height: 160,
       aspectRatioLocked: false
     },
     sizeConstraints: {
       minimumWidth: 720,
-      minimumHeight: 72,
+      minimumHeight: 110,
       maximumWidth: 1800,
-      maximumHeight: 220
+      maximumHeight: 300
     }
   },
   {
@@ -352,7 +420,7 @@ const MAP_BREAK_COMPONENT_DEFINITIONS = [
       y: 60,
       width: 340,
       height: 90,
-      aspectRatioLocked: true
+      aspectRatioLocked: false
     },
     sizeConstraints: {
       minimumWidth: 240,
@@ -366,7 +434,7 @@ const MAP_BREAK_COMPONENT_DEFINITIONS = [
 const SERIES_END_COMPONENT_DEFINITIONS = [
   {
     id: 'brandTransition',
-    label: '页面内转场组件',
+    label: '页内定时转场',
     kind: 'transition',
     canvasEditable: false,
     defaultLayout: {
@@ -427,10 +495,10 @@ const SERIES_END_COMPONENT_DEFINITIONS = [
       y: 230,
       width: 600,
       height: 150,
-      aspectRatioLocked: true
+      aspectRatioLocked: false
     },
     sizeConstraints: {
-      minimumWidth: 360,
+      minimumWidth: 520,
       minimumHeight: 90,
       maximumWidth: 960,
       maximumHeight: 300
@@ -475,16 +543,16 @@ const SERIES_END_COMPONENT_DEFINITIONS = [
     label: '系列赛选手累计数据',
     defaultLayout: {
       x: 120,
-      y: 660,
+      y: 650,
       width: 1680,
-      height: 290,
+      height: 320,
       aspectRatioLocked: false
     },
     sizeConstraints: {
       minimumWidth: 960,
-      minimumHeight: 220,
+      minimumHeight: 280,
       maximumWidth: 1800,
-      maximumHeight: 500
+      maximumHeight: 560
     }
   },
   {
@@ -529,7 +597,7 @@ const SERIES_END_COMPONENT_DEFINITIONS = [
       y: 970,
       width: 320,
       height: 80,
-      aspectRatioLocked: true
+      aspectRatioLocked: false
     },
     sizeConstraints: {
       minimumWidth: 240,
@@ -543,7 +611,7 @@ const SERIES_END_COMPONENT_DEFINITIONS = [
 const STANDBY_COMPONENT_DEFINITIONS = [
   {
     id: 'brandTransition',
-    label: '页面内转场组件',
+    label: '页内定时转场',
     kind: 'transition',
     canvasEditable: false,
     defaultLayout: {
@@ -670,7 +738,7 @@ const STANDBY_COMPONENT_DEFINITIONS = [
       y: 60,
       width: 360,
       height: 96,
-      aspectRatioLocked: true
+      aspectRatioLocked: false
     },
     sizeConstraints: {
       minimumWidth: 240,

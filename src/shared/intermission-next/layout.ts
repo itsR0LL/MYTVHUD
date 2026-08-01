@@ -41,6 +41,14 @@ const RESIZE_DIRECTIONS: Record<IntermissionNextResizeHandle, ResizeDirection> =
   north_west: { horizontal: -1, vertical: -1 }
 }
 
+const LEGACY_MAP_SEQUENCE_DEFAULT_LAYOUT: IntermissionNextComponentLayout = {
+  x: 180,
+  y: 80,
+  width: 1180,
+  height: 110,
+  aspectRatioLocked: false
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -71,6 +79,39 @@ function createDefaultComponentLayout(
   definition: IntermissionNextComponentDefinition
 ): IntermissionNextComponentLayout {
   return copyComponentLayout(definition.defaultLayout)
+}
+
+function migrateLegacyComponentLayout(
+  pageId: IntermissionNextPageId,
+  definition: IntermissionNextComponentDefinition,
+  value: unknown
+): unknown {
+  if (!isRecord(value)) return value
+  if (pageId === 'map_break' && definition.id === 'mapSequence') {
+    const legacy = LEGACY_MAP_SEQUENCE_DEFAULT_LAYOUT
+    const matchesLegacyDefault =
+      value.x === legacy.x &&
+      value.y === legacy.y &&
+      value.width === legacy.width &&
+      value.height === legacy.height &&
+      value.aspectRatioLocked === legacy.aspectRatioLocked
+    if (matchesLegacyDefault) return definition.defaultLayout
+  }
+  const wasLegacyLockedByDefault =
+    definition.id === 'eventMark' || (pageId === 'series_end' && definition.id === 'finalScore')
+  const matchesCurrentDefaultGeometry =
+    value.x === definition.defaultLayout.x &&
+    value.y === definition.defaultLayout.y &&
+    value.width === definition.defaultLayout.width &&
+    value.height === definition.defaultLayout.height
+  if (
+    wasLegacyLockedByDefault &&
+    matchesCurrentDefaultGeometry &&
+    value.aspectRatioLocked === true
+  ) {
+    return { ...value, aspectRatioLocked: false }
+  }
+  return value
 }
 
 function lockedSize(
@@ -265,7 +306,7 @@ export function normalizeIntermissionNextPageLayout<PageId extends IntermissionN
     if (definition.kind === 'transition' || !isRecord(sourceComponents[definition.id])) continue
     components[definition.id] = normalizeIntermissionNextComponentLayout(
       definition,
-      sourceComponents[definition.id]
+      migrateLegacyComponentLayout(pageId, definition, sourceComponents[definition.id])
     )
     componentWindows[definition.id] = normalizeComponentWindows(sourceWindows[definition.id])
   }
@@ -334,18 +375,20 @@ export function addIntermissionNextComponent<PageId extends IntermissionNextPage
   value: unknown,
   pageId: PageId,
   componentId: string,
-  startOffsetMs = INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS
+  startOffsetMs: number
 ): IntermissionNextLayoutState {
   const state = normalizeIntermissionNextLayoutState(value)
   const definition = getIntermissionNextComponentDefinition(pageId, componentId)
   if (!definition) return state
   const page = state.pages[pageId] as unknown as IntermissionNextPageLayout<PageId>
   if (definition.kind === 'transition') {
+    const normalizedStartOffsetMs = nonNegativeInteger(startOffsetMs)
+    if (normalizedStartOffsetMs === null || normalizedStartOffsetMs === 0) return state
     let index = 1
     while (page.transitions.some((entry) => entry.id === `transition-${index}`)) index += 1
     const transition = {
       id: `transition-${index}`,
-      startOffsetMs: nonNegativeInteger(startOffsetMs) ?? 0,
+      startOffsetMs: normalizedStartOffsetMs,
       durationMs: INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS
     } as const
     return {
@@ -464,7 +507,7 @@ export function setIntermissionNextTransitionStart(
   const state = normalizeIntermissionNextLayoutState(value)
   const page = state.pages[pageId]
   const start = nonNegativeInteger(startOffsetMs)
-  if (start === null) return state
+  if (start === null || start === 0) return state
   return {
     ...state,
     pages: {

@@ -14,6 +14,7 @@ import {
   intermissionNextSelectionStyle
 } from '../../src/renderer/src/components/intermission-next/editor-helpers'
 import { createIntermissionNextPreviewMessage } from '../../src/renderer/src/components/intermission-next/preview-message'
+import { createEditorPreviewPayload } from '../../src/renderer/src/components/intermission-next/editor-preview-data'
 import { INTERMISSION_NEXT_PREVIEW_MESSAGE } from '../../src/shared/intermission-output-next/output'
 
 test('编辑器布局克隆不共享组件或时间片段引用', () => {
@@ -83,4 +84,62 @@ test('管理端预览消息把响应式代理转换为可结构化克隆的独�
   assert.notEqual(message.payload, sourcePayload)
   assert.deepEqual(message.payload, { version: 1, nested: { visible: false } })
   assert.doesNotThrow(() => structuredClone(message))
+})
+
+test('BP 页面编辑预览不采用尚未完成的实际 BP 序列', () => {
+  const layout = createDefaultIntermissionNextLayoutState()
+  const result = createEditorPreviewPayload(
+    {
+      payloadRevision: 1,
+      playRevision: 1,
+      pageData: {
+        page: 'bp',
+        matchId: 'preview-incomplete-bp',
+        matchType: 'BO3',
+        teamA: { id: 'team-a', name: '战队 A', avatar: null },
+        teamB: { id: 'team-b', name: '战队 B', avatar: null },
+        sequence: [],
+        playbackStarted: false,
+        playbackStartedAtMs: null,
+        animationEnabled: true,
+        playRevision: 1,
+        preview: false,
+        issues: []
+      },
+      utilityReplay: null
+    } as never,
+    layout,
+    'bp',
+    12_000,
+    0
+  )
+  assert.equal(result.pageData?.page, 'bp')
+  if (result.pageData?.page !== 'bp') throw new Error('BP 编辑预览页面类型无效')
+  assert.equal(result.pageData.sequence.length, 7)
+  assert.equal(result.pageData.sequence.filter((item) => item.action !== 'ban').length, 3)
+})
+
+test('地图间编辑预览为地图序列和下一张地图补齐本地动态图片', () => {
+  const result = createEditorPreviewPayload(
+    {
+      payloadRevision: 1,
+      playRevision: 1,
+      pageData: null,
+      mapMedia: [],
+      utilityReplay: null
+    } as never,
+    createDefaultIntermissionNextLayoutState(),
+    'map_break',
+    600_000,
+    9_000
+  )
+  const sequenceFrames = result.mapMedia.filter((frame) => frame.purpose === 'sequence')
+  const heroFrames = result.mapMedia.filter((frame) => frame.purpose === 'hero')
+  assert.equal(sequenceFrames.length, 3)
+  assert.equal(heroFrames.length, 1)
+  assert.equal(heroFrames[0]?.mapId, 'de_anubis')
+  assert.equal(
+    sequenceFrames.every((frame) => frame.preload !== null),
+    true
+  )
 })

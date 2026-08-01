@@ -15,6 +15,7 @@
     "src/main/gsi/latest-frame-processor.ts",
     "src/main/gsi/match-runtime.ts",
     "src/main/gsi/utility-replay-capture.ts",
+    "src/main/intermission-next/test-mode.ts",
     "tests/**/*.ts"
   ]
 }
