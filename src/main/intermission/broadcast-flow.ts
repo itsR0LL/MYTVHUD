@@ -9,7 +9,6 @@ import {
   BROADCAST_RUNTIME_STATE_KEY,
   createDefaultBroadcastRuntime,
   createUnscheduledSegments,
-  normalizeBroadcastFlowTemplates,
   normalizeBroadcastDefaultTotalDurationMs,
   normalizeBroadcastRuntime,
   normalizeBroadcastScoreOverride,
@@ -40,6 +39,9 @@ import { getMapUtilityReplay } from '../gsi/utility-replay'
 
 const BP_MAP_IDS = BP_MAPS.map((map) => map.id)
 const LEGACY_INTERMISSION_STATE_KEY = 'intermissionStateV1'
+const LEGACY_INTERMISSION_LAYOUT_SETTINGS_KEY = 'intermissionLayoutV1'
+const LEGACY_INTERMISSION_NEXT_LAYOUT_SETTINGS_KEY = 'intermissionNextLayoutV1'
+const LEGACY_BROADCAST_PAGE_FLOW_TEMPLATES_KEY = 'broadcastPageFlowTemplatesV2'
 
 let liveRuntime = createDefaultBroadcastRuntime()
 let initialized = false
@@ -60,6 +62,13 @@ function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
     () => undefined
   )
   return result
+}
+
+async function removeLegacyIntermissionSettings(): Promise<void> {
+  await databaseService.settings.remove(BROADCAST_FLOW_TEMPLATES_KEY)
+  await databaseService.settings.remove(LEGACY_BROADCAST_PAGE_FLOW_TEMPLATES_KEY)
+  await databaseService.settings.remove(LEGACY_INTERMISSION_LAYOUT_SETTINGS_KEY)
+  await databaseService.settings.remove(LEGACY_INTERMISSION_NEXT_LAYOUT_SETTINGS_KEY)
 }
 
 async function ensureInitialized(): Promise<void> {
@@ -213,11 +222,20 @@ async function handleRuntimeTimer(): Promise<void> {
 async function loadPageFlowTemplates(): Promise<BroadcastPageFlowTemplatesV3> {
   const stored = await databaseService.settings.get(BROADCAST_PAGE_FLOW_TEMPLATES_KEY)
   if (stored !== undefined && stored !== null) {
-    return normalizeBroadcastPageFlowTemplates(stored)
+    const templates = normalizeBroadcastPageFlowTemplates(stored)
+    await removeLegacyIntermissionSettings()
+    return templates
+  }
+
+  const pageFlowV2 = await databaseService.settings.get(LEGACY_BROADCAST_PAGE_FLOW_TEMPLATES_KEY)
+  if (pageFlowV2 !== undefined && pageFlowV2 !== null) {
+    const templates = normalizeBroadcastPageFlowTemplates(pageFlowV2)
+    await databaseService.settings.set(BROADCAST_PAGE_FLOW_TEMPLATES_KEY, templates)
+    await removeLegacyIntermissionSettings()
+    return templates
   }
 
   const legacyStored = await databaseService.settings.get(BROADCAST_FLOW_TEMPLATES_KEY)
-  const legacyTemplates = normalizeBroadcastFlowTemplates(legacyStored)
   const legacyStoredTemplates = isRecord(legacyStored) ? legacyStored : null
   const legacyMapBreakTemplate = legacyStoredTemplates?.map_break
   const legacyMapBreakHasDefault =
@@ -231,11 +249,15 @@ async function loadPageFlowTemplates(): Promise<BroadcastPageFlowTemplatesV3> {
       ? normalizeBroadcastDefaultTotalDurationMs(legacyTimer.durationMs)
       : 0
     if (legacyDurationMs > 0) {
-      legacyTemplates.map_break.defaultTotalDurationMs = legacyDurationMs
+      const migrated = migrateBroadcastFlowTemplatesV1ToPageFlowV3(legacyStored, legacyDurationMs)
+      await databaseService.settings.set(BROADCAST_PAGE_FLOW_TEMPLATES_KEY, migrated)
+      await removeLegacyIntermissionSettings()
+      return migrated
     }
   }
-  const templates = migrateBroadcastFlowTemplatesV1ToPageFlowV3(legacyTemplates)
+  const templates = migrateBroadcastFlowTemplatesV1ToPageFlowV3(legacyStored)
   await databaseService.settings.set(BROADCAST_PAGE_FLOW_TEMPLATES_KEY, templates)
+  await removeLegacyIntermissionSettings()
   return templates
 }
 
@@ -258,6 +280,7 @@ async function loadScoreOverride(matchType: Parameters<typeof normalizeBroadcast
 }
 
 export async function initializeBroadcastRuntimeState(): Promise<void> {
+  await loadPageFlowTemplates()
   await ensureInitialized()
 }
 

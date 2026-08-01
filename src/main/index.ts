@@ -109,12 +109,6 @@ app.whenReady().then(async () => {
   }
 
   try {
-    await initializeIntermissionState()
-  } catch (error) {
-    console.error('初始化播出控制状态失败：', error)
-  }
-
-  try {
     await initializeMatchRuntimeState()
   } catch (error) {
     console.error('初始化比赛运行状态失败：', error)
@@ -124,6 +118,12 @@ app.whenReady().then(async () => {
     await initializeBroadcastRuntimeState()
   } catch (error) {
     console.error('初始化播出运行状态失败：', error)
+  }
+
+  try {
+    await initializeIntermissionState()
+  } catch (error) {
+    console.error('初始化播出控制状态失败：', error)
   }
 
   try {

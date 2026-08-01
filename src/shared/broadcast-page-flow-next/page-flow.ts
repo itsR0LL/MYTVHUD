@@ -1,12 +1,11 @@
 import {
   BROADCAST_MAX_TOTAL_DURATION_MS,
   BROADCAST_MIN_TOTAL_DURATION_MS,
+  BROADCAST_CONTENT_TYPES,
   BROADCAST_PROGRAM_TYPES,
   createDefaultBroadcastComponentVisibility,
-  normalizeBroadcastFlowTemplates,
   type BroadcastContentType,
   type BroadcastExecutionSegment,
-  type BroadcastFlowTemplatesV1,
   type BroadcastProgramType
 } from '../broadcast-flow'
 import type { IntermissionNextPageId, IntermissionNextPageLayout } from '../intermission-next'
@@ -98,20 +97,110 @@ export function createUnconfiguredBroadcastPageFlowTemplates(): BroadcastPageFlo
   }
 }
 
+function legacyTemplateState(
+  value: unknown,
+  type: BroadcastProgramType
+): { valid: boolean; defaultTotalDurationMs: number; enabled: boolean } {
+  if (!isRecord(value)) return { valid: false, defaultTotalDurationMs: 0, enabled: false }
+  const source = value[type]
+  if (!isRecord(source) || !Array.isArray(source.segments) || source.segments.length === 0) {
+    return { valid: false, defaultTotalDurationMs: 0, enabled: false }
+  }
+  const normalizedSegments: Array<{ contentType: BroadcastContentType; enabled: boolean }> = []
+  const seenContentTypes = new Set<BroadcastContentType>()
+  for (const rawSegment of source.segments) {
+    if (
+      !isRecord(rawSegment) ||
+      !BROADCAST_CONTENT_TYPES.includes(rawSegment.contentType as BroadcastContentType)
+    ) {
+      return { valid: false, defaultTotalDurationMs: 0, enabled: false }
+    }
+    const minimumDurationMs = nonNegativeDuration(rawSegment.minimumDurationMs)
+    const preferredDurationMs = nonNegativeDuration(rawSegment.preferredDurationMs)
+    const maximumDurationMs = nonNegativeDuration(rawSegment.maximumDurationMs)
+    const weight = Number(rawSegment.weight)
+    if (
+      minimumDurationMs === null ||
+      preferredDurationMs === null ||
+      maximumDurationMs === null ||
+      minimumDurationMs > preferredDurationMs ||
+      preferredDurationMs > maximumDurationMs ||
+      !Number.isFinite(weight) ||
+      weight <= 0
+    ) {
+      return { valid: false, defaultTotalDurationMs: 0, enabled: false }
+    }
+    const contentType = rawSegment.contentType as BroadcastContentType
+    if (seenContentTypes.has(contentType)) {
+      return { valid: false, defaultTotalDurationMs: 0, enabled: false }
+    }
+    seenContentTypes.add(contentType)
+    normalizedSegments.push({ contentType, enabled: rawSegment.enabled !== false })
+  }
+  const storedByContentType = new Map(
+    normalizedSegments.map((segment) => [segment.contentType, segment.enabled] as const)
+  )
+  const expectedContentTypes =
+    type === 'map_break'
+      ? legacyProgramContentTypes(type, false)
+      : [
+          ...new Set([
+            ...legacyProgramContentTypes(type, false),
+            ...legacyProgramContentTypes(type, true)
+          ])
+        ]
+  return {
+    valid: true,
+    defaultTotalDurationMs: normalizedTotalDuration(source.defaultTotalDurationMs),
+    enabled: expectedContentTypes.some(
+      (contentType) => storedByContentType.get(contentType) ?? contentType !== 'map_utility_replay'
+    )
+  }
+}
+
+function legacyProgramContentTypes(
+  type: BroadcastProgramType,
+  hasNextMatch: boolean
+): BroadcastContentType[] {
+  if (type === 'map_break') {
+    return [
+      'map_report',
+      'map_utility_replay',
+      'series_progress',
+      'next_map',
+      'intermission_notice'
+    ]
+  }
+  if (type === 'series_end') {
+    return [
+      'series_result',
+      'series_map_history',
+      'series_player_stats',
+      'map_utility_replay',
+      'standby'
+    ]
+  }
+  return [hasNextMatch ? 'next_match' : 'standby']
+}
+
 export function migrateBroadcastFlowTemplatesV1ToPageFlowV3(
-  value: BroadcastFlowTemplatesV1
+  value: unknown,
+  legacyMapBreakDurationMs: unknown = 0
 ): BroadcastPageFlowTemplatesV3 {
-  const legacy = normalizeBroadcastFlowTemplates(value)
   const templates = Object.fromEntries(
     BROADCAST_PROGRAM_TYPES.map((type) => {
-      const source = legacy[type]
-      const defaultTotalDurationMs = normalizedTotalDuration(source.defaultTotalDurationMs)
+      const source = legacyTemplateState(value, type)
+      const durationOverride =
+        type === 'map_break' ? normalizedTotalDuration(legacyMapBreakDurationMs) : 0
+      const defaultTotalDurationMs =
+        normalizedTotalDuration(source.defaultTotalDurationMs) || durationOverride
       return [
         type,
         {
           type,
           pageId: type,
-          enabled: defaultTotalDurationMs > 0 && source.segments.some((segment) => segment.enabled),
+          enabled:
+            defaultTotalDurationMs > 0 && (source.valid ? source.enabled : durationOverride > 0),
           defaultTotalDurationMs
         }
       ]
@@ -251,6 +340,9 @@ export function allocateBroadcastPageSegments(
   const boundaries = new Set<number>([0, totalDurationMs])
   const occupiedTransitionEnds: number[] = []
   for (const transition of transitions) {
+    if (transition.startOffsetMs === 0) {
+      throw new Error('页内定时转场不能设置在页面开始时，页面切换已自带一次转场')
+    }
     const endOffsetMs = transition.startOffsetMs + transition.durationMs
     if (endOffsetMs > totalDurationMs) throw new Error('转场组件超出页面总时长')
     if (occupiedTransitionEnds.some((end) => transition.startOffsetMs < end)) {

@@ -3,7 +3,6 @@ import type { BPPayload } from '../../../shared/bp'
 import type { BroadcastDirectorSnapshot } from '../../../shared/broadcast-director'
 import {
   BROADCAST_FLOW_TEMPLATES_KEY,
-  normalizeBroadcastFlowTemplates,
   normalizeBroadcastRuntime,
   type BroadcastProgram,
   type BroadcastRuntimeV1
@@ -65,6 +64,8 @@ export const INTERMISSION_NEXT_CONFIGURATION_ITEMS = [
   'transitionTimings',
   'backgroundAssets'
 ] as const
+
+const LEGACY_BROADCAST_PAGE_FLOW_TEMPLATES_KEY = 'broadcastPageFlowTemplatesV2'
 
 export type IntermissionNextConfigurationItem =
   (typeof INTERMISSION_NEXT_CONFIGURATION_ITEMS)[number]
@@ -244,13 +245,17 @@ function normalizePersistedRuntimeState(
 
 function pageFlowTemplatesFromStoredValues(
   currentValue: unknown,
+  pageFlowV2Value: unknown,
   legacyValue: unknown
 ): BroadcastPageFlowTemplatesV3 {
   if (currentValue !== undefined && currentValue !== null) {
     return normalizeBroadcastPageFlowTemplates(currentValue)
   }
+  if (pageFlowV2Value !== undefined && pageFlowV2Value !== null) {
+    return normalizeBroadcastPageFlowTemplates(pageFlowV2Value)
+  }
   if (legacyValue !== undefined && legacyValue !== null) {
-    return migrateBroadcastFlowTemplatesV1ToPageFlowV3(normalizeBroadcastFlowTemplates(legacyValue))
+    return migrateBroadcastFlowTemplatesV1ToPageFlowV3(legacyValue)
   }
   return createUnconfiguredBroadcastPageFlowTemplates()
 }
@@ -408,12 +413,18 @@ export class IntermissionNextStateCoordinator {
     const currentPageFlowTemplates = await this.options.settings.get(
       INTERMISSION_NEXT_PAGE_FLOW_TEMPLATES_SETTINGS_KEY
     )
-    const legacyPageFlowTemplates =
+    const pageFlowV2Templates =
       currentPageFlowTemplates === undefined || currentPageFlowTemplates === null
+        ? await this.options.settings.get(LEGACY_BROADCAST_PAGE_FLOW_TEMPLATES_KEY)
+        : undefined
+    const legacyPageFlowTemplates =
+      (currentPageFlowTemplates === undefined || currentPageFlowTemplates === null) &&
+      (pageFlowV2Templates === undefined || pageFlowV2Templates === null)
         ? await this.options.settings.get(BROADCAST_FLOW_TEMPLATES_KEY)
         : undefined
     this.pageFlowTemplates = pageFlowTemplatesFromStoredValues(
       currentPageFlowTemplates,
+      pageFlowV2Templates,
       legacyPageFlowTemplates
     )
 

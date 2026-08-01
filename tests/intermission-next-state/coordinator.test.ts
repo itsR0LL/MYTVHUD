@@ -9,9 +9,7 @@ import {
 } from '../../src/shared/broadcast-director'
 import {
   BROADCAST_FLOW_TEMPLATES_KEY,
-  INTERMISSION_LAYOUT_SETTINGS_KEY,
   createDefaultBroadcastRuntime,
-  createUnconfiguredBroadcastFlowTemplates,
   type BroadcastProgram,
   type BroadcastRuntimeV1
 } from '../../src/shared/broadcast-flow'
@@ -289,11 +287,23 @@ function createHarness(
   }
 }
 
-test('初始化清空旧布局并迁移旧流程总时长到V3键', async () => {
-  const legacyTemplates = createUnconfiguredBroadcastFlowTemplates()
-  legacyTemplates.map_break.defaultTotalDurationMs = 300_000
+test('初始化新布局并迁移旧流程总时长到V3键', async () => {
+  const legacyTemplates = {
+    map_break: {
+      defaultTotalDurationMs: 300_000,
+      segments: [
+        {
+          contentType: 'map_report',
+          enabled: true,
+          minimumDurationMs: 0,
+          preferredDurationMs: 0,
+          maximumDurationMs: 0,
+          weight: 1
+        }
+      ]
+    }
+  }
   const settings = new MemoryStore({
-    [INTERMISSION_LAYOUT_SETTINGS_KEY]: { version: 0 },
     [BROADCAST_FLOW_TEMPLATES_KEY]: legacyTemplates
   })
   const harness = createHarness({ settings })
@@ -312,6 +322,29 @@ test('初始化清空旧布局并迁移旧流程总时长到V3键', async () => 
   assert.equal(migratedTemplates.templates.map_break.enabled, true)
   assert.equal(migratedTemplates.templates.map_break.defaultTotalDurationMs, 300_000)
   assert.ok(harness.additional.values.has(INTERMISSION_NEXT_RUNTIME_STATE_KEY))
+})
+
+test('初始化优先迁移V2页面流程设置并写入V3键', async () => {
+  const pageFlowV2 = createUnconfiguredBroadcastPageFlowTemplates()
+  pageFlowV2.templates.map_break = {
+    ...pageFlowV2.templates.map_break,
+    enabled: true,
+    defaultTotalDurationMs: 600_000
+  }
+  const settings = new MemoryStore({
+    broadcastPageFlowTemplatesV2: { ...pageFlowV2, version: 2 }
+  })
+  const harness = createHarness({ settings })
+
+  const result = await harness.coordinator.initialize()
+
+  assert.equal(result.status, 'ready')
+  const migratedTemplates = settings.values.get(
+    INTERMISSION_NEXT_PAGE_FLOW_TEMPLATES_SETTINGS_KEY
+  ) as BroadcastPageFlowTemplatesV3
+  assert.equal(migratedTemplates.version, 3)
+  assert.equal(migratedTemplates.templates.map_break.enabled, true)
+  assert.equal(migratedTemplates.templates.map_break.defaultTotalDurationMs, 600_000)
 })
 
 test('缺少显式配置时返回未配置状态且不发布OBS输出', async () => {

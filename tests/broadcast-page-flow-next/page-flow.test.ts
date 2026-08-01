@@ -1,10 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
-  createUnconfiguredBroadcastFlowTemplates,
-  type BroadcastFlowTemplatesV1
-} from '../../src/shared/broadcast-flow'
-import {
   allocateBroadcastPageSegments,
   allocateBroadcastPageWindow,
   createUnconfiguredBroadcastPageFlowTemplates,
@@ -19,13 +15,34 @@ import {
 import { UTILITY_REPLAY_TOTAL_DURATION_MS } from '../../src/shared/utility-replay'
 
 test('旧模板迁移只保留三类页面总时长和启用状态', () => {
-  const legacy: BroadcastFlowTemplatesV1 = createUnconfiguredBroadcastFlowTemplates()
-  legacy.map_break.defaultTotalDurationMs = 600_000
-  legacy.series_end.defaultTotalDurationMs = 300_000
-  legacy.standby.defaultTotalDurationMs = 900_000
-  legacy.series_end.segments.forEach((segment) => {
-    segment.enabled = false
+  const segment = (contentType: string, enabled: boolean) => ({
+    contentType,
+    enabled,
+    minimumDurationMs: 0,
+    preferredDurationMs: 0,
+    maximumDurationMs: 0,
+    weight: 1
   })
+  const legacy = {
+    map_break: {
+      defaultTotalDurationMs: 600_000,
+      segments: [segment('map_report', true)]
+    },
+    series_end: {
+      defaultTotalDurationMs: 300_000,
+      segments: [
+        segment('series_result', false),
+        segment('series_map_history', false),
+        segment('series_player_stats', false),
+        segment('map_utility_replay', false),
+        segment('standby', false)
+      ]
+    },
+    standby: {
+      defaultTotalDurationMs: 900_000,
+      segments: [segment('standby', true)]
+    }
+  }
 
   const migrated = migrateBroadcastFlowTemplatesV1ToPageFlowV3(legacy)
   assert.equal(migrated.version, 3)
@@ -35,6 +52,12 @@ test('旧模板迁移只保留三类页面总时长和启用状态', () => {
   assert.equal(migrated.templates.series_end.enabled, false)
   assert.equal('segments' in migrated.templates.map_break, false)
   assert.equal('components' in migrated.templates.map_break, false)
+})
+
+test('旧模板缺失时仍可迁移赛间倒计时总时长', () => {
+  const migrated = migrateBroadcastFlowTemplatesV1ToPageFlowV3(undefined, 600_000)
+  assert.equal(migrated.templates.map_break.defaultTotalDurationMs, 600_000)
+  assert.equal(migrated.templates.map_break.enabled, true)
 })
 
 test('错误版本和未知页面安全回退为未配置模板', () => {
@@ -127,11 +150,16 @@ test('总时长不足时不压缩页面内部动画', () => {
   assert.deepEqual(result, { status: 'insufficient', minimumDurationMs: 1_200 })
 })
 
-test('页面时间轴生成普通内容、转场和固定道具回放片段', () => {
+test('页面时间轴可在道具回放结束后播放固定转场再进入赛后数据', () => {
   let layout = createDefaultIntermissionNextLayoutState()
   layout = addIntermissionNextComponent(layout, 'map_break', 'mapReport', 0)
-  layout = addIntermissionNextComponent(layout, 'map_break', 'brandTransition', 10_000)
-  layout = addIntermissionNextComponent(layout, 'map_break', 'utilityReplay', 60_000)
+  layout = addIntermissionNextComponent(layout, 'map_break', 'utilityReplay', 0)
+  layout = addIntermissionNextComponent(
+    layout,
+    'map_break',
+    'brandTransition',
+    UTILITY_REPLAY_TOTAL_DURATION_MS
+  )
   const segments = allocateBroadcastPageSegments(
     {
       type: 'map_break',
@@ -148,11 +176,14 @@ test('页面时间轴生成普通内容、转场和固定道具回放片段', ()
   assert.deepEqual(
     segments.map((segment) => [segment.contentType, segment.durationMs]),
     [
-      ['map_report', 10_000],
-      ['page_transition', INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS],
-      ['map_report', 50_000 - INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS],
       ['map_utility_replay', UTILITY_REPLAY_TOTAL_DURATION_MS],
-      ['map_report', 120_000]
+      ['page_transition', INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS],
+      [
+        'map_report',
+        300_000 -
+          UTILITY_REPLAY_TOTAL_DURATION_MS -
+          INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS
+      ]
     ]
   )
   assert.equal(segments.at(-1)?.endOffsetMs, 300_000)
@@ -160,8 +191,8 @@ test('页面时间轴生成普通内容、转场和固定道具回放片段', ()
 
 test('转场重叠或组件超出页面时拒绝开始播出', () => {
   let layout = createDefaultIntermissionNextLayoutState()
-  layout = addIntermissionNextComponent(layout, 'standby', 'brandTransition', 0)
   layout = addIntermissionNextComponent(layout, 'standby', 'brandTransition', 500)
+  layout = addIntermissionNextComponent(layout, 'standby', 'brandTransition', 1_000)
   assert.throws(() =>
     allocateBroadcastPageSegments(
       {
@@ -173,5 +204,33 @@ test('转场重叠或组件超出页面时拒绝开始播出', () => {
       60_000,
       { availableContentTypes: ['standby'], pageLayout: layout.pages.standby }
     )
+  )
+})
+
+test('旧布局中的零时刻页内转场会被播出流程明确拒绝', () => {
+  const layout = createDefaultIntermissionNextLayoutState()
+  const pageLayout: (typeof layout.pages)['standby'] = {
+    ...layout.pages.standby,
+    transitions: [
+      {
+        id: 'legacy-transition',
+        startOffsetMs: 0,
+        durationMs: INTERMISSION_NEXT_TRANSITION_COMPONENT_DURATION_MS
+      }
+    ]
+  }
+  assert.throws(
+    () =>
+      allocateBroadcastPageSegments(
+        {
+          type: 'standby',
+          pageId: 'standby',
+          enabled: true,
+          defaultTotalDurationMs: 60_000
+        },
+        60_000,
+        { availableContentTypes: ['standby'], pageLayout }
+      ),
+    /页内定时转场不能设置在页面开始时/
   )
 })

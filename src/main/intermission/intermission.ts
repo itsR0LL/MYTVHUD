@@ -1,7 +1,6 @@
 import type { IpcMain } from 'electron'
 import { databaseService, type BaseEntity } from '../database/database'
 import {
-  calculateIntermissionSeriesScore,
   createDefaultIntermissionState,
   isBPMapId,
   isBPMatchType,
@@ -13,16 +12,12 @@ import {
   type IntermissionMatch,
   type IntermissionMatchMap,
   type IntermissionPayload,
-  type IntermissionSeriesScore,
-  type IntermissionState,
   type IntermissionStateUpdate,
   type MatchMapStatus
 } from '../../shared/intermission'
 import type { BPTeam } from '../../shared/bp'
 import {
   getBroadcastRuntimeState,
-  hideBroadcastOutput,
-  startPreparedBroadcastProgram,
   setBroadcastRuntimePublisher,
   updatePreparedProgramScoreOverride
 } from './broadcast-flow'
@@ -141,34 +136,12 @@ async function getCurrentMatch(): Promise<IntermissionMatch | null> {
   }
 }
 
-function effectiveSeriesScore(
-  match: IntermissionMatch,
-  state: IntermissionState
-): IntermissionSeriesScore {
-  return state.scoreOverride.enabled
-    ? { teamA: state.scoreOverride.teamA, teamB: state.scoreOverride.teamB }
-    : calculateIntermissionSeriesScore(match.maps, match.type)
-}
-
-function seriesHasEnded(match: IntermissionMatch, state: IntermissionState): boolean {
-  const score = effectiveSeriesScore(match, state)
-  const maximum = seriesWinLimit(match.type)
-  return score.teamA >= maximum || score.teamB >= maximum
-}
-
 function reconcileStateForMatch(match: IntermissionMatch | null): void {
-  if (!match) {
-    liveState = { ...liveState, visible: false, nextMapId: '' }
-    return
-  }
+  if (!match) return
 
   liveState = {
     ...liveState,
     scoreOverride: normalizeIntermissionScoreOverride(liveState.scoreOverride, match.type)
-  }
-  const selectedMap = match.maps.find((map) => map.name === liveState.nextMapId)
-  if (!selectedMap || selectedMap.status !== 'pending' || seriesHasEnded(match, liveState)) {
-    liveState = { ...liveState, visible: false, nextMapId: '' }
   }
 }
 
@@ -213,13 +186,6 @@ export async function initializeIntermissionState(): Promise<void> {
     const match = await getCurrentMatch()
     const stored = await databaseService.additional.get(INTERMISSION_STATE_KEY)
     liveState = normalizeIntermissionState(stored, match?.type)
-    liveState.visible = false
-    liveState.timer = {
-      status: 'idle',
-      durationMs: liveState.timer.durationMs,
-      remainingMs: liveState.timer.durationMs,
-      deadlineAtMs: null
-    }
     reconcileStateForMatch(match)
     await persistState()
   })
@@ -241,7 +207,6 @@ export async function resetIntermissionBroadcastState(): Promise<IntermissionPay
     const defaultState = createDefaultIntermissionState()
     liveState = {
       ...defaultState,
-      layout: liveState.layout,
       revision: liveState.revision + 1
     }
     return persistAndPublish()
@@ -266,7 +231,7 @@ export async function resetIntermissionScoreOverride(): Promise<IntermissionPayl
 export async function updateIntermissionState(value: unknown): Promise<IntermissionPayload> {
   return enqueueMutation(async () => {
     if (!isRecord(value)) throw new Error('赛间状态更新必须是对象')
-    const allowedKeys = new Set(['visible', 'nextMapId', 'scoreOverride'])
+    const allowedKeys = new Set(['scoreOverride'])
     const unknownKey = Object.keys(value).find((key) => !allowedKeys.has(key))
     if (unknownKey) throw new Error(`赛间状态更新不支持字段：${unknownKey}`)
 
@@ -274,21 +239,6 @@ export async function updateIntermissionState(value: unknown): Promise<Intermiss
     if (!match) throw new Error('当前比赛数据不完整，无法更新赛间状态')
 
     const nextState = { ...liveState }
-    let outputCommand: boolean | null = null
-    if (Object.prototype.hasOwnProperty.call(value, 'visible')) {
-      if (typeof value.visible !== 'boolean') throw new Error('visible 必须是布尔值')
-      outputCommand = value.visible
-      nextState.visible = false
-    }
-    if (Object.prototype.hasOwnProperty.call(value, 'nextMapId')) {
-      if (value.nextMapId !== '' && !isBPMapId(value.nextMapId)) {
-        throw new Error('nextMapId 不是受支持的地图')
-      }
-      if (value.nextMapId !== '') {
-        throw new Error('下一张地图已经改为由完整 BP 和比赛运行状态自动计算')
-      }
-      nextState.nextMapId = ''
-    }
     if (Object.prototype.hasOwnProperty.call(value, 'scoreOverride')) {
       if (!isRecord(value.scoreOverride) || typeof value.scoreOverride.enabled !== 'boolean') {
         throw new Error('scoreOverride 数据不完整')
@@ -307,11 +257,6 @@ export async function updateIntermissionState(value: unknown): Promise<Intermiss
     liveState = { ...nextState, revision: liveState.revision + 1 }
     if (Object.prototype.hasOwnProperty.call(value, 'scoreOverride')) {
       await updatePreparedProgramScoreOverride(match.id, liveState.scoreOverride)
-    }
-    if (outputCommand === true) {
-      await startPreparedBroadcastProgram(liveState.timer.durationMs)
-    } else if (outputCommand === false) {
-      await hideBroadcastOutput()
     }
     return persistAndPublish()
   })

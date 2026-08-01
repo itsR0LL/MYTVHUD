@@ -19,17 +19,12 @@ import {
 } from '../src/shared/bp'
 import {
   MAP_BREAK_DURATION_PRESETS_MS,
-  allocateBroadcastSegments,
-  createUnconfiguredBroadcastFlowTemplates,
-  normalizeBroadcastFlowTemplates,
   normalizeBroadcastRuntime,
-  programContentTypes,
-  validateBroadcastFlowTemplates,
-  type BroadcastFlowTemplate
+  programContentTypes
 } from '../src/shared/broadcast-flow'
 import { projectWorldPositionToRadar } from '../src/shared/radar'
+import { PlayerHeadshotTracker } from '../src/shared/player-headshot-tracker'
 import {
-  UTILITY_REPLAY_TOTAL_DURATION_MS,
   createEmptyMapUtilityReplay,
   finalizeMapUtilityReplay,
   normalizeMapUtilityReplay
@@ -56,6 +51,7 @@ import {
   createDefaultIntermissionTestModeState,
   nextIntermissionTestStage
 } from '../src/shared/intermission-test-mode'
+import { normalizeIntermissionState } from '../src/shared/intermission'
 
 const MAP_IDS: BPMapId[] = [
   'de_ancient',
@@ -108,16 +104,6 @@ function snapshotFromMap(map: MatchMapRecord, mapIndex: number): MapFinalSnapsho
     seriesScoreAfterMap: { teamA: 0, teamB: 0 },
     players: []
   }
-}
-
-function configuredTemplate(): BroadcastFlowTemplate {
-  const template = structuredClone(createUnconfiguredBroadcastFlowTemplates().map_break)
-  for (const segment of template.segments) {
-    segment.minimumDurationMs = 10_000
-    segment.preferredDurationMs = 20_000
-    segment.maximumDurationMs = 30_000
-  }
-  return template
 }
 
 test('BO1、BO3、BO5 完整七步 BP 均通过固定顺序校验', () => {
@@ -385,6 +371,7 @@ test('系列赛选手数据按 SteamID 跨已完成地图汇总', () => {
     deaths: 10,
     mvps: 3,
     score: 45,
+    headshots: 11,
     adr: 90
   }
   const snapshots: Partial<Record<BPMapId, MapFinalSnapshot>> = {
@@ -406,7 +393,7 @@ test('系列赛选手数据按 SteamID 跨已完成地图汇总', () => {
       teamBScore: 13,
       roundCount: 23,
       seriesScoreAfterMap: { teamA: 1, teamB: 1 },
-      players: [{ ...player, kills: 18, assists: 7, deaths: 14, mvps: 2, score: 39 }]
+      players: [{ ...player, kills: 18, assists: 7, deaths: 14, mvps: 2, score: 39, headshots: 8 }]
     }
   }
   assert.deepEqual(aggregateSeriesPlayerStats(maps, snapshots), [
@@ -417,28 +404,33 @@ test('系列赛选手数据按 SteamID 跨已完成地图汇总', () => {
       deaths: 24,
       mvps: 5,
       score: 84,
+      headshots: 19,
       adr: null,
       mapsPlayed: 2
     }
   ])
 })
 
-test('播出时间按连续内容段分配且总时长严格一致', () => {
-  const segments = allocateBroadcastSegments('map_break', configuredTemplate(), 120_000, [
-    'map_report',
-    'series_progress',
-    'next_map',
-    'intermission_notice'
-  ])
-  assert.equal(segments[0].startOffsetMs, 0)
-  for (let index = 1; index < segments.length; index += 1) {
-    assert.equal(segments[index].startOffsetMs, segments[index - 1].endOffsetMs)
-  }
-  assert.equal(segments.at(-1)?.endOffsetMs, 120_000)
-  assert.equal(
-    segments.reduce((sum, segment) => sum + segment.durationMs, 0),
-    120_000
-  )
+test('爆头统计按地图、回合和 SteamID 保存每回合最大值', () => {
+  const tracker = new PlayerHeadshotTracker()
+  const frame = (round: number, first: number, second: number, phase = 'live') => ({
+    map: { name: 'de_ancient', phase, round },
+    players: [
+      { steamid: 'steam-a', state: { round_killhs: first } },
+      { steamid: 'steam-b', state: { round_killhs: second } }
+    ]
+  })
+
+  tracker.capture(frame(0, 1, 0))
+  tracker.capture(frame(0, 1, 1))
+  tracker.capture(frame(1, 0, 2))
+  tracker.capture(frame(1, 1, 1))
+  tracker.capture(frame(2, 5, 5, 'warmup'))
+
+  assert.equal(tracker.total('de_ancient', 'steam-a'), 2)
+  assert.equal(tracker.total('de_ancient', 'steam-b'), 3)
+  tracker.clear()
+  assert.equal(tracker.total('de_ancient', 'steam-a'), 0)
 })
 
 test('道具回放内容在地图间和系列赛结束流程中均存在且位于待机之前', () => {
@@ -447,43 +439,6 @@ test('道具回放内容在地图间和系列赛结束流程中均存在且位�
   assert.equal(seriesEnd.includes('map_utility_replay'), true)
   assert.ok(seriesEnd.indexOf('map_utility_replay') < seriesEnd.indexOf('standby'))
   assert.equal(programContentTypes('series_end', true).at(-1), 'standby')
-})
-
-test('道具回放模板固定四页各 30 秒并默认由导播关闭', () => {
-  const templates = createUnconfiguredBroadcastFlowTemplates()
-  for (const type of ['map_break', 'series_end'] as const) {
-    const segment = templates[type].segments.find(
-      (item) => item.contentType === 'map_utility_replay'
-    )
-    assert.ok(segment)
-    assert.equal(segment.enabled, false)
-    assert.equal(segment.minimumDurationMs, UTILITY_REPLAY_TOTAL_DURATION_MS)
-    assert.equal(segment.preferredDurationMs, UTILITY_REPLAY_TOTAL_DURATION_MS)
-    assert.equal(segment.maximumDurationMs, UTILITY_REPLAY_TOTAL_DURATION_MS)
-    assert.deepEqual(segment.components, {
-      teamScore: false,
-      mapSeries: false,
-      timerNotice: false,
-      eventLogo: false
-    })
-  }
-  assert.doesNotThrow(() => validateBroadcastFlowTemplates(templates))
-})
-
-test('启用道具回放后时间分配仍严格保持 120 秒', () => {
-  const template = structuredClone(createUnconfiguredBroadcastFlowTemplates().map_break)
-  const utility = template.segments.find((segment) => segment.contentType === 'map_utility_replay')
-  assert.ok(utility)
-  utility.enabled = true
-  const segments = allocateBroadcastSegments('map_break', template, 180_000, [
-    'map_utility_replay',
-    'intermission_notice'
-  ])
-  assert.equal(
-    segments.find((segment) => segment.contentType === 'map_utility_replay')?.durationMs,
-    UTILITY_REPLAY_TOTAL_DURATION_MS
-  )
-  assert.equal(segments.at(-1)?.endOffsetMs, 180_000)
 })
 
 test('现有 HUD 雷达坐标精确转换为可直接绘制坐标', () => {
@@ -578,61 +533,32 @@ test('旧地图快照中的完整道具数据规范化后不再进入比赛运�
   )
 })
 
-test('总时长不足不可跳过段最短时间时拒绝开始', () => {
-  const template = configuredTemplate()
-  const mapReport = template.segments.find((segment) => segment.contentType === 'map_report')
-  assert.ok(mapReport)
-  mapReport.minimumDurationMs = 20_000
-  mapReport.preferredDurationMs = 20_000
-  mapReport.maximumDurationMs = 20_000
-  assert.throws(
-    () => allocateBroadcastSegments('map_break', template, 15_000, ['map_report']),
-    /至少需要 20000 毫秒/
-  )
-})
-
-test('旧流程模板规范化后系列赛结束固定以赛事待机收尾', () => {
-  const stored = createUnconfiguredBroadcastFlowTemplates()
-  const normalized = normalizeBroadcastFlowTemplates(stored)
-  assert.equal(
-    normalized.series_end.segments.some((segment) => segment.contentType === 'next_match'),
-    false
-  )
-  assert.equal(
-    normalized.series_end.segments.some((segment) => segment.contentType === 'standby'),
-    true
-  )
-})
-
-test('三类播出模板分别保留自己的默认总时长', () => {
-  const stored = createUnconfiguredBroadcastFlowTemplates()
-  stored.map_break.defaultTotalDurationMs = 5 * 60 * 1000
-  stored.series_end.defaultTotalDurationMs = 12 * 60 * 1000
-  stored.standby.defaultTotalDurationMs = 20 * 60 * 1000
-  const normalized = normalizeBroadcastFlowTemplates(stored)
-  assert.equal(normalized.map_break.defaultTotalDurationMs, 5 * 60 * 1000)
-  assert.equal(normalized.series_end.defaultTotalDurationMs, 12 * 60 * 1000)
-  assert.equal(normalized.standby.defaultTotalDurationMs, 20 * 60 * 1000)
-})
-
-test('旧流程模板缺少默认总时长字段时保持未设置', () => {
-  const stored = structuredClone(createUnconfiguredBroadcastFlowTemplates()) as unknown as Record<
-    string,
-    Record<string, unknown>
-  >
-  delete stored.map_break.defaultTotalDurationMs
-  delete stored.series_end.defaultTotalDurationMs
-  delete stored.standby.defaultTotalDurationMs
-  const normalized = normalizeBroadcastFlowTemplates(stored)
-  assert.equal(normalized.map_break.defaultTotalDurationMs, 0)
-  assert.equal(normalized.series_end.defaultTotalDurationMs, 0)
-  assert.equal(normalized.standby.defaultTotalDurationMs, 0)
-})
-
 test('地图间快捷时长固定为 5、10、15、20 分钟', () => {
   assert.deepEqual(
     [...MAP_BREAK_DURATION_PRESETS_MS],
     [5 * 60 * 1000, 10 * 60 * 1000, 15 * 60 * 1000, 20 * 60 * 1000]
+  )
+})
+
+test('旧赛间状态迁移后只保留人工系列赛比分', () => {
+  assert.deepEqual(
+    normalizeIntermissionState(
+      {
+        version: 2,
+        visible: true,
+        revision: 7,
+        nextMapId: 'de_mirage',
+        timer: { status: 'running', durationMs: 600_000, remainingMs: 500_000 },
+        layout: { teamScore: { x: 1, y: 2, scale: 1 } },
+        scoreOverride: { enabled: true, teamA: 1, teamB: 0 }
+      },
+      'BO3'
+    ),
+    {
+      version: 3,
+      revision: 7,
+      scoreOverride: { enabled: true, teamA: 1, teamB: 0 }
+    }
   )
 })
 
