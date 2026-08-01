@@ -88,7 +88,9 @@ export async function streamBackgroundVideoFile(
     : request.headers.range
   const range = parseSingleByteRange(rangeHeader, file.size)
   response.setHeader('Accept-Ranges', 'bytes')
+  response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
   response.setHeader('Content-Type', asset.mimeType)
+  response.setHeader('X-Content-Type-Options', 'nosniff')
 
   if (range.status === 'invalid') {
     response.setHeader('Content-Range', `bytes */${file.size}`)

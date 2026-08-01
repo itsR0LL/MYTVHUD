@@ -143,7 +143,7 @@ export async function initializeIntermissionNextOutput(
 }
 
 export async function getIntermissionNextState(): Promise<IntermissionNextCoordinatorResult> {
-  const result = await (await getCoordinator()).refreshRuntime()
+  const result = await (await getCoordinator()).refreshRuntime(false)
   return result.status === 'ready'
     ? { ...result, payload: applyIntermissionTestMode(result.payload) }
     : result

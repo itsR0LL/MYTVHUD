@@ -26,7 +26,14 @@
   let effectiveTransition = null
   let animationFrameId = null
   let utilityReplayView = null
+  let mapMediaVisuals = []
+  let clockOutputs = []
+  let componentOutputs = []
+  let enterAnimationOutputs = []
+  let componentOutputById = new Map()
+  let lastClockUpdateAtMs = Number.NEGATIVE_INFINITY
   const requestedMapMediaFrameEnds = new Set()
+  const CLOCK_UPDATE_INTERVAL_MS = 100
   const UTILITY_REPLAY_PAGE_DURATION_MS = 30_000
   const UTILITY_REPLAY_FLASH_DURATION_MS = 250
   const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
@@ -38,6 +45,14 @@
     { id: 'counter', start: 0.24 }
   ]
   const brandVectorHook = brandLayer.querySelector('[data-brand-vector-hook]')
+  const leftBrandCover = brandLayer.querySelector('.brand-cover-left')
+  const rightBrandCover = brandLayer.querySelector('.brand-cover-right')
+  let transitionBrandPartNodes = []
+
+  function setStyle(node, property, value) {
+    if (!node || node.style.getPropertyValue(property) === value) return
+    node.style.setProperty(property, value)
+  }
 
   async function loadTransitionBrand() {
     if (!brandVectorHook) return
@@ -59,8 +74,13 @@
         logo.appendChild(importedPart)
       }
       brandVectorHook.appendChild(logo)
+      transitionBrandPartNodes = TRANSITION_BRAND_PARTS.map((descriptor) => ({
+        descriptor,
+        node: logo.querySelector(`[data-transition-brand-part="${descriptor.id}"]`)
+      })).filter((entry) => entry.node)
     } catch {
       brandVectorHook.replaceChildren()
+      transitionBrandPartNodes = []
     }
   }
 
@@ -72,24 +92,30 @@
     return 1 - (1 - clampUnit(value)) ** 3
   }
 
+  function easeInOutCubic(value) {
+    const progress = clampUnit(value)
+    return progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2
+  }
+
   function updateTransitionBrandAssembly(progress) {
     if (!brandVectorHook) return
     const normalizedProgress = clampUnit(progress)
     const fadeIn = clampUnit(normalizedProgress / 0.12)
     const fadeOut = clampUnit((1 - normalizedProgress) / 0.18)
     const exitProgress = easeOutCubic((normalizedProgress - 0.82) / 0.18)
-    brandVectorHook.style.opacity = String(Math.min(fadeIn, fadeOut))
+    setStyle(brandVectorHook, 'opacity', String(Math.min(fadeIn, fadeOut)))
 
-    for (let index = 0; index < TRANSITION_BRAND_PARTS.length; index += 1) {
-      const descriptor = TRANSITION_BRAND_PARTS[index]
-      const part = brandVectorHook.querySelector(`[data-transition-brand-part="${descriptor.id}"]`)
-      if (!part) continue
+    for (let index = 0; index < transitionBrandPartNodes.length; index += 1) {
+      const { descriptor, node: part } = transitionBrandPartNodes[index]
       const assemblyProgress = easeOutCubic((normalizedProgress - descriptor.start) / 0.5)
       const entryOffset = (1 - assemblyProgress) * (280 + index * 70)
       const exitOffset = exitProgress * 120
-      part.style.opacity = String(assemblyProgress)
-      part.style.transform = `translateX(${entryOffset - exitOffset}px) scale(${0.94 + assemblyProgress * 0.06})`
-      part.style.filter = `blur(${(1 - assemblyProgress) * 5}px)`
+      setStyle(part, 'opacity', String(assemblyProgress))
+      setStyle(
+        part,
+        'transform',
+        `translate3d(${entryOffset - exitOffset}px, 0, 0) scale(${0.94 + assemblyProgress * 0.06})`
+      )
     }
   }
 
@@ -105,7 +131,7 @@
 
   function resizeStage() {
     const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080)
-    stage.style.setProperty('--stage-scale', String(scale))
+    setStyle(stage, '--stage-scale', String(scale))
   }
 
   function element(tagName, className, text) {
@@ -197,7 +223,7 @@
   }
 
   function refreshMapMediaVisualState(visual) {
-    const images = [...visual.querySelectorAll('.map-media-image')]
+    const images = visual.mapMediaImages ?? [...visual.querySelectorAll('.map-media-image')]
     const hasLoadedMedia = images.some((image) => image.dataset.mapMediaReady === 'true')
     const configuredImages = images.filter((image) => image.dataset.mapMediaFileUrl)
     const allConfiguredMediaFailed =
@@ -262,7 +288,7 @@
   }
 
   function syncMapMediaVisualFiles(visual, frame) {
-    const images = [...visual.querySelectorAll('.map-media-image')]
+    const images = visual.mapMediaImages ?? [...visual.querySelectorAll('.map-media-image')]
     if (images.length !== 2) return false
     const desiredCurrent = images.find(
       (image) => image.dataset.mapMediaFileUrl === frame.current.url
@@ -290,8 +316,11 @@
     visual.dataset.mapMediaMapId = frame.mapId
     visual.dataset.mapMediaPurpose = frame.purpose
     const images = element('div', 'map-media-images')
-    images.appendChild(createMapMediaImage(frame.current, 'current', visual))
-    images.appendChild(createMapMediaImage(frame.preload, 'preload', visual))
+    const currentImage = createMapMediaImage(frame.current, 'current', visual)
+    const preloadImage = createMapMediaImage(frame.preload, 'preload', visual)
+    visual.mapMediaImages = [currentImage, preloadImage]
+    images.appendChild(currentImage)
+    images.appendChild(preloadImage)
     visual.appendChild(images)
     visual.appendChild(element('div', 'map-media-fallback-text', mapName))
     return visual
@@ -1256,6 +1285,12 @@
     }
     pageLayer.replaceChildren()
     utilityReplayView = null
+    mapMediaVisuals = []
+    clockOutputs = []
+    componentOutputs = []
+    enterAnimationOutputs = []
+    componentOutputById = new Map()
+    lastClockUpdateAtMs = Number.NEGATIVE_INFINITY
     activePageId = data ? data.page : null
     if (!data) return
     if (data.page === 'warmup') pageLayer.appendChild(renderWarmup(data))
@@ -1266,6 +1301,21 @@
     if (data.page === 'map_break') pageLayer.appendChild(renderMapBreak(data))
     if (data.page === 'series_end') pageLayer.appendChild(renderSeriesEnd(data))
     if (data.page === 'standby') pageLayer.appendChild(renderStandby(data))
+
+    mapMediaVisuals = [...pageLayer.querySelectorAll('.map-media-visual')]
+    clockOutputs = [...pageLayer.querySelectorAll('[data-clock-output]')]
+    componentOutputs = [...pageLayer.querySelectorAll('[data-component-id]')]
+    componentOutputById = new Map(componentOutputs.map((node) => [node.dataset.componentId, node]))
+    enterAnimationOutputs = [...pageLayer.querySelectorAll('[data-enter-group]')].map((node) => ({
+      node,
+      group: node.dataset.enterGroup,
+      index: Number(node.dataset.enterIndex),
+      total: Number(node.dataset.enterTotal),
+      eventMarks: [...node.querySelectorAll('.event-mark')].map((mark) => ({
+        wordmark: mark.querySelector('[data-event-mark-part="wordmark"]'),
+        icon: mark.querySelector('[data-event-mark-part="icon"]')
+      }))
+    }))
   }
 
   function setVideoAsset(video, asset) {
@@ -1276,9 +1326,11 @@
     if (!asset) {
       video.pause()
       video.removeAttribute('src')
+      video.load()
       return true
     }
     video.src = asset.streamUrl
+    video.preload = 'auto'
     video.muted = !asset.audioEnabled
     video.loop = asset.seamlessLoop
     video.load()
@@ -1288,10 +1340,12 @@
   function syncVideoTransport(video, asset, status) {
     if (!asset || video.classList.contains('is-failed')) return
     if (status === 'playing') {
-      video.play().catch(() => {
-        video.classList.add('is-failed')
-      })
-    } else {
+      if (video.paused) {
+        video.play().catch(() => {
+          video.classList.add('is-failed')
+        })
+      }
+    } else if (!video.paused) {
       video.pause()
     }
   }
@@ -1327,11 +1381,14 @@
       const asset = runtime.resolveAsset(payload.backgroundAssets, assignment.assetId)
       if (assignment.shouldLoad) setVideoAsset(video, asset)
       video.dataset.backgroundRole = assignment.role
+      const transitionTargetActive = state.transition?.toAssetId === assignment.assetId
+      const transportStatus =
+        assignment.role === 'active' || transitionTargetActive ? state.playbackStatus : 'paused'
       if (assignment.shouldSeek) {
         const targetPositionMs = assignment.role === 'active' ? positionMs : 0
-        syncVideoPlayback(video, asset, targetPositionMs, state.playbackStatus)
+        syncVideoPlayback(video, asset, targetPositionMs, transportStatus)
       } else {
-        syncVideoTransport(video, asset, state.playbackStatus)
+        syncVideoTransport(video, asset, transportStatus)
       }
     }
     lastBackgroundRevision = state.revision
@@ -1345,32 +1402,47 @@
       const transitionProgress = runtime.backgroundTransitionProgressAt(state, nowMs)
       for (const video of videoSlots) {
         if (video.dataset.assetId === state.transition.fromAssetId) {
-          video.style.opacity = String(1 - transitionProgress)
+          setStyle(video, 'opacity', String(1 - transitionProgress))
+          if (transitionProgress >= 1 && !video.paused) {
+            video.pause()
+          }
         } else if (video.dataset.assetId === state.transition.toAssetId) {
-          video.style.opacity = String(transitionProgress)
+          setStyle(video, 'opacity', String(transitionProgress))
         } else {
-          video.style.opacity = '0'
+          setStyle(video, 'opacity', '0')
         }
       }
     } else {
       for (const video of videoSlots) {
-        video.style.opacity =
+        setStyle(
+          video,
+          'opacity',
           state.activeAssetId && video.dataset.assetId === state.activeAssetId ? '1' : '0'
+        )
       }
     }
   }
 
   function updateMapMediaFrame(nowMs) {
-    for (const visual of pageLayer.querySelectorAll('.map-media-visual')) {
+    for (const visual of mapMediaVisuals) {
       const frame = runtime.findMapMediaFrame(
         payload.mapMedia,
         visual.dataset.mapMediaMapId,
         visual.dataset.mapMediaPurpose
       )
       if (!frame) continue
-      const currentReady = syncMapMediaVisualFiles(visual, frame)
-      const currentImage = visual.querySelector('.map-media-image.is-current')
-      const preloadImage = visual.querySelector('.map-media-image.is-preload')
+      const frameFileKey = `${frame.current.url}|${frame.preload?.url ?? ''}`
+      if (visual.dataset.mapMediaFrameKey !== frameFileKey) {
+        if (syncMapMediaVisualFiles(visual, frame)) {
+          visual.dataset.mapMediaFrameKey = frameFileKey
+        } else {
+          delete visual.dataset.mapMediaFrameKey
+        }
+      }
+      const images = visual.mapMediaImages ?? []
+      const currentImage = images.find((image) => image.classList.contains('is-current'))
+      const preloadImage = images.find((image) => image.classList.contains('is-preload'))
+      const currentReady = currentImage?.dataset.mapMediaReady === 'true'
       const currentMotion = runtime.mapMediaMotionAt(frame, nowMs, reducedMotionQuery.matches)
       const preloadMotion = runtime.mapMediaMotionAt(frame, nowMs, true)
       const preloadReady =
@@ -1380,17 +1452,25 @@
         preloadImage.dataset.mapMediaReady === 'true'
       if (currentReady && preloadReady) {
         const opacities = runtime.mapMediaOpacitiesAt(frame, nowMs)
-        currentImage.style.opacity = String(opacities.current)
-        preloadImage.style.opacity = String(opacities.preload)
+        setStyle(currentImage, 'opacity', String(opacities.current))
+        setStyle(preloadImage, 'opacity', String(opacities.preload))
       } else {
-        if (currentImage && currentReady) currentImage.style.opacity = '1'
-        if (preloadImage) preloadImage.style.opacity = '0'
+        if (currentImage && currentReady) setStyle(currentImage, 'opacity', '1')
+        if (preloadImage) setStyle(preloadImage, 'opacity', '0')
       }
       if (currentImage) {
-        currentImage.style.transform = `translate3d(${currentMotion.translateX}%, ${currentMotion.translateY}%, 0) scale(${currentMotion.scale})`
+        setStyle(
+          currentImage,
+          'transform',
+          `translate3d(${currentMotion.translateX}%, ${currentMotion.translateY}%, 0) scale(${currentMotion.scale})`
+        )
       }
       if (preloadImage) {
-        preloadImage.style.transform = `translate3d(${preloadMotion.translateX}%, ${preloadMotion.translateY}%, 0) scale(${preloadMotion.scale})`
+        setStyle(
+          preloadImage,
+          'transform',
+          `translate3d(${preloadMotion.translateX}%, ${preloadMotion.translateY}%, 0) scale(${preloadMotion.scale})`
+        )
       }
     }
   }
@@ -1430,10 +1510,12 @@
     const remainingMs = runtime.playbackClockRemainingMs(payload.clock, nowMs)
     const elapsedMs = Math.max(0, payload.clock.totalDurationMs - (remainingMs ?? 0))
     const text = runtime.formatDuration(remainingMs)
-    for (const clock of pageLayer.querySelectorAll('[data-clock-output]')) clock.textContent = text
+    for (const clock of clockOutputs) {
+      if (clock.textContent !== text) clock.textContent = text
+    }
     if (activePageId && payload.layout.pages[activePageId]) {
       const pageLayout = payload.layout.pages[activePageId]
-      for (const componentNode of pageLayer.querySelectorAll('[data-component-id]')) {
+      for (const componentNode of componentOutputs) {
         const componentId = componentNode.dataset.componentId
         const configured = Boolean(pageLayout.components[componentId])
         const windows = pageLayout.componentWindows[componentId]
@@ -1447,49 +1529,52 @@
         } else {
           active = runtime.componentWindowActive(windows, elapsedMs, payload.clock.totalDurationMs)
         }
-        componentNode.style.display = configured && active ? 'flex' : 'none'
+        setStyle(componentNode, 'display', configured && active ? 'flex' : 'none')
       }
     }
     if (activePageId === 'standby') {
-      const countdownComponent = pageLayer.querySelector('.component-startCountdown')
-      const promptComponent = pageLayer.querySelector('.component-standbyPrompt')
+      const countdownComponent = componentOutputById.get('startCountdown')
+      const promptComponent = componentOutputById.get('standbyPrompt')
       const knownDuration = payload.clock.totalDurationMs > 0
       if (countdownComponent) {
         const layout = payload.layout.pages.standby.components.startCountdown
-        if (!knownDuration || !layout) countdownComponent.style.display = 'none'
+        if (!knownDuration || !layout) setStyle(countdownComponent, 'display', 'none')
       }
       if (promptComponent) {
         const layout = payload.layout.pages.standby.components.standbyPrompt
-        if (!layout) promptComponent.style.display = 'none'
+        if (!layout) setStyle(promptComponent, 'display', 'none')
       }
     }
   }
 
   function updateInternalPageAnimation(frame, reducedMotion) {
-    for (const node of pageLayer.querySelectorAll('[data-enter-group]')) {
+    for (const output of enterAnimationOutputs) {
+      const { node } = output
       const progress = runtime.internalEnterProgress(
         activePageId,
-        node.dataset.enterGroup,
-        Number(node.dataset.enterIndex),
-        Number(node.dataset.enterTotal),
+        output.group,
+        output.index,
+        output.total,
         frame,
         reducedMotion
       )
-      node.style.opacity = String(progress)
-      node.style.transform = `translateY(${(1 - progress) * 16}px)`
-      node.style.filter = `blur(${(1 - progress) * 2}px)`
-      for (const mark of node.querySelectorAll('.event-mark')) {
-        const wordmark = mark.querySelector('[data-event-mark-part="wordmark"]')
-        const icon = mark.querySelector('[data-event-mark-part="icon"]')
+      setStyle(node, 'opacity', String(progress))
+      setStyle(node, 'transform', `translate3d(0, ${(1 - progress) * 16}px, 0)`)
+      for (const mark of output.eventMarks) {
+        const { wordmark, icon } = mark
         const wordmarkProgress = reducedMotion ? 1 : easeOutCubic(progress / 0.72)
         const iconProgress = reducedMotion ? 1 : easeOutCubic((progress - 0.12) / 0.72)
         if (wordmark) {
-          wordmark.style.opacity = String(wordmarkProgress)
-          wordmark.style.transform = `translateX(${(1 - wordmarkProgress) * 72}px)`
+          setStyle(wordmark, 'opacity', String(wordmarkProgress))
+          setStyle(wordmark, 'transform', `translate3d(${(1 - wordmarkProgress) * 72}px, 0, 0)`)
         }
         if (icon) {
-          icon.style.opacity = String(iconProgress)
-          icon.style.transform = `translateX(${(1 - iconProgress) * 128}px) scale(${0.9 + iconProgress * 0.1})`
+          setStyle(icon, 'opacity', String(iconProgress))
+          setStyle(
+            icon,
+            'transform',
+            `translate3d(${(1 - iconProgress) * 128}px, 0, 0) scale(${0.9 + iconProgress * 0.1})`
+          )
         }
       }
     }
@@ -1508,9 +1593,8 @@
       effectiveTransition.exitStartedAtMs === null
     const pageVisual = runtime.pageTransitionVisual(frame, reducedMotion, invalidAnimationFallback)
     const pageOpacity = payload.visible ? pageVisual.opacity : 0
-    pageLayer.style.opacity = String(pageOpacity)
-    pageLayer.style.transform = `translateY(${pageVisual.translateY}px)`
-    pageLayer.style.filter = `blur(${pageVisual.blur}px)`
+    setStyle(pageLayer, 'opacity', String(pageOpacity))
+    setStyle(pageLayer, 'transform', `translate3d(0, ${pageVisual.translateY}px, 0)`)
     pageLayer.classList.toggle('is-ready', pageOpacity > 0)
     pageLayer.classList.toggle('is-exiting', payload.visible && !reducedMotion && exiting)
     updateInternalPageAnimation(frame, reducedMotion)
@@ -1535,13 +1619,13 @@
       brandLayer.classList.add('is-active')
       brandLayer.dataset.mode = 'background-switch'
       brandLayer.dataset.phase = 'background-switch'
-      brandLayer.style.setProperty('--phase-progress', String(progress))
+      setStyle(brandLayer, '--phase-progress', String(progress))
       updateTransitionBrandAssembly(progress)
       return
     }
 
     brandLayer.dataset.mode = 'page'
-    if (brandVectorHook) brandVectorHook.style.opacity = ''
+    if (brandVectorHook) setStyle(brandVectorHook, 'opacity', '')
     const brandActive =
       payload.visible &&
       !reducedMotion &&
@@ -1552,20 +1636,19 @@
         frame.phase === 'brand_exit')
     brandLayer.classList.toggle('is-active', brandActive)
     brandLayer.dataset.phase = frame.phase
-    brandLayer.style.setProperty('--phase-progress', String(frame.progress))
-    const leftCover = brandLayer.querySelector('.brand-cover-left')
-    const rightCover = brandLayer.querySelector('.brand-cover-right')
+    setStyle(brandLayer, '--phase-progress', String(frame.progress))
     let leftOffset = -100
     let rightOffset = 100
+    const coverProgress = easeInOutCubic(frame.progress)
     if (frame.phase === 'brand_cover' || frame.phase === 'page_exit') {
-      leftOffset = -100 + frame.progress * 100
-      rightOffset = 100 - frame.progress * 100
+      leftOffset = -100 + coverProgress * 100
+      rightOffset = 100 - coverProgress * 100
     } else if (frame.phase === 'background_reveal' || frame.phase === 'brand_exit') {
-      leftOffset = -frame.progress * 100
-      rightOffset = frame.progress * 100
+      leftOffset = -coverProgress * 100
+      rightOffset = coverProgress * 100
     }
-    leftCover.style.transform = `translateX(${leftOffset}%)`
-    rightCover.style.transform = `translateX(${rightOffset}%)`
+    setStyle(leftBrandCover, 'transform', `translate3d(${leftOffset}%, 0, 0)`)
+    setStyle(rightBrandCover, 'transform', `translate3d(${rightOffset}%, 0, 0)`)
   }
 
   function tick() {
@@ -1576,14 +1659,16 @@
         updateMapMediaFrame(nowMs)
         requestDueMapMediaFrames(nowMs)
         updateTransition(nowMs)
-        updateClock(nowMs)
+        if (nowMs - lastClockUpdateAtMs >= CLOCK_UPDATE_INTERVAL_MS) {
+          updateClock(nowMs)
+          lastClockUpdateAtMs = nowMs
+        }
         updateUtilityReplay(nowMs)
       } catch {
         pageLayer.classList.add('is-ready')
         pageLayer.classList.remove('is-exiting')
-        pageLayer.style.opacity = '1'
-        pageLayer.style.transform = 'translateY(0)'
-        pageLayer.style.filter = 'blur(0)'
+        setStyle(pageLayer, 'opacity', '1')
+        setStyle(pageLayer, 'transform', 'translate3d(0, 0, 0)')
         brandLayer.classList.remove('is-active')
         setConnectionMessage('动画状态异常，已保留最终文字画面', true)
       }

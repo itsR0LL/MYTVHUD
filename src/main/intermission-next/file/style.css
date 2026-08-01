@@ -61,6 +61,8 @@ body {
   transform: translate(-50%, -50%) scale(var(--stage-scale, 1));
   transform-origin: center;
   background: transparent;
+  contain: layout paint style;
+  isolation: isolate;
 }
 
 #background-layer,
@@ -68,6 +70,7 @@ body {
 #brand-layer {
   position: absolute;
   inset: 0;
+  backface-visibility: hidden;
 }
 
 #background-layer {
@@ -86,6 +89,9 @@ body {
   object-fit: cover;
   opacity: 0;
   background: transparent;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: opacity;
 }
 
 .background-video.is-failed {
@@ -103,21 +109,19 @@ body {
 
 #page-layer {
   opacity: 0;
-  transform: translateY(18px);
-  filter: blur(5px);
+  transform: translate3d(0, 18px, 0);
   pointer-events: none;
+  will-change: opacity, transform;
 }
 
 #page-layer.is-ready {
   opacity: 1;
-  transform: translateY(0);
-  filter: none;
+  transform: translate3d(0, 0, 0);
 }
 
 #page-layer.is-exiting {
   opacity: 0;
-  transform: translateY(-14px);
-  filter: blur(4px);
+  transform: translate3d(0, -14px, 0);
 }
 
 .broadcast-page {
@@ -143,7 +147,8 @@ body {
 }
 
 [data-enter-group] {
-  will-change: opacity, transform, filter;
+  backface-visibility: hidden;
+  will-change: opacity, transform;
 }
 
 .panel {
@@ -1651,7 +1656,8 @@ body {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 #connection-state {
@@ -1680,7 +1686,6 @@ body {
 
   #page-layer {
     transform: none !important;
-    filter: none !important;
   }
 
   #brand-layer {

@@ -11,8 +11,22 @@
     <main id="output-root" aria-live="off">
       <div id="stage">
         <div id="background-layer" aria-hidden="true">
-          <video id="background-video-a" class="background-video" playsinline></video>
-          <video id="background-video-b" class="background-video" playsinline></video>
+          <video
+            id="background-video-a"
+            class="background-video"
+            playsinline
+            muted
+            preload="auto"
+            disablepictureinpicture
+          ></video>
+          <video
+            id="background-video-b"
+            class="background-video"
+            playsinline
+            muted
+            preload="auto"
+            disablepictureinpicture
+          ></video>
           <div class="background-shade"></div>
         </div>
         <section id="page-layer"></section>

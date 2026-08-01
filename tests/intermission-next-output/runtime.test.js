@@ -391,7 +391,9 @@ test('地图间页面渲染签名只响应sequence媒体槽位增减而不响应
   assert.equal(runtime.pageRenderSignature(original), runtime.pageRenderSignature(changed))
   assert.notEqual(
     runtime.pageRenderSignature(original),
-    runtime.pageRenderSignature(outputPayload({ pageData: original.pageData, mapMedia: [mapFrame()] }))
+    runtime.pageRenderSignature(
+      outputPayload({ pageData: original.pageData, mapMedia: [mapFrame()] })
+    )
   )
 })
 
@@ -524,25 +526,22 @@ test('页面视觉直接服从 frame progress 且 reduced-motion 落到稳定状
   assert.deepEqual(
     runtime.pageTransitionVisual({ phase: 'page_enter', progress: 0.25 }, false, false),
     {
-      opacity: 0.25,
-      translateY: 13.5,
-      blur: 3.75
+      opacity: 0.578125,
+      translateY: 7.59375
     }
   )
   assert.deepEqual(
     runtime.pageTransitionVisual({ phase: 'page_exit', progress: 0.5 }, false, false),
     {
-      opacity: 0.5,
-      translateY: -7,
-      blur: 2
+      opacity: 0.875,
+      translateY: -1.75
     }
   )
   assert.deepEqual(
     runtime.pageTransitionVisual({ phase: 'brand_cover', progress: 0.1 }, true, false),
     {
       opacity: 1,
-      translateY: 0,
-      blur: 0
+      translateY: 0
     }
   )
 })

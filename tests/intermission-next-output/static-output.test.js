@@ -345,6 +345,27 @@ test('页面和背景不叠加固定 CSS 转场时长', () => {
   assert.match(app, /runtime\.backgroundTransitionProgressAt/)
 })
 
+test('正式输出只使用合成线程友好的位移与透明度动画', () => {
+  const css = read('style.css')
+  const app = read('app.js')
+  assert.doesNotMatch(app, /\.style\.filter/)
+  assert.doesNotMatch(app, /setStyle\([^\n]+, 'filter'/)
+  assert.doesNotMatch(css, /#page-layer[^}]*filter:/s)
+  assert.match(app, /for \(const visual of mapMediaVisuals\)/)
+  assert.match(app, /for \(const output of enterAnimationOutputs\)/)
+  assert.match(app, /CLOCK_UPDATE_INTERVAL_MS = 100/)
+})
+
+test('下一段背景仅预载并在转场开始后参与播放解码', () => {
+  const app = read('app.js')
+  assert.match(app, /const transitionTargetActive = state\.transition\?\.toAssetId/)
+  assert.match(
+    app,
+    /assignment\.role === 'active' \|\| transitionTargetActive \? state\.playbackStatus : 'paused'/
+  )
+  assert.match(app, /transitionProgress >= 1 && !video\.paused/)
+})
+
 test('地图媒体逐帧使用绝对时间且每个整页截止时间只获取一次状态', () => {
   const app = read('app.js')
   assert.match(app, /runtime\.mapMediaOpacitiesAt\(frame, nowMs\)/)

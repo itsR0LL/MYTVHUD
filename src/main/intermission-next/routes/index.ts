@@ -63,6 +63,7 @@ const MAP_CONTENT_TYPES = new Map<string, string>([
   ['.jpg', 'image/jpeg'],
   ['.jpeg', 'image/jpeg']
 ])
+const IMMUTABLE_ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 
 function sendEmpty(response: ServerResponse, statusCode: number): void {
   response.statusCode = statusCode
@@ -136,7 +137,8 @@ async function streamStaticFile(
   request: IncomingMessage,
   response: ServerResponse,
   filePath: string,
-  contentType: string
+  contentType: string,
+  cacheControl = 'no-store'
 ): Promise<void> {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     response.setHeader('Allow', 'GET, HEAD')
@@ -157,7 +159,7 @@ async function streamStaticFile(
   }
 
   response.statusCode = 200
-  response.setHeader('Cache-Control', 'no-store')
+  response.setHeader('Cache-Control', cacheControl)
   response.setHeader('Content-Type', contentType)
   response.setHeader('Content-Length', file.size)
   response.setHeader('X-Content-Type-Options', 'nosniff')
@@ -231,7 +233,13 @@ function assetDirectoryHandler(
         sendEmpty(response, 404)
         return
       }
-      return streamStaticFile(request, response, asset.filePath, asset.contentType)
+      return streamStaticFile(
+        request,
+        response,
+        asset.filePath,
+        asset.contentType,
+        IMMUTABLE_ASSET_CACHE_CONTROL
+      )
     })
   }
 }

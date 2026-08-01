@@ -313,10 +313,10 @@ export class IntermissionNextStateCoordinator {
     })
   }
 
-  refreshRuntime(): Promise<IntermissionNextCoordinatorResult> {
+  refreshRuntime(publish = true): Promise<IntermissionNextCoordinatorResult> {
     return this.queue.enqueue(async () => {
       await this.loadState()
-      return this.publishCurrent()
+      return this.publishCurrent(publish)
     })
   }
 
@@ -496,7 +496,7 @@ export class IntermissionNextStateCoordinator {
     }
   }
 
-  private async publishCurrent(): Promise<IntermissionNextCoordinatorResult> {
+  private async publishCurrent(publish = true): Promise<IntermissionNextCoordinatorResult> {
     if (
       this.configuration.highlightRule === null ||
       this.configuration.transitionTimings === null ||
@@ -634,7 +634,7 @@ export class IntermissionNextStateCoordinator {
     })
 
     await this.persistRuntime()
-    await this.options.publisher.publish(payload)
+    if (publish) await this.options.publisher.publish(payload)
     return {
       status: 'ready',
       payload,

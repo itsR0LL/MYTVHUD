@@ -35,6 +35,15 @@
     return durationMs === 0 ? 1 : clamp(elapsedMs / durationMs, 0, 1)
   }
 
+  function easeOutCubic(value) {
+    const unit = clamp(value, 0, 1)
+    return 1 - (1 - unit) ** 3
+  }
+
+  function easeInCubic(value) {
+    return clamp(value, 0, 1) ** 3
+  }
+
   function transitionFrameAt(state, timings, nowMs) {
     const timingsValid =
       isRecord(timings) &&
@@ -362,32 +371,32 @@
   }
 
   function pageTransitionVisual(frame, reducedMotion, forceFinal) {
-    if (forceFinal) return { opacity: 1, translateY: 0, blur: 0 }
+    if (forceFinal) return { opacity: 1, translateY: 0 }
     if (!isRecord(frame) || !TRANSITION_PHASES.includes(frame.phase)) {
-      return { opacity: 0, translateY: 0, blur: 0 }
+      return { opacity: 0, translateY: 0 }
     }
     if (reducedMotion) {
       const hidden =
         frame.phase === 'hidden' || frame.phase === 'page_exit' || frame.phase === 'brand_exit'
-      return { opacity: hidden ? 0 : 1, translateY: 0, blur: 0 }
+      return { opacity: hidden ? 0 : 1, translateY: 0 }
     }
     const phaseProgress = isFiniteNumber(frame.progress) ? clamp(frame.progress, 0, 1) : 0
     if (frame.phase === 'page_enter') {
+      const easedProgress = easeOutCubic(phaseProgress)
       return {
-        opacity: phaseProgress,
-        translateY: (1 - phaseProgress) * 18,
-        blur: (1 - phaseProgress) * 5
+        opacity: easedProgress,
+        translateY: (1 - easedProgress) * 18
       }
     }
-    if (frame.phase === 'hold') return { opacity: 1, translateY: 0, blur: 0 }
+    if (frame.phase === 'hold') return { opacity: 1, translateY: 0 }
     if (frame.phase === 'page_exit') {
+      const easedProgress = easeInCubic(phaseProgress)
       return {
-        opacity: 1 - phaseProgress,
-        translateY: -14 * phaseProgress,
-        blur: 4 * phaseProgress
+        opacity: 1 - easedProgress,
+        translateY: -14 * easedProgress
       }
     }
-    return { opacity: 0, translateY: 18, blur: 5 }
+    return { opacity: 0, translateY: 18 }
   }
 
   function planBackgroundVideoSlots(currentAssetIds, backgroundState) {
@@ -486,6 +495,49 @@
     return []
   }
 
+  function utilityReplayRenderIdentity(value) {
+    if (!isRecord(value)) return null
+    const rounds = Array.isArray(value.rounds) ? value.rounds : []
+    const events = Array.isArray(value.events) ? value.events : []
+    return {
+      version: value.version,
+      mapId: value.mapId,
+      radarAssetPath: value.radarAssetPath,
+      durationMs: value.durationMs,
+      expectedRoundCount: value.expectedRoundCount,
+      unassignedGrenadeCount: value.unassignedGrenadeCount,
+      complete: value.complete,
+      rounds: rounds.map((round) =>
+        isRecord(round)
+          ? {
+              roundIndex: round.roundIndex,
+              teamCTId: round.teamCTId,
+              teamTId: round.teamTId,
+              unassignedGrenadeCount: round.unassignedGrenadeCount
+            }
+          : null
+      ),
+      events: events.map((event) =>
+        isRecord(event)
+          ? {
+              id: event.id,
+              grenadeId: event.grenadeId,
+              roundIndex: event.roundIndex,
+              teamId: event.teamId,
+              side: event.side,
+              type: event.type,
+              trajectoryLength: Array.isArray(event.trajectory) ? event.trajectory.length : 0,
+              flameFrameLength: Array.isArray(event.flameFrames) ? event.flameFrames.length : 0,
+              effectStartedAtMs: event.effectStartedAtMs,
+              effectEndedAtMs: event.effectEndedAtMs,
+              explodedAtMs: event.explodedAtMs,
+              endedAtMs: event.endedAtMs
+            }
+          : null
+      )
+    }
+  }
+
   function pageRenderSignature(value) {
     if (
       !isRecord(value) ||
@@ -502,7 +554,7 @@
       layout: value.layout.pages[pageId] ?? null,
       mapMedia: relevantMapMediaPairs(value),
       activeSegment: value.activeSegment ?? null,
-      utilityReplay: value.utilityReplay ?? null
+      utilityReplay: utilityReplayRenderIdentity(value.utilityReplay)
     })
   }
 
@@ -511,7 +563,16 @@
     if (!isRecord(currentPayload) || !isFiniteNumber(currentPayload.payloadRevision)) return true
     if (nextPayload.payloadRevision > currentPayload.payloadRevision) return true
     if (nextPayload.payloadRevision < currentPayload.payloadRevision) return false
-    return stableSerialize(currentPayload) === stableSerialize(nextPayload)
+    return (
+      stableSerialize({
+        ...currentPayload,
+        utilityReplay: utilityReplayRenderIdentity(currentPayload.utilityReplay)
+      }) ===
+      stableSerialize({
+        ...nextPayload,
+        utilityReplay: utilityReplayRenderIdentity(nextPayload.utilityReplay)
+      })
+    )
   }
 
   const INTERNAL_ENTER_RANGES = Object.freeze({

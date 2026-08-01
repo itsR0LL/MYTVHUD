@@ -418,6 +418,17 @@ test('串行执行并发背景变更并按发布顺序递增修订', async () =>
   )
 })
 
+test('管理端读取最新状态时不重复向 OBS 广播完整负载', async () => {
+  const harness = createHarness()
+  await harness.coordinator.initialize()
+  assert.equal(harness.published.length, 1)
+
+  const refreshed = await harness.coordinator.refreshRuntime(false)
+
+  assert.equal(refreshed.status, 'ready')
+  assert.equal(harness.published.length, 1)
+})
+
 test('OBS输出和比分时间线只读取onAirProgram而不泄露preparedProgram', async () => {
   const onAir = standbyProgram('on-air-match')
   const prepared = standbyProgram('prepared-match')

@@ -144,6 +144,7 @@ test('品牌 SVG 与地图资源从调用方目录安全响应', async () => {
     `${baseUrl}/intermission-next/assets/brand/counter-strike-2-wordmark.svg`
   )
   assert.equal(brandResponse.status, 200)
+  assert.equal(brandResponse.headers.get('cache-control'), 'public, max-age=31536000, immutable')
   assert.match(brandResponse.headers.get('content-type') ?? '', /^image\/svg\+xml/)
   assert.match(await brandResponse.text(), /<svg/)
 
@@ -151,6 +152,7 @@ test('品牌 SVG 与地图资源从调用方目录安全响应', async () => {
     `${baseUrl}/intermission-next/assets/maps/de_ancient/fallback.png`
   )
   assert.equal(mapResponse.status, 200)
+  assert.equal(mapResponse.headers.get('cache-control'), 'public, max-age=31536000, immutable')
   assert.equal(mapResponse.headers.get('content-type'), 'image/png')
   assert.ok((await mapResponse.arrayBuffer()).byteLength > 0)
 })
@@ -169,6 +171,7 @@ test('背景接口按 registry 中的 assetId 提供 Range 流', async () => {
   })
   assert.equal(response.status, 206)
   assert.equal(response.headers.get('accept-ranges'), 'bytes')
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable')
   assert.equal(response.headers.get('content-range'), 'bytes 3-6/10')
   assert.equal(await response.text(), '3456')
 })

@@ -105,7 +105,7 @@ const messages = {
     multi: {
       matchForm: {
         title: '比赛表单',
-        desc: '设置比赛双方、赛制与完整地图 BP；提交后由 BP 页面控制播出。',
+        desc: '设置比赛双方、赛制与完整地图 BP；保存后由播出控制统一管理 BP 与赛间输出。',
         type: '赛制',
         teamA: '战队 A',
         teamB: '战队 B',
@@ -126,7 +126,7 @@ const messages = {
           emptySequence: '从左侧地图池开始添加 BP 步骤',
           banCount: '当前赛制必须包含 {count} 个禁用步骤。',
           pickCount: '当前赛制必须包含 {count} 个选择步骤。',
-          prepared: 'BP 已准备并保持隐藏，请前往 BP 页面确认后点击显示。'
+          prepared: 'BP 已准备并保持隐藏，请前往播出控制，在 BP 阶段播放动画。'
         },
         score: {
           title: '对局地图与比分',
@@ -146,28 +146,86 @@ const messages = {
       }
     },
     menu: {
-      title: '菜单 - 安装与配置',
+      title: 'MYTVHUD 快速使用教程',
+      subtitle: '从首次配置到正式播出，按实际导播顺序完成下面七个步骤。',
+      stepsLabel: 'MYTVHUD 使用步骤',
+      output: {
+        title: '统一非比赛画面输出',
+        desc: '暖场、BP、地图间播出、系列赛结束和赛事待机共用一个 OBS 浏览器源。'
+      },
       step1: {
-        title: '步骤 1：配置 GSI（重要）',
-        content1_prefix: '在弹出的文件选择窗口中，选择',
-        content1_suffix: '，将自动配置 GSI。'
+        title: '配置 CS2 GSI',
+        summary: '让 MYTVHUD 持续接收当前对局、选手、比分和回合数据。',
+        item1: '点击下方按钮，在文件选择窗口中准确选择 game\\bin\\win64\\cs2.exe。',
+        item2: '软件会将 gamestate_integration_mytvhud.cfg 写入 game\\csgo\\cfg。',
+        note: '配置完成后启动 CS2；GSI 数据由游戏发送，软件不读取演示录像来替代实时数据。',
+        action: '选择 cs2.exe 并配置'
       },
       step2: {
-        title: '步骤 2：打开 Overlay',
-        content1_beforeIcon: '打开 CS2，进入观察者模式，并点击右上角的',
-        content1_afterIcon: '打开 HUD 映射。',
-        content2_prefix: '在控制台中输入',
-        content2_suffix: '隐藏游戏 HUD'
+        title: '注册战队与选手',
+        summary: '先建立战队，再用 SteamID64 将每名选手准确归属到对应战队。',
+        item1: '在“战队”页面填写队伍名称、游戏内名称和队伍图标。',
+        item2: '在“选手”页面填写昵称、SteamID64、头像，并选择所属战队。',
+        item3: 'HUD 会用注册选手的 SteamID64 识别 GSI 阵营，再显示正确队名和系列赛比分。',
+        note: '更换导播电脑时，可在“设置 → 赛事数据”导出和导入战队、选手及头像。',
+        teamAction: '前往战队',
+        playerAction: '前往选手'
       },
       step3: {
-        title: '步骤 3：配置 OBS',
-        content1_prefix: '在 OBS 中添加一个新的浏览器源，URL 填写',
-        content1_suffix: '，请确保浏览器源置于最上层。',
-        content2: '设置浏览器源的高度、宽度为你的屏幕宽度，单位为 px。',
-        content3_prefix: '地图 BP 使用单独的浏览器源，URL 填写',
-        content3_suffix: '。',
-        content4_prefix: '播出控制使用单独的浏览器源，URL 填写',
-        content4_suffix: '。'
+        title: '创建比赛并完成七步 BP',
+        summary: '比赛页面负责比赛双方、BO 赛制和完整 BP 数据，播出控制负责播放。',
+        item1: '选择两支已注册战队和 BO1、BO3 或 BO5 赛制。',
+        item2: '按照当前赛制提示完成七步禁用、选用、决胜图和选边信息。',
+        item3: '保存比赛后在地图池下方核对 BP 结果；比赛开始后由 GSI 自动更新地图进度和比分。',
+        note: 'BP 结果不会在保存后直接暴露给观众，必须在播出控制进入 BP 阶段后手动播放动画。',
+        action: '前往比赛'
+      },
+      step4: {
+        title: '在 OBS 配置两个浏览器源',
+        summary: '比赛画面与非比赛画面分场景管理，所有浏览器源均按 1920×1080 配置。',
+        item1: '游戏场景添加 HUD 浏览器源，并将它放在游戏画面上方。',
+        item2: '非比赛场景只添加统一播出浏览器源，不再单独添加旧版 BP 地址。',
+        item3: '右上角 Overlay 按钮用于本机全屏覆盖；OBS 正式采集应直接填写浏览器地址。',
+        note: '在 OBS 切换游戏场景与非比赛场景时，同时使用播出控制完成对应阶段的进入或退出。',
+        gameUrl: '比赛 HUD',
+        broadcastUrl: '统一播出'
+      },
+      step5: {
+        title: '设置完整播出页面',
+        summary: '先在“页面设置”完成五个页面的组件、布局和时间轴。',
+        item1: '依次设置暖场、BP 展示、地图间播出、系列赛结束和赛事待机。',
+        item2: '通过“添加组件”加入页面内容，在预览区拖拽、八方向缩放并填写精确位置和尺寸。',
+        item3: '在页面时间轴设置组件出现区间；需要页内切换时添加固定时长的页内定时转场。',
+        note: '每个页面独立保存。切换其他页面前，必须先点击“保存当前页面”或撤销当前修改。',
+        action: '打开页面设置'
+      },
+      step6: {
+        title: '配置流程并执行播出',
+        summary: '页面播放流程管时长，播出控制台管当前阶段，两者不负责彼此的内部布局。',
+        item1: '在“页面播放流程”设置地图间播出、系列赛结束和赛事待机的启用状态与播放时长。',
+        item2: '赛前点击“开始暖场”；BP 完整后点击“转场至 BP”，再点击“播放 BP 动画”。',
+        item3:
+          'BP 播放完成后进入比赛阶段；地图结束时系统冻结 GSI 数据并准备地图间或系列赛结束页面。',
+        item4: '使用“转场至下一段”播放准备好的页面；阶段跳转只开放具备实际数据的播出阶段。',
+        note: '“隐藏推流”会让统一浏览器源保持透明；“恢复暖场”用于回到本场播出的初始暖场状态。',
+        action: '打开播出控制'
+      },
+      step7: {
+        title: '测试、重置与数据迁移',
+        summary: '正式开播前验证全部页面，并在比赛交接时使用对应的安全操作。',
+        item1: '没有真实比赛时，可在播出控制底部启用“无比赛测试”，向 OBS 推送内存测试数据。',
+        item2:
+          '一场系列赛全部结束后，可在比赛页面“完全重置赛事工作区”；战队、选手和页面设置会保留。',
+        item3: '在设置页面导出 MYTVHUD 数据包，交给其他导播导入战队、选手和头像。',
+        note: '无比赛测试不会写入比赛、BP 或 GSI 数据；道具回放仍必须通过真实 GSI 对局验证。',
+        settingsAction: '打开赛事数据',
+        matchAction: '打开比赛重置'
+      },
+      toast: {
+        gsiSuccess: 'GSI 配置完成',
+        gsiIncomplete: 'GSI 配置未完成',
+        gsiCancelled: '操作已取消或失败',
+        gsiFailed: 'GSI 配置失败'
       }
     },
     intermission: {

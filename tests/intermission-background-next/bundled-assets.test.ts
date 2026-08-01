@@ -18,8 +18,8 @@ test('三段正式背景素材使用实测媒体参数并固定循环顺序', ()
 
   for (const asset of assets) {
     assert.equal(asset.durationMs, 20_020)
-    assert.equal(asset.width, 3840)
-    assert.equal(asset.height, 2160)
+    assert.equal(asset.width, 1920)
+    assert.equal(asset.height, 1080)
     assert.equal(asset.frameRate, 30_000 / 1_001)
     assert.equal(asset.videoCodec, 'h264')
     assert.equal(asset.audioCodec, null)
@@ -31,9 +31,9 @@ test('三段正式背景素材使用实测媒体参数并固定循环顺序', ()
 test('三段视频均从项目内正式素材目录提供', () => {
   const registry = createBundledBackgroundFileRegistry(backgroundDirectory)
   const expectedFiles = [
-    ['background-video-1', '背景视频1.mp4', 64_035_358],
-    ['background-video-2', '背景视频2.mp4', 48_045_218],
-    ['background-video-3', '背景视频3.mp4', 68_042_268]
+    ['background-video-1', '背景视频1.mp4', 23_751_969],
+    ['background-video-2', '背景视频2.mp4', 19_474_859],
+    ['background-video-3', '背景视频3.mp4', 15_812_883]
   ] as const
 
   for (const [assetId, fileName, byteLength] of expectedFiles) {
@@ -42,5 +42,6 @@ test('三段视频均从项目内正式素材目录提供', () => {
     assert.equal(entry.filePath, join(backgroundDirectory, fileName))
     assert.equal(entry.mimeType, 'video/mp4')
     assert.equal(statSync(entry.filePath).size, byteLength)
+    assert.ok(byteLength < 24_000_000)
   }
 })

@@ -57,6 +57,7 @@ test('本地视频服务按范围流式返回而非整文件读入内存', async
     })
 
     assert.equal(response.status, 206)
+    assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable')
     assert.equal(response.headers.get('content-range'), 'bytes 3-6/10')
     assert.equal(await response.text(), '3456')
   } finally {
