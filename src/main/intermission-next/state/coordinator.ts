@@ -8,7 +8,6 @@ import {
   type BroadcastRuntimeV1
 } from '../../../shared/broadcast-flow'
 import {
-  createUnconfiguredBroadcastPageFlowTemplates,
   migrateBroadcastFlowTemplatesV1ToPageFlowV3,
   normalizeBroadcastPageFlowTemplates,
   type BroadcastPageFlowTemplatesV3
@@ -32,7 +31,8 @@ import {
   type GlobalBackgroundStateV1
 } from '../../../shared/intermission-background-next/background-state'
 import {
-  createDefaultIntermissionNextLayoutState,
+  createBundledBroadcastPageFlowTemplates,
+  createBundledIntermissionNextLayoutState,
   normalizeIntermissionNextLayoutState,
   type IntermissionNextLayoutState
 } from '../../../shared/intermission-next'
@@ -257,7 +257,7 @@ function pageFlowTemplatesFromStoredValues(
   if (legacyValue !== undefined && legacyValue !== null) {
     return migrateBroadcastFlowTemplatesV1ToPageFlowV3(legacyValue)
   }
-  return createUnconfiguredBroadcastPageFlowTemplates()
+  return createBundledBroadcastPageFlowTemplates()
 }
 
 function outputRuntime(runtime: BroadcastRuntimeV1): BroadcastRuntimeV1 {
@@ -293,8 +293,8 @@ function runtimeElapsedAtMs(runtime: BroadcastRuntimeV1, nowMs: number): number 
 export class IntermissionNextStateCoordinator {
   private readonly queue = new SerialMutationQueue()
   private initialized = false
-  private layout = createDefaultIntermissionNextLayoutState()
-  private pageFlowTemplates = createUnconfiguredBroadcastPageFlowTemplates()
+  private layout = createBundledIntermissionNextLayoutState()
+  private pageFlowTemplates = createBundledBroadcastPageFlowTemplates()
   private persistedRuntime = createDefaultPersistedRuntimeState()
   private configuration: ResolvedConfiguration = {
     highlightRule: null,
@@ -408,7 +408,9 @@ export class IntermissionNextStateCoordinator {
     if (this.initialized) return
 
     const currentLayout = await this.options.settings.get(INTERMISSION_NEXT_LAYOUT_SETTINGS_KEY)
-    this.layout = normalizeIntermissionNextLayoutState(currentLayout)
+    this.layout = normalizeIntermissionNextLayoutState(
+      currentLayout ?? createBundledIntermissionNextLayoutState()
+    )
 
     const currentPageFlowTemplates = await this.options.settings.get(
       INTERMISSION_NEXT_PAGE_FLOW_TEMPLATES_SETTINGS_KEY

@@ -6,15 +6,19 @@ directories:
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!.test-build/**'
+  - '!tests/**'
   - '!AUDIO_BROADCAST_DEVELOPMENT_PLAN.md'
   - '!components.json'
+  - '!dev-server.*.log'
   - '!package-win.ps1'
   - '!pnpm-workspace.yaml'
   - '!scripts/**'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.tests.json,tsconfig.web.json}'
+  - '!*.tsbuildinfo'
 asarUnpack:
   - resources/**
 win:

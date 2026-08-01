@@ -3,6 +3,7 @@ import fs from 'fs'
 import { Low } from 'lowdb'
 import { JSONFile } from 'lowdb/node'
 import type { IpcMain } from 'electron'
+import { createBundledIntermissionPageSettings } from '../../shared/intermission-next'
 import { legacyUserDataDirectory, userDataDirectory } from '../app-paths'
 
 export const dbDir = path.join(userDataDirectory, 'Database')
@@ -270,6 +271,7 @@ export class DatabaseService {
   readonly teams = new CollectionStore<BaseEntity>(teamsFile)
   readonly players = new CollectionStore<BaseEntity>(playersFile)
   readonly settings = new KeyValueStore<KeyValueData>(settingsFile, {
+    ...createBundledIntermissionPageSettings(),
     "seriesName_first": "",
     "seriesName_second": "",
     "seriesName_third": "MYTVHUD",

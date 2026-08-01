@@ -21,6 +21,9 @@ import type { GlobalBackgroundAssetV1 } from '../../src/shared/intermission-back
 import { globalBackgroundPositionAt } from '../../src/shared/intermission-background-next/background-state'
 import {
   addIntermissionNextComponent,
+  createBundledBroadcastPageFlowTemplates,
+  createBundledIntermissionNextLayoutState,
+  createBundledIntermissionPageSettings,
   createDefaultIntermissionNextLayoutState
 } from '../../src/shared/intermission-next'
 import type { IntermissionNextMapMediaOutputFrame } from '../../src/shared/intermission-output-next/map-media'
@@ -72,6 +75,24 @@ class MemoryStore implements IntermissionNextKeyValueStoreAdapter {
     this.writes.push({ key, value: copy })
   }
 }
+
+test('新安装仅写入内置页面配置且保留精确页面顺序', () => {
+  const bundledSettings = createBundledIntermissionPageSettings()
+
+  assert.deepEqual(Object.keys(bundledSettings).sort(), [
+    'broadcastPageFlowTemplatesV3',
+    'intermissionNextLayoutV2'
+  ])
+  assert.deepEqual(bundledSettings.broadcastPageFlowTemplatesV3.order, [
+    'map_break',
+    'series_end',
+    'standby'
+  ])
+  assert.deepEqual(bundledSettings.intermissionNextLayoutV2.pages.map_break.transitions, [
+    { id: 'transition-1', startOffsetMs: 120180, durationMs: 1400 },
+    { id: 'transition-2', startOffsetMs: 420000, durationMs: 1400 }
+  ])
+})
 
 function backgroundAsset(id: string): GlobalBackgroundAssetV1 {
   return {
@@ -313,7 +334,7 @@ test('初始化新布局并迁移旧流程总时长到V3键', async () => {
   assert.equal(result.status, 'ready')
   assert.deepEqual(
     settings.values.get(INTERMISSION_NEXT_LAYOUT_SETTINGS_KEY),
-    createDefaultIntermissionNextLayoutState()
+    createBundledIntermissionNextLayoutState()
   )
   const migratedTemplates = settings.values.get(
     INTERMISSION_NEXT_PAGE_FLOW_TEMPLATES_SETTINGS_KEY
@@ -322,6 +343,25 @@ test('初始化新布局并迁移旧流程总时长到V3键', async () => {
   assert.equal(migratedTemplates.templates.map_break.enabled, true)
   assert.equal(migratedTemplates.templates.map_break.defaultTotalDurationMs, 300_000)
   assert.ok(harness.additional.values.has(INTERMISSION_NEXT_RUNTIME_STATE_KEY))
+})
+
+test('缺少持久化页面配置时载入安装包内置布局与播放流程', async () => {
+  const harness = createHarness()
+
+  const result = await harness.coordinator.initialize()
+
+  assert.equal(result.status, 'ready')
+  if (result.status !== 'ready') return
+  assert.deepEqual(result.snapshot.layout, createBundledIntermissionNextLayoutState())
+  assert.deepEqual(result.snapshot.pageFlowTemplates, createBundledBroadcastPageFlowTemplates())
+  assert.deepEqual(
+    harness.settings.values.get(INTERMISSION_NEXT_LAYOUT_SETTINGS_KEY),
+    createBundledIntermissionNextLayoutState()
+  )
+  assert.deepEqual(
+    harness.settings.values.get(INTERMISSION_NEXT_PAGE_FLOW_TEMPLATES_SETTINGS_KEY),
+    createBundledBroadcastPageFlowTemplates()
+  )
 })
 
 test('初始化优先迁移V2页面流程设置并写入V3键', async () => {
