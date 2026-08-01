@@ -2,7 +2,7 @@ import type {
   IntermissionNextLayoutState,
   IntermissionNextPageId
 } from '../../../../shared/intermission-next'
-import type { BPSequenceItem } from '../../../../shared/bp'
+import { isBPSequenceComplete, type BPMapId, type BPSequenceItem } from '../../../../shared/bp'
 import type {
   IntermissionPageMap,
   IntermissionPagePlayer,
@@ -12,6 +12,10 @@ import type {
   IntermissionNextOutputPayloadV1,
   IntermissionNextPageData
 } from '../../../../shared/intermission-output-next/output'
+import type { IntermissionNextMapMediaOutputFrame } from '../../../../shared/intermission-output-next/map-media'
+
+const PREVIEW_MAP_MEDIA_ROTATION_INTERVAL_MS = 10_000
+const PREVIEW_MAP_MEDIA_CROSSFADE_DURATION_MS = 1_500
 
 const teamA: IntermissionPageTeam = { id: 'preview-team-a', name: '战队 A', avatar: null }
 const teamB: IntermissionPageTeam = { id: 'preview-team-b', name: '战队 B', avatar: null }
@@ -34,24 +38,37 @@ function player(
   assists: number,
   deaths: number,
   score: number,
-  adr: number
+  adr: number,
+  headshotRate: number
 ): IntermissionPagePlayer {
-  return { steamid, teamId, name, kills, assists, deaths, mvps: 0, score, adr, mapsPlayed: 1 }
+  return {
+    steamid,
+    teamId,
+    name,
+    kills,
+    assists,
+    deaths,
+    mvps: 0,
+    score,
+    headshotRate,
+    adr,
+    mapsPlayed: 1
+  }
 }
 
 const teamAPlayers = [
-  player('preview-a-1', 'preview-team-a', '选手 A1', 24, 6, 15, 58, 92.4),
-  player('preview-a-2', 'preview-team-a', '选手 A2', 21, 4, 17, 49, 84.1),
-  player('preview-a-3', 'preview-team-a', '选手 A3', 18, 8, 16, 43, 79.2),
-  player('preview-a-4', 'preview-team-a', '选手 A4', 16, 5, 18, 37, 70.5),
-  player('preview-a-5', 'preview-team-a', '选手 A5', 13, 7, 19, 32, 66.3)
+  player('preview-a-1', 'preview-team-a', '选手 A1', 24, 6, 15, 58, 92.4, 58),
+  player('preview-a-2', 'preview-team-a', '选手 A2', 21, 4, 17, 49, 84.1, 52),
+  player('preview-a-3', 'preview-team-a', '选手 A3', 18, 8, 16, 43, 79.2, 44),
+  player('preview-a-4', 'preview-team-a', '选手 A4', 16, 5, 18, 37, 70.5, 63),
+  player('preview-a-5', 'preview-team-a', '选手 A5', 13, 7, 19, 32, 66.3, 46)
 ]
 const teamBPlayers = [
-  player('preview-b-1', 'preview-team-b', '选手 B1', 22, 5, 18, 51, 88.7),
-  player('preview-b-2', 'preview-team-b', '选手 B2', 20, 3, 18, 46, 82.3),
-  player('preview-b-3', 'preview-team-b', '选手 B3', 17, 9, 19, 42, 76.9),
-  player('preview-b-4', 'preview-team-b', '选手 B4', 14, 6, 20, 34, 68.8),
-  player('preview-b-5', 'preview-team-b', '选手 B5', 12, 4, 21, 29, 61.4)
+  player('preview-b-1', 'preview-team-b', '选手 B1', 22, 5, 18, 51, 88.7, 55),
+  player('preview-b-2', 'preview-team-b', '选手 B2', 20, 3, 18, 46, 82.3, 50),
+  player('preview-b-3', 'preview-team-b', '选手 B3', 17, 9, 19, 42, 76.9, 41),
+  player('preview-b-4', 'preview-team-b', '选手 B4', 14, 6, 20, 34, 68.8, 57),
+  player('preview-b-5', 'preview-team-b', '选手 B5', 12, 4, 21, 29, 61.4, 42)
 ]
 
 const maps: IntermissionPageMap[] = [
@@ -83,6 +100,77 @@ const maps: IntermissionPageMap[] = [
     teamBScore: null
   }
 ]
+
+function previewMapMediaFile(mapId: BPMapId, purpose: 'hero' | 'sequence', assetIndex: 1 | 2) {
+  const directory = purpose === 'hero' ? 'display' : 'component'
+  const filename =
+    purpose === 'hero' ? `${mapId}_${assetIndex}_png.png` : `${mapId}_${assetIndex}.jpg`
+  return {
+    url: `/intermission-next/assets/maps/${mapId}/${directory}/${filename}`,
+    fallbackUrl: `/intermission-next/assets/maps/${mapId}/fallback.png`,
+    width: purpose === 'hero' ? 1920 : 640,
+    height: purpose === 'hero' ? 1080 : 360
+  }
+}
+
+function previewMapMediaFrame(
+  mapId: BPMapId,
+  purpose: 'hero' | 'sequence',
+  nowMs: number,
+  cursorMs: number
+): IntermissionNextMapMediaOutputFrame {
+  const cycleIndex = Math.floor(cursorMs / PREVIEW_MAP_MEDIA_ROTATION_INTERVAL_MS)
+  const timeInCycleMs = cursorMs % PREVIEW_MAP_MEDIA_ROTATION_INTERVAL_MS
+  const frameStartedAtMs = nowMs - timeInCycleMs
+  const frameEndAtMs = frameStartedAtMs + PREVIEW_MAP_MEDIA_ROTATION_INTERVAL_MS
+  const currentIndex = cycleIndex % 2 === 0 ? 1 : 2
+  const preloadIndex = currentIndex === 1 ? 2 : 1
+  const crossfadeStartedAtMs = frameEndAtMs - PREVIEW_MAP_MEDIA_CROSSFADE_DURATION_MS
+  return {
+    mapId,
+    purpose,
+    mediaRevision: 1,
+    current: previewMapMediaFile(mapId, purpose, currentIndex),
+    preload: previewMapMediaFile(mapId, purpose, preloadIndex),
+    crossfadeProgress: Math.max(
+      0,
+      Math.min(
+        1,
+        (timeInCycleMs -
+          (PREVIEW_MAP_MEDIA_ROTATION_INTERVAL_MS - PREVIEW_MAP_MEDIA_CROSSFADE_DURATION_MS)) /
+          PREVIEW_MAP_MEDIA_CROSSFADE_DURATION_MS
+      )
+    ),
+    frameStartedAtMs,
+    frameEndAtMs,
+    crossfadeStartedAtMs,
+    crossfadeDurationMs: PREVIEW_MAP_MEDIA_CROSSFADE_DURATION_MS
+  }
+}
+
+function editorPreviewMapMedia(
+  source: IntermissionNextOutputPayloadV1,
+  data: IntermissionNextPageData,
+  nowMs: number,
+  cursorMs: number
+): IntermissionNextMapMediaOutputFrame[] {
+  const frames =
+    source.pageData?.page === data.page && Array.isArray(source.mapMedia)
+      ? [...source.mapMedia]
+      : []
+  if (data.page !== 'map_break' && data.page !== 'series_end') return frames
+
+  const appendMissingFrame = (mapId: BPMapId, purpose: 'hero' | 'sequence') => {
+    const exists = frames.some((frame) => frame.mapId === mapId && frame.purpose === purpose)
+    if (!exists) frames.push(previewMapMediaFrame(mapId, purpose, nowMs, cursorMs))
+  }
+
+  for (const map of data.maps) appendMissingFrame(map.mapId, 'sequence')
+  if (data.page === 'map_break') {
+    if (data.nextMap) appendMissingFrame(data.nextMap.mapId, 'hero')
+  }
+  return frames
+}
 
 function pageData(pageId: IntermissionNextPageId): IntermissionNextPageData {
   if (pageId === 'warmup') {
@@ -208,7 +296,12 @@ export function createEditorPreviewPayload(
     : utilityWindow
       ? ('map_utility_replay' as const)
       : primaryContentType(pageId)
-  const sourcePageData = source.pageData?.page === pageId ? source.pageData : pageData(pageId)
+  const sourcePageData =
+    source.pageData?.page === pageId &&
+    (source.pageData.page !== 'bp' ||
+      isBPSequenceComplete(source.pageData.sequence, source.pageData.matchType))
+      ? source.pageData
+      : pageData(pageId)
   const previewPageData =
     sourcePageData.page === 'bp'
       ? {
@@ -225,6 +318,7 @@ export function createEditorPreviewPayload(
     serverNowMs: nowMs,
     visible: true,
     pageData: previewPageData,
+    mapMedia: editorPreviewMapMedia(source, previewPageData, nowMs, cursorMs),
     layout,
     transition: {
       version: 1,

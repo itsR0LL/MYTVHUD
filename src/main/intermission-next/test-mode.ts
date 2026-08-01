@@ -7,7 +7,11 @@ import {
   type BroadcastDirectorStage
 } from '../../shared/broadcast-director'
 import { BROADCAST_MAX_TOTAL_DURATION_MS } from '../../shared/broadcast-flow'
-import { BP_BROADCAST_TIMELINE_DURATION_MS, type BPSequenceItem } from '../../shared/bp'
+import {
+  BP_BROADCAST_TIMELINE_DURATION_MS,
+  type BPMapId,
+  type BPSequenceItem
+} from '../../shared/bp'
 import type { GlobalBackgroundStateV1 } from '../../shared/intermission-background-next/background-state'
 import {
   createDefaultIntermissionTestModeState,
@@ -25,8 +29,11 @@ import type {
   IntermissionNextOutputPayloadV1,
   IntermissionNextPageData
 } from '../../shared/intermission-output-next/output'
+import type { IntermissionNextLayoutState } from '../../shared/intermission-next'
 
 const TEST_BACKGROUND_TRANSITION_DURATION_MS = 1_000
+const TEST_MAP_MEDIA_ROTATION_INTERVAL_MS = 10_000
+const TEST_MAP_MEDIA_CROSSFADE_DURATION_MS = 1_500
 const TEST_BP_SEQUENCE: BPSequenceItem[] = [
   { map: 'de_mirage', action: 'ban', actor: 'team_a', startingSide: '' },
   { map: 'de_nuke', action: 'ban', actor: 'team_b', startingSide: '' },
@@ -85,24 +92,37 @@ function player(
   assists: number,
   deaths: number,
   score: number,
-  adr: number
+  adr: number,
+  headshotRate: number
 ): IntermissionPagePlayer {
-  return { steamid, teamId, name, kills, assists, deaths, mvps: 0, score, adr, mapsPlayed: 2 }
+  return {
+    steamid,
+    teamId,
+    name,
+    kills,
+    assists,
+    deaths,
+    mvps: 0,
+    score,
+    headshotRate,
+    adr,
+    mapsPlayed: 2
+  }
 }
 
 const teamAPlayers = [
-  player('test-a-1', teamA.id, '星河', 24, 6, 15, 58, 92.4),
-  player('test-a-2', teamA.id, '北辰', 21, 4, 17, 49, 84.1),
-  player('test-a-3', teamA.id, '山海', 18, 8, 16, 43, 79.2),
-  player('test-a-4', teamA.id, '轨迹', 16, 5, 18, 37, 70.5),
-  player('test-a-5', teamA.id, '流光', 13, 7, 19, 32, 66.3)
+  player('test-a-1', teamA.id, '星河', 24, 6, 15, 58, 92.4, 58),
+  player('test-a-2', teamA.id, '北辰', 21, 4, 17, 49, 84.1, 52),
+  player('test-a-3', teamA.id, '山海', 18, 8, 16, 43, 79.2, 44),
+  player('test-a-4', teamA.id, '轨迹', 16, 5, 18, 37, 70.5, 63),
+  player('test-a-5', teamA.id, '流光', 13, 7, 19, 32, 66.3, 46)
 ]
 const teamBPlayers = [
-  player('test-b-1', teamB.id, '石英', 22, 5, 18, 51, 88.7),
-  player('test-b-2', teamB.id, '螺旋', 20, 3, 18, 46, 82.3),
-  player('test-b-3', teamB.id, '潮汐', 17, 9, 19, 42, 76.9),
-  player('test-b-4', teamB.id, '暮色', 14, 6, 20, 34, 68.8),
-  player('test-b-5', teamB.id, '岩层', 12, 4, 21, 29, 61.4)
+  player('test-b-1', teamB.id, '石英', 22, 5, 18, 51, 88.7, 55),
+  player('test-b-2', teamB.id, '螺旋', 20, 3, 18, 46, 82.3, 50),
+  player('test-b-3', teamB.id, '潮汐', 17, 9, 19, 42, 76.9, 41),
+  player('test-b-4', teamB.id, '暮色', 14, 6, 20, 34, 68.8, 57),
+  player('test-b-5', teamB.id, '岩层', 12, 4, 21, 29, 61.4, 42)
 ]
 
 const maps: IntermissionPageMap[] = [
@@ -153,7 +173,7 @@ const maps: IntermissionPageMap[] = [
   }
 ]
 
-function pageData(
+export function createIntermissionTestPageData(
   stage: BroadcastDirectorStage,
   revision: number,
   stageStartedAtMs: number
@@ -268,37 +288,68 @@ function pageData(
   }
 }
 
-function mapMediaFile(mapId: 'de_ancient' | 'de_anubis' | 'de_dust2' | 'de_inferno') {
+function mapMediaFile(mapId: BPMapId, purpose: 'hero' | 'sequence', assetIndex: 1 | 2) {
+  const directory = purpose === 'hero' ? 'display' : 'component'
+  const filename =
+    purpose === 'hero' ? `${mapId}_${assetIndex}_png.png` : `${mapId}_${assetIndex}.jpg`
   return {
-    url: `/intermission-next/assets/maps/${mapId}/component/${mapId}_1.jpg`,
+    url: `/intermission-next/assets/maps/${mapId}/${directory}/${filename}`,
     fallbackUrl: `/intermission-next/assets/maps/${mapId}/fallback.png`,
-    width: 640,
-    height: 360
+    width: purpose === 'hero' ? 1920 : 640,
+    height: purpose === 'hero' ? 1080 : 360
   }
 }
 
-function testMapMedia(stage: BroadcastDirectorStage): IntermissionNextMapMediaOutputFrame[] {
-  if (stage !== 'map_break' && stage !== 'series_end') return []
-  const purpose = stage === 'map_break' ? ('hero' as const) : ('sequence' as const)
-  const mapIds =
-    stage === 'map_break'
-      ? (['de_ancient', 'de_anubis'] as const)
-      : (['de_ancient', 'de_anubis', 'de_dust2', 'de_inferno'] as const)
-  return mapIds.map((mapId) => ({
+function animatedMapMediaFrame(
+  mapId: BPMapId,
+  purpose: 'hero' | 'sequence',
+  stageStartedAtMs: number,
+  nowMs: number
+): IntermissionNextMapMediaOutputFrame {
+  const elapsedMs = Math.max(0, nowMs - stageStartedAtMs)
+  const cycleIndex = Math.floor(elapsedMs / TEST_MAP_MEDIA_ROTATION_INTERVAL_MS)
+  const frameStartedAtMs = stageStartedAtMs + cycleIndex * TEST_MAP_MEDIA_ROTATION_INTERVAL_MS
+  const frameEndAtMs = frameStartedAtMs + TEST_MAP_MEDIA_ROTATION_INTERVAL_MS
+  const currentIndex = cycleIndex % 2 === 0 ? 1 : 2
+  const preloadIndex = currentIndex === 1 ? 2 : 1
+  const crossfadeStartedAtMs = frameEndAtMs - TEST_MAP_MEDIA_CROSSFADE_DURATION_MS
+  return {
     mapId,
     purpose,
     mediaRevision: 1,
-    current: mapMediaFile(mapId),
-    preload: null,
-    crossfadeProgress: 0,
-    frameStartedAtMs: null,
-    frameEndAtMs: null,
-    crossfadeStartedAtMs: null,
-    crossfadeDurationMs: 0
-  }))
+    current: mapMediaFile(mapId, purpose, currentIndex),
+    preload: mapMediaFile(mapId, purpose, preloadIndex),
+    crossfadeProgress: Math.max(
+      0,
+      Math.min(1, (nowMs - crossfadeStartedAtMs) / TEST_MAP_MEDIA_CROSSFADE_DURATION_MS)
+    ),
+    frameStartedAtMs,
+    frameEndAtMs,
+    crossfadeStartedAtMs,
+    crossfadeDurationMs: TEST_MAP_MEDIA_CROSSFADE_DURATION_MS
+  }
 }
 
-function testActiveSegment(stage: BroadcastDirectorStage): IntermissionNextActiveSegment | null {
+export function createIntermissionTestMapMedia(
+  stage: BroadcastDirectorStage,
+  stageStartedAtMs: number,
+  nowMs: number
+): IntermissionNextMapMediaOutputFrame[] {
+  if (stage !== 'map_break' && stage !== 'series_end') return []
+  if (stage === 'map_break') {
+    return [
+      animatedMapMediaFrame('de_anubis', 'hero', stageStartedAtMs, nowMs),
+      ...maps.map((map) => animatedMapMediaFrame(map.mapId, 'sequence', stageStartedAtMs, nowMs))
+    ]
+  }
+  return maps.map((map) => animatedMapMediaFrame(map.mapId, 'sequence', stageStartedAtMs, nowMs))
+}
+
+function testActiveSegment(
+  stage: BroadcastDirectorStage,
+  startOffsetMs: number,
+  durationMs: number
+): IntermissionNextActiveSegment | null {
   const contentType =
     stage === 'map_break'
       ? ('map_report' as const)
@@ -311,10 +362,22 @@ function testActiveSegment(stage: BroadcastDirectorStage): IntermissionNextActiv
     ? {
         id: `test-${stage}`,
         contentType,
-        startOffsetMs: 0,
-        durationMs: BROADCAST_MAX_TOTAL_DURATION_MS
+        startOffsetMs,
+        durationMs
       }
     : null
+}
+
+export function intermissionTestContentStartOffsetMs(
+  layout: IntermissionNextLayoutState,
+  stage: BroadcastDirectorStage
+): number {
+  if (stage !== 'map_break' && stage !== 'series_end') return 0
+  const windows = layout.pages[stage].componentWindows.utilityReplay ?? []
+  return windows.reduce((offsetMs, window) => {
+    if (window.startOffsetMs !== 0 || window.endOffsetMs === null) return offsetMs
+    return Math.max(offsetMs, window.endOffsetMs)
+  }, 0)
 }
 
 function nextDecision(stage: BroadcastDirectorStage): BroadcastDirectorAdvanceDecision {
@@ -428,7 +491,7 @@ export function applyIntermissionTestMode(
   const state = getIntermissionTestModeState()
   if (!state.enabled) return source
   const director = testDirector(state)
-  const data = pageData(state.stage, state.revision, state.stageStartedAtMs)
+  const data = createIntermissionTestPageData(state.stage, state.revision, state.stageStartedAtMs)
   const pageId = state.stage === 'hidden' ? null : state.stage === 'bp' ? 'bp' : state.stage
   const totalDurationMs =
     state.stage === 'hidden'
@@ -436,6 +499,8 @@ export function applyIntermissionTestMode(
       : state.stage === 'bp'
         ? BP_BROADCAST_TIMELINE_DURATION_MS
         : BROADCAST_MAX_TOTAL_DURATION_MS
+  const contentStartOffsetMs = intermissionTestContentStartOffsetMs(source.layout, state.stage)
+  const remainingDurationMs = Math.max(0, totalDurationMs - contentStartOffsetMs)
   return {
     ...source,
     playRevision: state.revision,
@@ -450,13 +515,17 @@ export function applyIntermissionTestMode(
       startedAtMs: pageId === null ? null : state.stageStartedAtMs,
       exitStartedAtMs: null
     },
-    mapMedia: testMapMedia(state.stage),
-    activeSegment: testActiveSegment(state.stage),
+    mapMedia: createIntermissionTestMapMedia(
+      state.stage,
+      state.stageStartedAtMs,
+      source.serverNowMs
+    ),
+    activeSegment: testActiveSegment(state.stage, contentStartOffsetMs, remainingDurationMs),
     utilityReplay: null,
     clock: {
       status: state.stage === 'hidden' ? 'idle' : 'playing',
       totalDurationMs,
-      deadlineAtMs: state.stage === 'hidden' ? null : state.stageStartedAtMs + totalDurationMs,
+      deadlineAtMs: state.stage === 'hidden' ? null : state.stageStartedAtMs + remainingDurationMs,
       pausedRemainingMs: null
     },
     issues: []
