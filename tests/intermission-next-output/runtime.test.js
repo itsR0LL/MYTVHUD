@@ -546,6 +546,27 @@ test('页面视觉直接服从 frame progress 且 reduced-motion 落到稳定状
   )
 })
 
+test('道具图标按原始时间戳分段插值并保留真实速度变化', () => {
+  const trajectory = [
+    [0, 0, 0],
+    [100, 10, 0],
+    [300, 10, 20]
+  ]
+  assert.equal(runtime.utilityTrajectoryPositionAt(trajectory, -1), null)
+  assert.deepEqual(runtime.utilityTrajectoryPositionAt(trajectory, 50), {
+    x: 5,
+    y: 0
+  })
+  assert.deepEqual(runtime.utilityTrajectoryPositionAt(trajectory, 200), {
+    x: 10,
+    y: 10
+  })
+  assert.deepEqual(runtime.utilityTrajectoryPositionAt(trajectory, 400), {
+    x: 10,
+    y: 20
+  })
+})
+
 test('只接受五类精确页面载荷结构', () => {
   const base = {
     version: 1,

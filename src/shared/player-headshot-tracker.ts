@@ -4,6 +4,9 @@ export interface PlayerHeadshotFrame {
     phase?: unknown
     round?: unknown
   } | null
+  round?: {
+    phase?: unknown
+  } | null
   players?: Array<{
     steamid?: unknown
     state?: {
@@ -23,15 +26,21 @@ export class PlayerHeadshotTracker {
   capture(frame: PlayerHeadshotFrame): void {
     const mapId = typeof frame.map?.name === 'string' ? frame.map.name : ''
     const mapPhase = frame.map?.phase
-    const roundIndex = nonNegativeInteger(frame.map?.round)
+    const completedRoundCount = nonNegativeInteger(frame.map?.round)
     if (
       !mapId ||
       (mapPhase !== 'live' && mapPhase !== 'gameover') ||
-      roundIndex === null ||
+      completedRoundCount === null ||
       !Array.isArray(frame.players)
     ) {
       return
     }
+
+    const roundIndex =
+      frame.round?.phase === 'over' || mapPhase === 'gameover'
+        ? completedRoundCount
+        : completedRoundCount + 1
+    if (roundIndex <= 0) return
 
     let rounds = this.roundsByMap.get(mapId)
     if (!rounds) {

@@ -587,7 +587,6 @@ export async function processActiveMatchFrame(
     if (!currentMaps || !currentMap) return emptyResult
 
     let runtimeChanged = ensureRuntimeMatch(activeMatch.id)
-    capturePlayerHeadshotFrame(data)
     if (liveRuntime.seriesEnded) {
       if (runtimeChanged) {
         liveRuntime.revision += 1

@@ -411,21 +411,28 @@ test('系列赛选手数据按 SteamID 跨已完成地图汇总', () => {
   ])
 })
 
-test('爆头统计按地图、回合和 SteamID 保存每回合最大值', () => {
+test('爆头击杀按实际回合归档且 live 与 over 帧不会重复累计', () => {
   const tracker = new PlayerHeadshotTracker()
-  const frame = (round: number, first: number, second: number, phase = 'live') => ({
-    map: { name: 'de_ancient', phase, round },
+  const frame = (
+    completedRoundCount: number,
+    roundPhase: string,
+    first: number,
+    second: number,
+    mapPhase = 'live'
+  ) => ({
+    map: { name: 'de_ancient', phase: mapPhase, round: completedRoundCount },
+    round: { phase: roundPhase },
     players: [
       { steamid: 'steam-a', state: { round_killhs: first } },
       { steamid: 'steam-b', state: { round_killhs: second } }
     ]
   })
 
-  tracker.capture(frame(0, 1, 0))
-  tracker.capture(frame(0, 1, 1))
-  tracker.capture(frame(1, 0, 2))
-  tracker.capture(frame(1, 1, 1))
-  tracker.capture(frame(2, 5, 5, 'warmup'))
+  tracker.capture(frame(0, 'live', 1, 0))
+  tracker.capture(frame(1, 'over', 1, 1))
+  tracker.capture(frame(1, 'live', 0, 2))
+  tracker.capture(frame(2, 'over', 1, 2))
+  tracker.capture(frame(2, 'live', 5, 5, 'warmup'))
 
   assert.equal(tracker.total('de_ancient', 'steam-a'), 2)
   assert.equal(tracker.total('de_ancient', 'steam-b'), 3)
@@ -447,7 +454,7 @@ test('现有 HUD 雷达坐标精确转换为可直接绘制坐标', () => {
   assert.deepEqual(projectWorldPositionToRadar('de_nuke', [0, 0, -451]), [473.66, 638.3])
 })
 
-test('地图道具回放只在正式回合齐全且没有未归属道具时标记完整', () => {
+test('地图道具回放在正式回合齐全时可播放并保留未归属道具数量', () => {
   const replay = createEmptyMapUtilityReplay('de_mirage')
   replay.rounds = [
     {
@@ -486,7 +493,9 @@ test('地图道具回放只在正式回合齐全且没有未归属道具时标�
   assert.equal(complete.complete, true)
   assert.equal(normalizeMapUtilityReplay(complete)?.complete, true)
   complete.rounds[1].unassignedGrenadeCount = 1
-  assert.equal(finalizeMapUtilityReplay(complete, 2).complete, false)
+  const replayWithSkippedUtility = finalizeMapUtilityReplay(complete, 2)
+  assert.equal(replayWithSkippedUtility.complete, true)
+  assert.equal(replayWithSkippedUtility.unassignedGrenadeCount, 1)
 })
 
 test('旧地图快照中的完整道具数据规范化后不再进入比赛运行态', () => {
@@ -715,7 +724,12 @@ test('GSI 地图状态只按精确阶段推进且重复结束帧不再修改结�
 function utilityGSIFrame(
   roundPhase: 'freezetime' | 'live' | 'over',
   score: number,
-  players: Array<{ steamid: string; side: 'CT' | 'T' }>,
+  players: Array<{
+    steamid: string
+    side: 'CT' | 'T'
+    position?: number[]
+    health?: number
+  }>,
   grenades: unknown[] = []
 ): CSGO {
   return {
@@ -728,7 +742,9 @@ function utilityGSIFrame(
     round: { phase: roundPhase },
     players: players.map((player) => ({
       steamid: player.steamid,
-      team: { side: player.side }
+      team: { side: player.side },
+      position: player.position,
+      state: { health: player.health ?? 100 }
     })),
     grenades
   } as unknown as CSGO
@@ -791,6 +807,62 @@ test('道具采集只在冻结阶段武装，并在比分增加后提交已消�
   assert.equal(completed?.replay.events.length, 1)
   assert.equal(completed?.replay.events[0].endedAtMs, 500)
   assert.equal(capture.finalizeMap('de_ancient', 1).complete, true)
+})
+
+test('新版道具回放按时间采集存活选手移动路径并兼容旧版空路径', () => {
+  const legacy = normalizeMapUtilityReplay({
+    ...createEmptyMapUtilityReplay('de_ancient'),
+    version: 1,
+    playerPaths: undefined
+  })
+  assert.equal(legacy?.version, 2)
+  assert.deepEqual(legacy?.playerPaths, [])
+
+  const capture = new UtilityReplayCapture()
+  capture.processFrame(
+    utilityGSIFrame('freezetime', 0, [{ steamid: 'steam-a', side: 'CT', position: [0, 0, 0] }]),
+    UTILITY_MATCH_CONTEXT,
+    UTILITY_SIDES,
+    1_000
+  )
+  capture.processFrame(
+    utilityGSIFrame('live', 0, [{ steamid: 'steam-a', side: 'CT', position: [0, 0, 0] }]),
+    UTILITY_MATCH_CONTEXT,
+    UTILITY_SIDES,
+    2_000
+  )
+  capture.processFrame(
+    utilityGSIFrame('live', 0, [{ steamid: 'steam-a', side: 'CT', position: [50, 0, 0] }]),
+    UTILITY_MATCH_CONTEXT,
+    UTILITY_SIDES,
+    2_100
+  )
+  capture.processFrame(
+    utilityGSIFrame('live', 0, [{ steamid: 'steam-a', side: 'CT', position: [100, 0, 0] }]),
+    UTILITY_MATCH_CONTEXT,
+    UTILITY_SIDES,
+    2_300
+  )
+  capture.processFrame(
+    utilityGSIFrame('freezetime', 1, [{ steamid: 'steam-a', side: 'CT', position: [100, 0, 0] }]),
+    UTILITY_MATCH_CONTEXT,
+    UTILITY_SIDES,
+    3_000
+  )
+  const replay = capture.finalizeMap('de_ancient', 1)
+  assert.equal(replay.version, 2)
+  assert.deepEqual(replay.playerPaths, [
+    {
+      steamId: 'steam-a',
+      roundIndex: 1,
+      teamId: String(TEAM_A.id),
+      side: 'CT',
+      trajectory: [
+        [0, 583.26, 428.92],
+        [300, 603.1, 428.92]
+      ]
+    }
+  ])
 })
 
 test('道具 owner 与 SteamID 先不匹配后精确匹配时清除未归属记录', () => {

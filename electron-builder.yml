@@ -1,6 +1,5 @@
 appId: com.mytvhud.manager
 productName: MYTVHUD Manager
-buildNumber: '7'
 directories:
   buildResources: build
 files:

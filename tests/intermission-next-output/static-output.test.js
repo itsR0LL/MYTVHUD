@@ -7,6 +7,11 @@ const path = require('node:path')
 const outputDirectory = path.resolve(__dirname, '../../src/main/intermission-next/file')
 const bpAssetDirectory = path.resolve(__dirname, '../../src/main/bp/file')
 const rendererPageDirectory = path.resolve(__dirname, '../../src/renderer/src/pages')
+const rendererIndexPath = path.resolve(__dirname, '../../src/renderer/index.html')
+const rendererI18nPath = path.resolve(__dirname, '../../src/renderer/src/i18n/index.ts')
+const broadcastFlowPath = path.resolve(__dirname, '../../src/main/intermission/broadcast-flow.ts')
+const packagePath = path.resolve(__dirname, '../../package.json')
+const electronBuilderPath = path.resolve(__dirname, '../../electron-builder.yml')
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function read(fileName) {
@@ -22,6 +27,24 @@ function readBPAsset(fileName) {
 function readRendererPage(fileName) {
   return fs.readFileSync(path.join(rendererPageDirectory, fileName), 'utf8')
 }
+
+test('管理端 CSP 放行本地 GSI HTTP 与 Socket 连接', () => {
+  const html = fs.readFileSync(rendererIndexPath, 'utf8')
+  assert.match(
+    html,
+    /connect-src 'self' http:\/\/localhost:5031 http:\/\/127\.0\.0\.1:5031 ws:\/\/localhost:5031 ws:\/\/127\.0\.0\.1:5031/
+  )
+})
+
+test('阶段跳转到地图间页面时按冻结数据重新校验并保留道具回放', () => {
+  const source = fs.readFileSync(broadcastFlowPath, 'utf8')
+  const start = source.indexOf('export async function prepareBroadcastMapReport')
+  const end = source.indexOf('export async function updatePreparedProgramScoreOverride', start)
+  const prepareMapReport = source.slice(start, end)
+  assert.match(prepareMapReport, /getMapUtilityReplay\(sourceProgram\.sourceMatchId, mapId\)/)
+  assert.match(prepareMapReport, /createUnscheduledSegments\('map_break', false\)/)
+  assert.doesNotMatch(prepareMapReport, /contentType === 'map_report'/)
+})
 
 test('正式入口与管理端预览入口严格隔离', () => {
   const formal = read('index.html')
@@ -123,6 +146,42 @@ test('本图数据板将双方选手表格上下排列', () => {
   assert.doesNotMatch(statsRule, /border-left:/)
 })
 
+test('道具回放删除开发验证计数并使用真实彩色道具图标', () => {
+  const app = read('app.js')
+  const css = read('style.css')
+
+  assert.doesNotMatch(app, /叠加 .* 个正式回合|utility-round-count/)
+  assert.match(app, /function createUtilityLegendIcon/)
+  assert.match(app, /\['smoke', 'smoke', '烟雾'\]/)
+  assert.match(app, /\['flash', 'flashbang', '闪光'\]/)
+  assert.match(app, /\['fire', 'firebomb', '燃烧'\]/)
+  assert.match(app, /createUtilityLegendIcon\(projectileType\)/)
+  assert.match(css, /\.utility-legend-icon/)
+  assert.doesNotMatch(css, /\.utility-legend-item i/)
+})
+
+test('比赛保存提示指向统一播出控制流程', () => {
+  const matchPage = readRendererPage('matchs.vue')
+  const i18n = fs.readFileSync(rendererI18nPath, 'utf8')
+
+  assert.match(matchPage, /toast\.success\('比赛与 BP 已保存'/)
+  assert.match(i18n, /结果已同步到播出控制/)
+  assert.match(i18n, /进入 BP 展示阶段后由导播开始播放动画/)
+  assert.doesNotMatch(i18n, /请前往播出控制，在 BP 阶段播放动画/)
+})
+
+test('安装包版本与发布者由当前项目元数据实时生成', () => {
+  const packageMetadata = JSON.parse(fs.readFileSync(packagePath, 'utf8'))
+  const builder = fs.readFileSync(electronBuilderPath, 'utf8')
+
+  assert.match(packageMetadata.version, /^\d+\.\d+\.\d+$/)
+  assert.equal(packageMetadata.author, 'Github itsR0L1')
+  assert.equal(packageMetadata.homepage, 'https://github.com/itsR0LL/MYTVHUD')
+  assert.match(builder, /artifactName: \$\{name\}-\$\{version\}-setup\.\$\{ext\}/)
+  assert.match(builder, /uninstallDisplayName: MYTVHUD Manager \$\{version\}/)
+  assert.doesNotMatch(builder, /^buildNumber:/m)
+})
+
 test('本图数据板只保留双方选手数据并删除真实比分时间线', () => {
   const app = read('app.js')
   const css = read('style.css')
@@ -144,6 +203,19 @@ test('选手数据最后一项使用爆头率而不是得分', () => {
   assert.match(tableRenderer, /\['爆头率', 'headshotRate'\]/)
   assert.match(tableRenderer, /`\$\{statValue\(player\[key\]\)\}%`/)
   assert.doesNotMatch(tableRenderer, /\['得分', 'score'\]/)
+})
+
+test('双方选手表格使用相同字段顺序且战队名称均左对齐', () => {
+  const app = read('app.js')
+  const css = read('style.css')
+  const tableRenderer = app.slice(
+    app.indexOf('function createPlayerTable'),
+    app.indexOf('function mapStateText')
+  )
+
+  assert.doesNotMatch(tableRenderer, /side === 'b'/)
+  assert.doesNotMatch(css, /\.team-table-title\.is-team-b\s*\{[\s\S]*?row-reverse/)
+  assert.doesNotMatch(css, /\.series-team-table\.is-team-b \.stat-table/)
 })
 
 test('本图完整数据板不加载地图背景并使用高对比文字', () => {
@@ -467,8 +539,17 @@ test('新版输出内置固定四页道具回放且不读取旧赛间接口', ()
   const css = read('style.css')
   assert.match(app, /function renderUtilityReplay/)
   assert.match(app, /function updateUtilityReplay/)
-  assert.match(app, /PAGE \$\{pageIndex \+ 1\} \/ 4/)
+  assert.match(app, /第 \$\{pageIndex \+ 1\} \/ 4 页/)
   assert.match(app, /UTILITY_REPLAY_PAGE_DURATION_MS = 30_000/)
+  assert.match(app, /utility-player-paths/)
+  assert.match(app, /function createUtilityProjectile/)
+  assert.match(app, /function createSmokeVisual/)
+  assert.match(app, /function createFlashVisual/)
+  assert.match(app, /function createFlameMarker/)
+  assert.match(app, /runtime\.utilityTrajectoryPositionAt/)
+  assert.match(app, /rotate\(-90\)/)
+  assert.doesNotMatch(app, /position\.angleDeg/)
+  assert.doesNotMatch(app, /utility-trajectory|svgElement\('polyline'/)
   assert.match(runtime, /utilityReplay/)
   assert.match(runtime, /activeSegment/)
   assert.match(css, /\.utility-replay-page/)

@@ -1012,8 +1012,6 @@ async function submitForm(): Promise<void> {
 
   runtimeBusy.value = true
   try {
-    const wasExistingMatch = Boolean(item.id)
-    let createdNextMatch = false
     if (isNextMatchDraft.value) {
       const created = await window.api.createNextMatch({
         teamAId: item.team_a.id,
@@ -1023,7 +1021,6 @@ async function submitForm(): Promise<void> {
       item.id = created.id
       matchForm.value.id = created.id
       isNextMatchDraft.value = false
-      createdNextMatch = true
     }
     const result = await window.api.saveMatch({
       match: item,
@@ -1035,15 +1032,12 @@ async function submitForm(): Promise<void> {
     })
     await loadRuntimeStatus()
     manualCorrectionEnabled.value = false
-    toast.success(
-      wasExistingMatch && !createdNextMatch ? t('common.modifySuccess') : t('common.addSuccess'),
-      {
-        description: result.runtimeInvalidated
-          ? '旧运行快照已按确认作废，BP 已重新准备。'
-          : t('multi.matchForm.bp.prepared'),
-        duration: 3500
-      }
-    )
+    toast.success('比赛与 BP 已保存', {
+      description: result.runtimeInvalidated
+        ? '旧运行快照已按确认作废；比赛与 BP 已重新保存，等待播出控制进入 BP 展示阶段。'
+        : t('multi.matchForm.bp.prepared'),
+      duration: 3500
+    })
   } catch (error: unknown) {
     toast.error(t('common.saveFailed'), {
       description: error instanceof Error ? error.message : String(error),

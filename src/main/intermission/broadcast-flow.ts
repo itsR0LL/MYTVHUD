@@ -327,16 +327,16 @@ export async function prepareBroadcastProgram(
     if (!utilityReplay?.complete) {
       if (!utilityReplay) {
         issues.push('最近结束地图没有前 30 秒道具回放数据，已跳过道具展示')
-      } else if (utilityReplay.unassignedGrenadeCount > 0) {
-        issues.push(
-          `最近结束地图有 ${utilityReplay.unassignedGrenadeCount} 个烟、闪或火无法归属战队，已跳过道具展示`
-        )
       } else {
         issues.push(
           `最近结束地图只完整记录 ${utilityReplay.rounds.length}/${utilityReplay.expectedRoundCount} 个回合，已跳过道具展示`
         )
       }
       segments = segments.filter((segment) => segment.contentType !== 'map_utility_replay')
+    } else if (utilityReplay.unassignedGrenadeCount > 0) {
+      issues.push(
+        `最近结束地图有 ${utilityReplay.unassignedGrenadeCount} 个烟、闪或火无法归属战队，已跳过这些异常数据，其余道具正常展示`
+      )
     }
     if (type === 'map_break' && !nextMapId) {
       issues.push('系列赛尚未结束，但无法从比赛计划派生下一张地图')
@@ -409,6 +409,22 @@ export async function prepareBroadcastMapReport(mapIdValue: unknown): Promise<Br
     const issues = mapSnapshot.players.length
       ? []
       : ['所选地图缺少完整选手数据，本图战报仅显示已冻结内容']
+    let segments = createUnscheduledSegments('map_break', false)
+    const utilityReplay = await getMapUtilityReplay(sourceProgram.sourceMatchId, mapId)
+    if (!utilityReplay?.complete) {
+      if (!utilityReplay) {
+        issues.push('所选地图没有前 30 秒道具回放数据，已跳过道具展示')
+      } else {
+        issues.push(
+          `所选地图只完整记录 ${utilityReplay.rounds.length}/${utilityReplay.expectedRoundCount} 个回合，已跳过道具展示`
+        )
+      }
+      segments = segments.filter((segment) => segment.contentType !== 'map_utility_replay')
+    } else if (utilityReplay.unassignedGrenadeCount > 0) {
+      issues.push(
+        `所选地图有 ${utilityReplay.unassignedGrenadeCount} 个烟、闪或火无法归属战队，已跳过这些异常数据，其余道具正常展示`
+      )
+    }
     const program: BroadcastProgram = {
       id: randomUUID(),
       type: 'map_break',
@@ -420,9 +436,7 @@ export async function prepareBroadcastMapReport(mapIdValue: unknown): Promise<Br
         lastFinishedMapId: mapId
       },
       issues,
-      segments: createUnscheduledSegments('map_break', false).filter(
-        (segment) => segment.contentType === 'map_report'
-      )
+      segments
     }
     const hasActiveProgram =
       liveRuntime.onAirProgram !== null &&

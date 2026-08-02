@@ -54,6 +54,13 @@
     node.style.setProperty(property, value)
   }
 
+  function setSvgAttribute(node, name, value) {
+    if (!node) return
+    const text = String(value)
+    if (node.getAttribute(name) === text) return
+    node.setAttribute(name, text)
+  }
+
   async function loadTransitionBrand() {
     if (!brandVectorHook) return
     try {
@@ -354,23 +361,14 @@
     const head = element('thead')
     const headRow = element('tr')
     const columns = series
-      ? side === 'b'
-        ? [
-            ['地图', 'mapsPlayed'],
-            ['爆头率', 'headshotRate'],
-            ['D', 'deaths'],
-            ['A', 'assists'],
-            ['K', 'kills'],
-            ['选手', 'name']
-          ]
-        : [
-            ['选手', 'name'],
-            ['K', 'kills'],
-            ['A', 'assists'],
-            ['D', 'deaths'],
-            ['爆头率', 'headshotRate'],
-            ['地图', 'mapsPlayed']
-          ]
+      ? [
+          ['选手', 'name'],
+          ['K', 'kills'],
+          ['A', 'assists'],
+          ['D', 'deaths'],
+          ['爆头率', 'headshotRate'],
+          ['地图', 'mapsPlayed']
+        ]
       : [
           ['选手', 'name'],
           ['K', 'kills'],
@@ -1055,12 +1053,15 @@
     radarImage.src = replay.radarAssetPath
     radarImage.alt = ''
     radarImage.draggable = false
+    const playerPathCanvas = element('canvas', 'utility-player-paths')
+    playerPathCanvas.width = 1024
+    playerPathCanvas.height = 1024
     const drawing = svgElement('svg', {
       class: 'utility-radar-drawing',
       viewBox: '0 0 1024 1024',
       'aria-hidden': 'true'
     })
-    append(radar, radarImage, drawing)
+    append(radar, radarImage, playerPathCanvas, drawing)
 
     const detail = element('aside', 'utility-detail')
     const pageLabel = element('span', 'utility-page-label')
@@ -1070,20 +1071,19 @@
       'utility-page-description',
       '本图全部正式回合 · 烟 / 闪 / 火'
     )
-    const roundCount = element('strong', 'utility-round-count')
     const pageClock = element('div', 'utility-page-clock')
     append(pageClock, element('span', '', '回合开局'), element('strong', '', '00:00 / 00:30'))
     const legend = element('div', 'utility-legend')
-    for (const [type, label] of [
-      ['smoke', '烟雾'],
-      ['flash', '闪光'],
-      ['fire', '燃烧']
+    for (const [type, projectileType, label] of [
+      ['smoke', 'smoke', '烟雾'],
+      ['flash', 'flashbang', '闪光'],
+      ['fire', 'firebomb', '燃烧']
     ]) {
       const item = element('span', `utility-legend-item is-${type}`)
-      append(item, element('i', ''), document.createTextNode(label))
+      append(item, createUtilityLegendIcon(projectileType), document.createTextNode(label))
       legend.appendChild(item)
     }
-    append(detail, pageLabel, pageTitle, pageDescription, roundCount, pageClock, legend)
+    append(detail, pageLabel, pageTitle, pageDescription, pageClock, legend)
     append(body, radar, detail)
     append(page, header, body)
 
@@ -1093,159 +1093,350 @@
       title: title.querySelector('.utility-title-value'),
       breakClock: breakClock.querySelector('strong'),
       drawing,
+      playerPathContext: playerPathCanvas.getContext('2d'),
       pageLabel,
       pageTitle,
-      roundCount,
       pageClock: pageClock.querySelector('strong'),
+      eventVisuals: [],
+      playerPoints: [],
+      nextPlayerPointIndex: 0,
+      lastPlayerPathElapsedMs: -1,
       lastPageIndex: -1
     }
     updateUtilityReplay(serverNowMs())
     return page
   }
 
-  function trajectoryVisibleUntil(event) {
-    if (event.type === 'smoke') {
-      return event.effectEndedAtMs ?? event.endedAtMs ?? UTILITY_REPLAY_PAGE_DURATION_MS
-    }
-    if (event.type === 'flashbang') {
-      return event.explodedAtMs === null
-        ? (event.endedAtMs ?? UTILITY_REPLAY_PAGE_DURATION_MS)
-        : event.explodedAtMs + UTILITY_REPLAY_FLASH_DURATION_MS
-    }
-    return (event.endedAtMs ?? UTILITY_REPLAY_PAGE_DURATION_MS) + 500
+  function utilityTypeClass(type) {
+    if (type === 'flashbang') return 'flash'
+    if (type === 'firebomb' || type === 'inferno') return 'fire'
+    return 'smoke'
   }
 
-  function appendTrajectory(drawing, event, pageElapsedMs) {
-    if (pageElapsedMs > trajectoryVisibleUntil(event)) return
-    const points = event.trajectory.filter((point) => point[0] <= pageElapsedMs)
-    if (!points.length) return
-    const typeClass =
-      event.type === 'flashbang' ? 'flash' : event.type === 'firebomb' ? 'fire' : 'smoke'
-    if (points.length > 1) {
-      drawing.appendChild(
-        svgElement('polyline', {
-          class: `utility-trajectory is-${typeClass}`,
-          points: points.map((point) => `${point[1]},${point[2]}`).join(' ')
-        })
+  function createUtilityProjectile(type) {
+    const typeClass = utilityTypeClass(type)
+    const root = svgElement('g', {
+      class: `utility-projectile is-${typeClass}`,
+      'aria-hidden': 'true'
+    })
+    if (type === 'smoke') {
+      append(
+        root,
+        svgElement('rect', {
+          class: 'utility-projectile-body',
+          x: -13,
+          y: -7,
+          width: 23,
+          height: 14,
+          rx: 4
+        }),
+        svgElement('rect', {
+          class: 'utility-projectile-cap',
+          x: 9,
+          y: -5,
+          width: 6,
+          height: 10,
+          rx: 2
+        }),
+        svgElement('path', { class: 'utility-projectile-detail', d: 'M-6 -7V7M1 -7V7' })
+      )
+    } else if (type === 'flashbang') {
+      append(
+        root,
+        svgElement('rect', {
+          class: 'utility-projectile-body',
+          x: -14,
+          y: -7,
+          width: 23,
+          height: 14,
+          rx: 3
+        }),
+        svgElement('path', { class: 'utility-projectile-cap', d: 'M9 -5H15V5H9ZM14 -5L20 -10' }),
+        svgElement('circle', { class: 'utility-projectile-cutout', cx: -7, cy: -3, r: 1.6 }),
+        svgElement('circle', { class: 'utility-projectile-cutout', cx: -1, cy: 3, r: 1.6 }),
+        svgElement('circle', { class: 'utility-projectile-cutout', cx: 5, cy: -3, r: 1.6 })
+      )
+    } else {
+      append(
+        root,
+        svgElement('path', {
+          class: 'utility-projectile-body',
+          d: 'M-14 -6H4L10 -3V3L4 6H-14C-18 6-18-6-14-6Z'
+        }),
+        svgElement('rect', {
+          class: 'utility-projectile-cap',
+          x: 9,
+          y: -4,
+          width: 7,
+          height: 8,
+          rx: 2
+        }),
+        svgElement('path', { class: 'utility-projectile-wick', d: 'M15 0C20-5 23-6 27-4' })
       )
     }
-    drawing.appendChild(
-      svgElement('circle', {
-        class: `utility-origin is-${typeClass}`,
-        cx: points[0][1],
-        cy: points[0][2],
-        r: 7
+    setStyle(root, 'display', 'none')
+    return root
+  }
+
+  function createUtilityLegendIcon(type) {
+    const icon = svgElement('svg', {
+      class: 'utility-legend-icon',
+      viewBox: '-20 -32 40 64',
+      'aria-hidden': 'true'
+    })
+    const projectile = createUtilityProjectile(type)
+    setStyle(projectile, 'display', 'block')
+    projectile.setAttribute('transform', 'rotate(-90)')
+    icon.appendChild(projectile)
+    return icon
+  }
+
+  function createSmokeVisual() {
+    const root = svgElement('g', { class: 'utility-smoke-visual', 'aria-hidden': 'true' })
+    append(
+      root,
+      svgElement('circle', { class: 'utility-smoke-lobe is-back', cx: -19, cy: 5, r: 16 }),
+      svgElement('circle', { class: 'utility-smoke-lobe is-back', cx: 20, cy: 6, r: 17 }),
+      svgElement('circle', { class: 'utility-smoke-lobe', cx: -9, cy: -10, r: 20 }),
+      svgElement('circle', { class: 'utility-smoke-lobe', cx: 11, cy: -12, r: 21 }),
+      svgElement('circle', { class: 'utility-smoke-lobe is-front', cx: 0, cy: 8, r: 23 }),
+      svgElement('path', {
+        class: 'utility-smoke-base',
+        d: 'M-35 11C-28 24 27 25 36 11C29 29-29 30-35 11Z'
       })
     )
+    setStyle(root, 'display', 'none')
+    return root
   }
 
-  function lastTrajectoryPosition(event, timeMs) {
-    return event.trajectory.filter((point) => point[0] <= timeMs).at(-1) || null
-  }
-
-  function appendSmokeEffect(drawing, event, pageElapsedMs) {
-    if (
-      event.effectStartedAtMs === null ||
-      pageElapsedMs < event.effectStartedAtMs ||
-      pageElapsedMs > (event.effectEndedAtMs ?? UTILITY_REPLAY_PAGE_DURATION_MS)
-    ) {
-      return
-    }
-    const position = lastTrajectoryPosition(event, event.effectStartedAtMs)
-    if (!position) return
-    drawing.append(
-      svgElement('circle', {
-        class: 'utility-effect utility-smoke-effect',
-        cx: position[1],
-        cy: position[2],
-        r: 31
+  function createFlashVisual() {
+    const root = svgElement('g', { class: 'utility-flash-visual', 'aria-hidden': 'true' })
+    append(
+      root,
+      svgElement('path', {
+        class: 'utility-flash-star',
+        d: 'M0-37L6-12L27-27L12-6L37 0L12 6L27 27L6 12L0 37L-6 12L-27 27L-12 6L-37 0L-12-6L-27-27L-6-12Z'
       }),
-      svgElement('circle', {
-        class: 'utility-landing is-smoke',
-        cx: position[1],
-        cy: position[2],
-        r: 8
+      svgElement('circle', { class: 'utility-flash-ring', cx: 0, cy: 0, r: 20 }),
+      svgElement('circle', { class: 'utility-flash-core', cx: 0, cy: 0, r: 8 })
+    )
+    setStyle(root, 'display', 'none')
+    return root
+  }
+
+  function createFlameMarker() {
+    const root = svgElement('g', { class: 'utility-fire-marker', 'aria-hidden': 'true' })
+    append(
+      root,
+      svgElement('path', {
+        class: 'utility-fire-outer',
+        d: 'M0-18C10-10 14-2 12 7C10 17-10 17-12 7C-14-2-7-9 0-18Z'
+      }),
+      svgElement('path', {
+        class: 'utility-fire-inner',
+        d: 'M1-8C6-3 7 2 5 7C3 12-5 11-6 6C-7 2-3-3 1-8Z'
       })
+    )
+    setStyle(root, 'display', 'none')
+    return root
+  }
+
+  function createUtilityEventVisual(event) {
+    const root = svgElement('g', {
+      class: `utility-event is-${utilityTypeClass(event.type)}`,
+      'data-utility-event-id': event.id
+    })
+    const projectile = event.trajectory.length > 0 ? createUtilityProjectile(event.type) : null
+    const smoke = event.type === 'smoke' ? createSmokeVisual() : null
+    const flash = event.type === 'flashbang' ? createFlashVisual() : null
+    const flameCount =
+      event.type === 'inferno'
+        ? Math.max(0, ...event.flameFrames.map((frame) => frame[1].length))
+        : 0
+    const flames = Array.from({ length: flameCount }, () => createFlameMarker())
+    append(root, projectile, smoke, flash, ...flames)
+    return { event, root, projectile, smoke, flash, flames }
+  }
+
+  function latestTimedFrame(frames, timeMs) {
+    if (!Array.isArray(frames) || frames.length === 0 || timeMs < frames[0][0]) return null
+    let low = 0
+    let high = frames.length - 1
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2)
+      if (frames[middle][0] <= timeMs) low = middle + 1
+      else high = middle - 1
+    }
+    return high >= 0 ? frames[high] : null
+  }
+
+  function projectileEndTime(event) {
+    const lastPoint = event.trajectory.at(-1)
+    if (!lastPoint) return null
+    if (event.type === 'smoke') return event.effectStartedAtMs ?? event.endedAtMs ?? lastPoint[0]
+    if (event.type === 'flashbang') return event.explodedAtMs ?? event.endedAtMs ?? lastPoint[0]
+    return event.endedAtMs ?? lastPoint[0]
+  }
+
+  function updateUtilityProjectile(visual, pageElapsedMs) {
+    const { event, projectile } = visual
+    if (!projectile) return
+    const firstPoint = event.trajectory[0]
+    const endTime = projectileEndTime(event)
+    const visible =
+      firstPoint && endTime !== null && pageElapsedMs >= firstPoint[0] && pageElapsedMs < endTime
+    if (!visible) {
+      setStyle(projectile, 'display', 'none')
+      return
+    }
+    const position = runtime.utilityTrajectoryPositionAt(event.trajectory, pageElapsedMs)
+    if (!position) {
+      setStyle(projectile, 'display', 'none')
+      return
+    }
+    const enterOpacity = clampUnit((pageElapsedMs - firstPoint[0]) / 90)
+    const exitOpacity = clampUnit((endTime - pageElapsedMs) / 90)
+    setStyle(projectile, 'display', 'block')
+    setStyle(projectile, 'opacity', String(Math.min(enterOpacity, exitOpacity)))
+    setSvgAttribute(
+      projectile,
+      'transform',
+      `translate(${position.x.toFixed(2)} ${position.y.toFixed(2)}) rotate(-90)`
     )
   }
 
-  function appendFlashEffect(drawing, event, pageElapsedMs) {
-    if (
-      event.explodedAtMs === null ||
-      pageElapsedMs < event.explodedAtMs ||
-      pageElapsedMs >= event.explodedAtMs + UTILITY_REPLAY_FLASH_DURATION_MS
-    ) {
+  function updateSmokeVisual(visual, pageElapsedMs, reducedMotion) {
+    const { event, smoke } = visual
+    if (!smoke || event.effectStartedAtMs === null) return
+    const endTime = event.effectEndedAtMs ?? UTILITY_REPLAY_PAGE_DURATION_MS
+    const visible = pageElapsedMs >= event.effectStartedAtMs && pageElapsedMs <= endTime
+    if (!visible) {
+      setStyle(smoke, 'display', 'none')
       return
     }
-    const position = lastTrajectoryPosition(event, event.explodedAtMs)
-    if (!position) return
-    const effectProgress = (pageElapsedMs - event.explodedAtMs) / UTILITY_REPLAY_FLASH_DURATION_MS
-    drawing.appendChild(
-      svgElement('circle', {
-        class: 'utility-flash-burst',
-        cx: position[1],
-        cy: position[2],
-        r: 12 + effectProgress * 70,
-        opacity: 1 - effectProgress
-      })
+    const position = runtime.utilityTrajectoryPositionAt(event.trajectory, event.effectStartedAtMs)
+    if (!position) {
+      setStyle(smoke, 'display', 'none')
+      return
+    }
+    const effectElapsedMs = pageElapsedMs - event.effectStartedAtMs
+    const enterProgress = easeOutCubic(effectElapsedMs / 360)
+    const exitProgress = clampUnit((endTime - pageElapsedMs) / 320)
+    const breathe = reducedMotion ? 1 : 1 + Math.sin(effectElapsedMs / 430) * 0.025
+    const scale = (0.62 + enterProgress * 0.38) * breathe
+    setStyle(smoke, 'display', 'block')
+    setStyle(smoke, 'opacity', String(Math.min(enterProgress, exitProgress)))
+    setSvgAttribute(
+      smoke,
+      'transform',
+      `translate(${position.x.toFixed(2)} ${position.y.toFixed(2)}) scale(${scale.toFixed(3)})`
     )
   }
 
-  function appendFireProjectileLanding(drawing, event, pageElapsedMs) {
-    if (
-      event.endedAtMs === null ||
-      pageElapsedMs < event.endedAtMs ||
-      pageElapsedMs > event.endedAtMs + 500
-    ) {
+  function updateFlashVisual(visual, pageElapsedMs) {
+    const { event, flash } = visual
+    if (!flash || event.explodedAtMs === null) return
+    const progress = (pageElapsedMs - event.explodedAtMs) / UTILITY_REPLAY_FLASH_DURATION_MS
+    if (progress < 0 || progress >= 1) {
+      setStyle(flash, 'display', 'none')
       return
     }
-    const position = lastTrajectoryPosition(event, event.endedAtMs)
-    if (!position) return
-    drawing.appendChild(
-      svgElement('circle', {
-        class: 'utility-landing is-fire',
-        cx: position[1],
-        cy: position[2],
-        r: 9
-      })
+    const position = runtime.utilityTrajectoryPositionAt(event.trajectory, event.explodedAtMs)
+    if (!position) {
+      setStyle(flash, 'display', 'none')
+      return
+    }
+    const scale = 0.32 + easeOutCubic(progress) * 1.08
+    setStyle(flash, 'display', 'block')
+    setStyle(flash, 'opacity', String(1 - progress))
+    setSvgAttribute(
+      flash,
+      'transform',
+      `translate(${position.x.toFixed(2)} ${position.y.toFixed(2)}) scale(${scale.toFixed(3)})`
     )
   }
 
-  function appendInfernoEffect(drawing, event, pageElapsedMs) {
-    if (
-      event.effectStartedAtMs === null ||
-      pageElapsedMs < event.effectStartedAtMs ||
-      pageElapsedMs > (event.effectEndedAtMs ?? UTILITY_REPLAY_PAGE_DURATION_MS)
-    ) {
-      return
-    }
-    const frame = event.flameFrames.filter((item) => item[0] <= pageElapsedMs).at(-1)
-    if (!frame) return
-    for (const position of frame[1]) {
-      drawing.appendChild(
-        svgElement('circle', {
-          class: 'utility-effect utility-fire-effect',
-          cx: position[0],
-          cy: position[1],
-          r: 11
-        })
+  function updateFireVisual(visual, pageElapsedMs, reducedMotion) {
+    const { event, flames } = visual
+    if (event.type !== 'inferno' || event.effectStartedAtMs === null || flames.length === 0) return
+    const endTime = event.effectEndedAtMs ?? UTILITY_REPLAY_PAGE_DURATION_MS
+    const frame = latestTimedFrame(event.flameFrames, pageElapsedMs)
+    const visible = pageElapsedMs >= event.effectStartedAtMs && pageElapsedMs <= endTime && frame
+    const effectElapsedMs = pageElapsedMs - event.effectStartedAtMs
+    const enterProgress = easeOutCubic(effectElapsedMs / 220)
+    const exitProgress = clampUnit((endTime - pageElapsedMs) / 260)
+    for (let index = 0; index < flames.length; index += 1) {
+      const marker = flames[index]
+      const position = visible ? frame[1][index] : null
+      if (!position) {
+        setStyle(marker, 'display', 'none')
+        continue
+      }
+      const flicker = reducedMotion ? 1 : 0.92 + Math.sin(effectElapsedMs / 85 + index * 1.7) * 0.08
+      const scale = Math.min(enterProgress, exitProgress) * flicker * 0.68
+      setStyle(marker, 'display', 'block')
+      setStyle(marker, 'opacity', String(Math.min(1, enterProgress, exitProgress)))
+      setSvgAttribute(
+        marker,
+        'transform',
+        `translate(${position[0].toFixed(2)} ${position[1].toFixed(2)}) rotate(${((index % 3) - 1) * 6}) scale(${scale.toFixed(3)})`
       )
     }
   }
 
-  function drawUtilityEvents(view, currentPage, pageElapsedMs) {
+  function clearUtilityPlayerPaths(view) {
+    const context = view.playerPathContext
+    if (context) context.clearRect(0, 0, 1024, 1024)
+    view.nextPlayerPointIndex = 0
+    view.lastPlayerPathElapsedMs = -1
+  }
+
+  function updateUtilityPlayerPaths(view, currentPage, pageElapsedMs) {
+    const context = view.playerPathContext
+    if (!context || view.playerPoints.length === 0) return
+    if (pageElapsedMs < view.lastPlayerPathElapsedMs) clearUtilityPlayerPaths(view)
+    context.fillStyle =
+      currentPage.side === 'CT' ? 'rgba(177, 232, 255, 0.76)' : 'rgba(255, 230, 132, 0.8)'
+    context.beginPath()
+    let drewPoint = false
+    while (
+      view.nextPlayerPointIndex < view.playerPoints.length &&
+      view.playerPoints[view.nextPlayerPointIndex][0] <= pageElapsedMs
+    ) {
+      const point = view.playerPoints[view.nextPlayerPointIndex]
+      context.moveTo(point[1] + 5.5, point[2])
+      context.arc(point[1], point[2], 5.5, 0, Math.PI * 2)
+      view.nextPlayerPointIndex += 1
+      drewPoint = true
+    }
+    if (drewPoint) context.fill()
+    view.lastPlayerPathElapsedMs = pageElapsedMs
+  }
+
+  function prepareUtilityReplayPage(view, currentPage) {
     const events = view.replay.events.filter(
       (event) => event.teamId === currentPage.teamId && event.side === currentPage.side
     )
     const drawing = svgElement('g')
-    for (const event of events) {
-      appendTrajectory(drawing, event, pageElapsedMs)
-      if (event.type === 'smoke') appendSmokeEffect(drawing, event, pageElapsedMs)
-      if (event.type === 'flashbang') appendFlashEffect(drawing, event, pageElapsedMs)
-      if (event.type === 'firebomb') appendFireProjectileLanding(drawing, event, pageElapsedMs)
-      if (event.type === 'inferno') appendInfernoEffect(drawing, event, pageElapsedMs)
-    }
+    view.eventVisuals = events.map((event) => createUtilityEventVisual(event))
+    for (const visual of view.eventVisuals) drawing.appendChild(visual.root)
     view.drawing.replaceChildren(drawing)
+    view.playerPoints = (view.replay.playerPaths || [])
+      .filter((path) => path.teamId === currentPage.teamId && path.side === currentPage.side)
+      .flatMap((path) => path.trajectory)
+      .sort((first, second) => first[0] - second[0])
+    clearUtilityPlayerPaths(view)
+  }
+
+  function updateUtilityEvents(view, currentPage, pageElapsedMs) {
+    updateUtilityPlayerPaths(view, currentPage, pageElapsedMs)
+    const reducedMotion = reducedMotionQuery.matches
+    for (const visual of view.eventVisuals) {
+      updateUtilityProjectile(visual, pageElapsedMs)
+      updateSmokeVisual(visual, pageElapsedMs, reducedMotion)
+      updateFlashVisual(visual, pageElapsedMs)
+      updateFireVisual(visual, pageElapsedMs, reducedMotion)
+    }
   }
 
   function updateUtilityReplay(nowMs) {
@@ -1267,21 +1458,16 @@
         ? UTILITY_REPLAY_PAGE_DURATION_MS
         : segmentElapsedMs % UTILITY_REPLAY_PAGE_DURATION_MS
     const currentPage = view.pages[pageIndex]
-    const rounds = view.replay.rounds.filter((round) =>
-      currentPage.side === 'CT'
-        ? round.teamCTId === currentPage.teamId
-        : round.teamTId === currentPage.teamId
-    )
     if (view.lastPageIndex !== pageIndex) {
       view.lastPageIndex = pageIndex
       view.title.textContent = `${utilityTeamName(currentPage.team)} · ${currentPage.side} 方前 30 秒道具展示`
-      view.pageLabel.textContent = `PAGE ${pageIndex + 1} / 4`
-      view.pageTitle.textContent = `${utilityTeamName(currentPage.team)} · ${currentPage.side} SIDE`
-      view.roundCount.textContent = `叠加 ${rounds.length} 个正式回合`
+      view.pageLabel.textContent = `第 ${pageIndex + 1} / 4 页`
+      view.pageTitle.textContent = `${utilityTeamName(currentPage.team)} · ${currentPage.side} 方`
+      prepareUtilityReplayPage(view, currentPage)
     }
     if (view.breakClock) view.breakClock.textContent = runtime.formatDuration(remainingMs)
     view.pageClock.textContent = `${runtime.formatDuration(pageElapsedMs)} / 00:30`
-    drawUtilityEvents(view, currentPage, pageElapsedMs)
+    updateUtilityEvents(view, currentPage, pageElapsedMs)
   }
 
   function renderPage() {

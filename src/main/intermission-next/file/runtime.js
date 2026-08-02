@@ -44,6 +44,58 @@
     return clamp(value, 0, 1) ** 3
   }
 
+  function utilityTrajectoryPositionAt(trajectory, timeMs) {
+    if (!Array.isArray(trajectory) || trajectory.length === 0 || !isFiniteNumber(timeMs)) {
+      return null
+    }
+    const first = trajectory[0]
+    const last = trajectory[trajectory.length - 1]
+    if (
+      !Array.isArray(first) ||
+      first.length < 3 ||
+      !first.every(isFiniteNumber) ||
+      !Array.isArray(last) ||
+      last.length < 3 ||
+      !last.every(isFiniteNumber) ||
+      timeMs < first[0]
+    ) {
+      return null
+    }
+    let previous = first
+    let next = first
+    if (timeMs >= last[0]) {
+      previous = trajectory.length > 1 ? trajectory[trajectory.length - 2] : last
+      next = last
+    } else {
+      let low = 1
+      let high = trajectory.length - 1
+      while (low <= high) {
+        const middle = Math.floor((low + high) / 2)
+        const point = trajectory[middle]
+        if (!Array.isArray(point) || point.length < 3 || !point.every(isFiniteNumber)) return null
+        if (point[0] < timeMs) low = middle + 1
+        else high = middle - 1
+      }
+      next = trajectory[low]
+      previous = trajectory[low - 1]
+    }
+    if (
+      !Array.isArray(previous) ||
+      previous.length < 3 ||
+      !previous.every(isFiniteNumber) ||
+      !Array.isArray(next) ||
+      next.length < 3 ||
+      !next.every(isFiniteNumber)
+    ) {
+      return null
+    }
+    const durationMs = next[0] - previous[0]
+    const segmentProgress = durationMs <= 0 ? 1 : clamp((timeMs - previous[0]) / durationMs, 0, 1)
+    const x = previous[1] + (next[1] - previous[1]) * segmentProgress
+    const y = previous[2] + (next[2] - previous[2]) * segmentProgress
+    return { x, y }
+  }
+
   function transitionFrameAt(state, timings, nowMs) {
     const timingsValid =
       isRecord(timings) &&
@@ -498,6 +550,7 @@
   function utilityReplayRenderIdentity(value) {
     if (!isRecord(value)) return null
     const rounds = Array.isArray(value.rounds) ? value.rounds : []
+    const playerPaths = Array.isArray(value.playerPaths) ? value.playerPaths : []
     const events = Array.isArray(value.events) ? value.events : []
     return {
       version: value.version,
@@ -514,6 +567,17 @@
               teamCTId: round.teamCTId,
               teamTId: round.teamTId,
               unassignedGrenadeCount: round.unassignedGrenadeCount
+            }
+          : null
+      ),
+      playerPaths: playerPaths.map((path) =>
+        isRecord(path)
+          ? {
+              steamId: path.steamId,
+              roundIndex: path.roundIndex,
+              teamId: path.teamId,
+              side: path.side,
+              trajectoryLength: Array.isArray(path.trajectory) ? path.trajectory.length : 0
             }
           : null
       ),
@@ -683,6 +747,7 @@
     pageRenderSignature,
     shouldAcceptPayload,
     internalEnterProgress,
+    utilityTrajectoryPositionAt,
     isOutputPayload,
     resolveAsset
   })

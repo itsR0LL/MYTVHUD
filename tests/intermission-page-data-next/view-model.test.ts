@@ -156,6 +156,29 @@ test('同分时不自行指定突出选手', () => {
   assert.equal(data.highlightedSteamid, null)
 })
 
+test('双方本图选手数据分别按 ADR 从高到低排列', () => {
+  const source = program('map_break')
+  const mapSnapshot = source.snapshot.mapSnapshots.de_mirage
+  assert.ok(mapSnapshot)
+  mapSnapshot.players = [
+    { ...player('a-low', String(TEAM_A.id), 'A Low', 18, 31), adr: 65 },
+    { ...player('b-low', String(TEAM_B.id), 'B Low', 17, 30), adr: 58 },
+    { ...player('a-high', String(TEAM_A.id), 'A High', 19, 34), adr: 112 },
+    { ...player('b-high', String(TEAM_B.id), 'B High', 20, 36), adr: 96 }
+  ]
+
+  const data = createMapBreakPageData(source, null, 'none')
+  assert.ok(data)
+  assert.deepEqual(
+    data.teamAPlayers.map((player) => player.steamid),
+    ['a-high', 'a-low']
+  )
+  assert.deepEqual(
+    data.teamBPlayers.map((player) => player.steamid),
+    ['b-high', 'b-low']
+  )
+})
+
 test('系列赛结束页只汇总实际完成地图并保留下一场状态', () => {
   const source = program('series_end')
   source.snapshot.match.maps[1].status = 'finished'

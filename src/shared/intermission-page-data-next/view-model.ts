@@ -222,6 +222,20 @@ function groupPlayers(
       unassignedPlayerCount += 1
     }
   }
+  const byADRDescending = (
+    first: IntermissionPagePlayer,
+    second: IntermissionPagePlayer
+  ): number => {
+    const firstADR = first.adr ?? -1
+    const secondADR = second.adr ?? -1
+    return (
+      secondADR - firstADR ||
+      second.kills - first.kills ||
+      first.steamid.localeCompare(second.steamid)
+    )
+  }
+  teamAPlayers.sort(byADRDescending)
+  teamBPlayers.sort(byADRDescending)
   return { teamAPlayers, teamBPlayers, unassignedPlayerCount }
 }
 

@@ -126,7 +126,8 @@ const messages = {
           emptySequence: '从左侧地图池开始添加 BP 步骤',
           banCount: '当前赛制必须包含 {count} 个禁用步骤。',
           pickCount: '当前赛制必须包含 {count} 个选择步骤。',
-          prepared: 'BP 已准备并保持隐藏，请前往播出控制，在 BP 阶段播放动画。'
+          prepared:
+            '比赛与 BP 已保存，结果已同步到播出控制；OBS 保持当前画面，进入 BP 展示阶段后由导播开始播放动画。'
         },
         score: {
           title: '对局地图与比分',
