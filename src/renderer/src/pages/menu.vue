@@ -195,13 +195,17 @@ const tutorialSteps: TutorialStep[] = [
     icon: MonitorUp,
     titleKey: 'menu.step4.title',
     summaryKey: 'menu.step4.summary',
-    itemKeys: ['menu.step4.item1', 'menu.step4.item2', 'menu.step4.item3'],
+    itemKeys: ['menu.step4.item1', 'menu.step4.item2', 'menu.step4.item3', 'menu.step4.item4'],
     noteKey: 'menu.step4.note',
     codes: [
       { labelKey: 'menu.step4.gameUrl', value: 'http://localhost:5031/overlay' },
       {
         labelKey: 'menu.step4.broadcastUrl',
         value: 'http://localhost:5031/intermission-next'
+      },
+      {
+        labelKey: 'menu.step4.consoleCommand',
+        value: 'cl_draw_only_deathnotices 1'
       }
     ],
     actions: []

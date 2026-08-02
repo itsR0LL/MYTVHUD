@@ -135,6 +135,16 @@ test('菜单教程使用现有品牌色且不为每条说明添加勾号', () =>
   assert.match(menu, /color-mix\(in srgb, var\(--primary\) 74%, white\)/)
 })
 
+test('菜单教程保留清理 CS2 原版 UI 的控制台指令', () => {
+  const menu = readRendererPage('menu.vue')
+  const i18n = fs.readFileSync(rendererI18nPath, 'utf8')
+
+  assert.match(menu, /value: 'cl_draw_only_deathnotices 1'/)
+  assert.match(menu, /labelKey: 'menu\.step4\.consoleCommand'/)
+  assert.match(i18n, /隐藏原版游戏 HUD，避免与 MYTVHUD 重叠/)
+  assert.match(i18n, /consoleCommand: '清理原版 UI'/)
+})
+
 test('本图数据板将双方选手表格上下排列', () => {
   const css = read('style.css')
   const statsRule = css.slice(

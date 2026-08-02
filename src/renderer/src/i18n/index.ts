@@ -187,9 +187,12 @@ const messages = {
         item1: '游戏场景添加 HUD 浏览器源，并将它放在游戏画面上方。',
         item2: '非比赛场景只添加统一播出浏览器源，不再单独添加旧版 BP 地址。',
         item3: '右上角 Overlay 按钮用于本机全屏覆盖；OBS 正式采集应直接填写浏览器地址。',
+        item4:
+          '进入 CS2 观察者模式后，在开发者控制台输入下方指令，隐藏原版游戏 HUD，避免与 MYTVHUD 重叠。',
         note: '在 OBS 切换游戏场景与非比赛场景时，同时使用播出控制完成对应阶段的进入或退出。',
         gameUrl: '比赛 HUD',
-        broadcastUrl: '统一播出'
+        broadcastUrl: '统一播出',
+        consoleCommand: '清理原版 UI'
       },
       step5: {
         title: '设置完整播出页面',
