@@ -52,6 +52,12 @@ import {
   nextIntermissionTestStage
 } from '../src/shared/intermission-test-mode'
 import { normalizeIntermissionState } from '../src/shared/intermission'
+import {
+  buildAliveSituation,
+  buildEconomySummary,
+  normalizeFlashOpacity,
+  parseHlaePlayerDeathMessage
+} from '../src/shared/gameplay-hud'
 
 const MAP_IDS: BPMapId[] = [
   'de_ancient',
@@ -411,31 +417,44 @@ test('系列赛选手数据按 SteamID 跨已完成地图汇总', () => {
   ])
 })
 
-test('爆头击杀按实际回合归档且 live 与 over 帧不会重复累计', () => {
+test('爆头击杀只在对局阶段累计并忽略冻结期残留值', () => {
   const tracker = new PlayerHeadshotTracker()
   const frame = (
     completedRoundCount: number,
     roundPhase: string,
-    first: number,
-    second: number,
+    countdownPhase: string,
+    first: { kills: number; headshots: number },
+    second: { kills: number; headshots: number },
     mapPhase = 'live'
   ) => ({
     map: { name: 'de_ancient', phase: mapPhase, round: completedRoundCount },
     round: { phase: roundPhase },
+    phase_countdowns: { phase: countdownPhase },
     players: [
-      { steamid: 'steam-a', state: { round_killhs: first } },
-      { steamid: 'steam-b', state: { round_killhs: second } }
+      {
+        steamid: 'steam-a',
+        state: { round_kills: first.kills, round_killhs: first.headshots }
+      },
+      {
+        steamid: 'steam-b',
+        state: { round_kills: second.kills, round_killhs: second.headshots }
+      }
     ]
   })
 
-  tracker.capture(frame(0, 'live', 1, 0))
-  tracker.capture(frame(1, 'over', 1, 1))
-  tracker.capture(frame(1, 'live', 0, 2))
-  tracker.capture(frame(2, 'over', 1, 2))
-  tracker.capture(frame(2, 'live', 5, 5, 'warmup'))
+  tracker.capture(frame(0, 'live', 'live', { kills: 1, headshots: 1 }, { kills: 0, headshots: 0 }))
+  tracker.capture(frame(1, 'over', 'over', { kills: 1, headshots: 1 }, { kills: 1, headshots: 1 }))
+  tracker.capture(
+    frame(1, 'freezetime', 'freezetime', { kills: 1, headshots: 1 }, { kills: 1, headshots: 1 })
+  )
+  tracker.capture(frame(1, 'live', 'live', { kills: 0, headshots: 0 }, { kills: 2, headshots: 1 }))
+  tracker.capture(frame(2, 'over', 'over', { kills: 1, headshots: 2 }, { kills: 2, headshots: 1 }))
+  tracker.capture(
+    frame(2, 'live', 'warmup', { kills: 5, headshots: 5 }, { kills: 5, headshots: 5 }, 'warmup')
+  )
 
   assert.equal(tracker.total('de_ancient', 'steam-a'), 2)
-  assert.equal(tracker.total('de_ancient', 'steam-b'), 3)
+  assert.equal(tracker.total('de_ancient', 'steam-b'), 2)
   tracker.clear()
   assert.equal(tracker.total('de_ancient', 'steam-a'), 0)
 })
@@ -809,60 +828,31 @@ test('道具采集只在冻结阶段武装，并在比分增加后提交已消�
   assert.equal(capture.finalizeMap('de_ancient', 1).complete, true)
 })
 
-test('新版道具回放按时间采集存活选手移动路径并兼容旧版空路径', () => {
+test('道具回放忽略旧版选手移动路径且不再生成路径字段', () => {
   const legacy = normalizeMapUtilityReplay({
     ...createEmptyMapUtilityReplay('de_ancient'),
     version: 1,
-    playerPaths: undefined
+    rounds: [
+      {
+        roundIndex: 1,
+        teamCTId: String(TEAM_A.id),
+        teamTId: String(TEAM_B.id),
+        unassignedGrenadeCount: 0
+      }
+    ],
+    playerPaths: [
+      {
+        steamId: 'steam-a',
+        roundIndex: 1,
+        teamId: String(TEAM_A.id),
+        side: 'CT',
+        trajectory: [[0, 583.26, 428.92]]
+      }
+    ]
   })
   assert.equal(legacy?.version, 2)
-  assert.deepEqual(legacy?.playerPaths, [])
-
-  const capture = new UtilityReplayCapture()
-  capture.processFrame(
-    utilityGSIFrame('freezetime', 0, [{ steamid: 'steam-a', side: 'CT', position: [0, 0, 0] }]),
-    UTILITY_MATCH_CONTEXT,
-    UTILITY_SIDES,
-    1_000
-  )
-  capture.processFrame(
-    utilityGSIFrame('live', 0, [{ steamid: 'steam-a', side: 'CT', position: [0, 0, 0] }]),
-    UTILITY_MATCH_CONTEXT,
-    UTILITY_SIDES,
-    2_000
-  )
-  capture.processFrame(
-    utilityGSIFrame('live', 0, [{ steamid: 'steam-a', side: 'CT', position: [50, 0, 0] }]),
-    UTILITY_MATCH_CONTEXT,
-    UTILITY_SIDES,
-    2_100
-  )
-  capture.processFrame(
-    utilityGSIFrame('live', 0, [{ steamid: 'steam-a', side: 'CT', position: [100, 0, 0] }]),
-    UTILITY_MATCH_CONTEXT,
-    UTILITY_SIDES,
-    2_300
-  )
-  capture.processFrame(
-    utilityGSIFrame('freezetime', 1, [{ steamid: 'steam-a', side: 'CT', position: [100, 0, 0] }]),
-    UTILITY_MATCH_CONTEXT,
-    UTILITY_SIDES,
-    3_000
-  )
-  const replay = capture.finalizeMap('de_ancient', 1)
-  assert.equal(replay.version, 2)
-  assert.deepEqual(replay.playerPaths, [
-    {
-      steamId: 'steam-a',
-      roundIndex: 1,
-      teamId: String(TEAM_A.id),
-      side: 'CT',
-      trajectory: [
-        [0, 583.26, 428.92],
-        [300, 603.1, 428.92]
-      ]
-    }
-  ])
+  assert.equal(Object.hasOwn(legacy ?? {}, 'playerPaths'), false)
+  assert.equal(Object.hasOwn(createEmptyMapUtilityReplay('de_ancient'), 'playerPaths'), false)
 })
 
 test('道具 owner 与 SteamID 先不匹配后精确匹配时清除未归属记录', () => {
@@ -1046,4 +1036,109 @@ test('最新帧处理器保留高优先级阶段帧并让后续帧等待同一�
   assert.equal(await processor.waitFor(sharedCritical), 'processed')
   assert.deepEqual(processed, [0, 2])
   assert.equal(processor.getStats().discardedFrames, 1)
+})
+
+test('冻结时间经济汇总按队伍统计现金、装备和选手明细', () => {
+  const summary = buildEconomySummary(
+    'CT',
+    [
+      {
+        steamid: '1',
+        name: '选手一',
+        observer_slot: 1,
+        team: { side: 'CT' },
+        state: { money: 2300, equip_value: 4800, armor: 100, helmet: true, defusekit: true },
+        primary_weapon: { name: 'weapon_m4a1_silencer' },
+        grenades: [{ name: 'weapon_smokegrenade' }, { name: 'weapon_flashbang' }]
+      },
+      {
+        steamid: '2',
+        name: '选手二',
+        observer_slot: 2,
+        team: { side: 'CT' },
+        state: { money: 900, equip_value: 3100, armor: 50 },
+        secondary_weapon: { name: 'weapon_deagle' },
+        grenades: []
+      },
+      {
+        steamid: '3',
+        name: '另一队选手',
+        team: { side: 'T' },
+        state: { money: 16000, equip_value: 9000 }
+      }
+    ],
+    2
+  )
+
+  assert.equal(summary.totalMoney, 3200)
+  assert.equal(summary.totalEquipmentValue, 7900)
+  assert.equal(summary.consecutiveRoundLosses, 2)
+  assert.deepEqual(
+    summary.players.map((player) => [player.name, player.weapon]),
+    [
+      ['选手一', 'm4a1_silencer'],
+      ['选手二', 'deagle']
+    ]
+  )
+})
+
+test('存活人数只在有效对局阶段生成残局信息', () => {
+  const players = [
+    { team: { side: 'CT' as const }, state: { health: 100 } },
+    { team: { side: 'T' as const }, state: { health: 100 } },
+    { team: { side: 'T' as const }, state: { health: 35 } },
+    { team: { side: 'T' as const }, state: { health: 0 } }
+  ]
+  assert.equal(buildAliveSituation(players, 'freezetime'), null)
+  assert.deepEqual(buildAliveSituation(players, 'live'), {
+    ct: 1,
+    t: 2,
+    primary: '1 对 2',
+    secondary: 'CT 残局 · 1 对 2',
+    clutchSide: 'CT'
+  })
+})
+
+test('闪光强度兼容零到一和零到二百五十五两种实值范围', () => {
+  assert.equal(normalizeFlashOpacity(0), 0)
+  assert.equal(normalizeFlashOpacity(0.5), 0.5)
+  assert.equal(normalizeFlashOpacity(255), 1)
+  assert.equal(normalizeFlashOpacity(128), 128 / 255)
+})
+
+test('HLAE player_death 消息严格转换为 csgogsi MIRV 数据', () => {
+  const parsed = parseHlaePlayerDeathMessage({
+    type: 'player_death',
+    clientTime: 1234,
+    data: {
+      userid: 4,
+      attacker: 8,
+      assister: 65535,
+      user_steamid: '76561198000000004',
+      attacker_steamid: '76561198000000008',
+      assister_steamid: '0',
+      assistedflash: false,
+      weapon: 'ak47',
+      weapon_itemid: '',
+      weapon_fauxitemid: '',
+      weapon_originalowner_xuid: '0',
+      headshot: true,
+      dominated: 0,
+      revenge: 0,
+      wipe: 0,
+      attackerblind: false,
+      thrusmoke: true,
+      noscope: false,
+      penetrated: 1,
+      noreplay: false,
+      attackerinair: false
+    }
+  })
+
+  assert.equal(parsed?.keys.userid.xuid, '76561198000000004')
+  assert.equal(parsed?.keys.attacker.xuid, '76561198000000008')
+  assert.equal(parsed?.keys.headshot, true)
+  assert.equal(parsed?.keys.thrusmoke, true)
+  assert.equal(parsed?.keys.penetrated, 1)
+  assert.equal(parseHlaePlayerDeathMessage({ type: 'player_death', data: {} }), null)
 })

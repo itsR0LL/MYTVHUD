@@ -12,14 +12,12 @@ import {
   type MatchUtilityReplayStateV1,
   type UtilityReplayEvent,
   type UtilityReplayEventType,
-  type UtilityReplayPlayerPath,
   type UtilityReplayRound,
   type UtilityReplaySide
 } from '../../shared/utility-replay'
 import type { ResolvedTeamSides } from './match-runtime'
 
 const INFERNO_SAMPLE_INTERVAL_MS = 100
-const PLAYER_PATH_SAMPLE_INTERVAL_MS = 250
 const FLASH_EXPLOSION_LIFETIME_SECONDS = 1.45
 const SMOKE_EFFECT_DURATION_SECONDS = 16.5
 
@@ -67,7 +65,6 @@ interface ActiveRound extends ArmedRound {
   roundIndex: number
   startedAtMs: number
   events: Map<string, UtilityReplayEvent>
-  playerPaths: Map<string, UtilityReplayPlayerPath>
   unassignedGrenadeIds: Set<string>
 }
 
@@ -160,39 +157,6 @@ function appendInfernoFrame(
     return
   }
   event.flameFrames.push([elapsedMs, positions])
-}
-
-function appendPlayerPathPoints(
-  round: ActiveRound,
-  data: CSGO,
-  resolvedSides: ResolvedTeamSides,
-  activeTeamIds: Set<string>,
-  elapsedMs: number
-): void {
-  for (const player of data.players) {
-    const side = player.team?.side
-    if (side !== 'CT' && side !== 'T') continue
-    if (!Array.isArray(player.position) || player.state?.health === 0) continue
-    const teamId = side === 'CT' ? resolvedSides.CT : resolvedSides.T
-    if (!activeTeamIds.has(teamId)) continue
-    const position = projectWorldPositionToRadar(round.mapId, player.position)
-    if (!position) continue
-    let path = round.playerPaths.get(player.steamid)
-    if (!path) {
-      path = {
-        steamId: player.steamid,
-        roundIndex: round.roundIndex,
-        teamId,
-        side,
-        trajectory: []
-      }
-      round.playerPaths.set(player.steamid, path)
-    }
-    const previous = path.trajectory.at(-1)
-    if (previous && previous[1] === position[0] && previous[2] === position[1]) continue
-    if (previous && elapsedMs - previous[0] < PLAYER_PATH_SAMPLE_INTERVAL_MS) continue
-    path.trajectory.push([elapsedMs, position[0], position[1]])
-  }
 }
 
 function ownerTeam(
@@ -307,7 +271,6 @@ export class UtilityReplayCapture {
           roundIndex: score + 1,
           startedAtMs: receivedAtMs,
           events: new Map(),
-          playerPaths: new Map(),
           unassignedGrenadeIds: new Set()
         }
       }
@@ -413,7 +376,6 @@ export class UtilityReplayCapture {
     }
 
     const seenEventKeys = new Set<string>()
-    appendPlayerPathPoints(round, data, resolvedSides, activeTeamIds, elapsedMs)
     for (const grenade of data.grenades) {
       if (!UTILITY_REPLAY_EVENT_TYPES.includes(grenade.type as UtilityReplayEventType)) {
         continue
@@ -509,13 +471,6 @@ export class UtilityReplayCapture {
       ...this.activeRound.events.values()
     ].sort(
       (first, second) => first.roundIndex - second.roundIndex || first.id.localeCompare(second.id)
-    )
-    replay.playerPaths = [
-      ...replay.playerPaths.filter((path) => path.roundIndex !== roundRecord.roundIndex),
-      ...this.activeRound.playerPaths.values()
-    ].sort(
-      (first, second) =>
-        first.roundIndex - second.roundIndex || first.steamId.localeCompare(second.steamId)
     )
     replay.unassignedGrenadeCount = replay.rounds.reduce(
       (sum, round) => sum + round.unassignedGrenadeCount,

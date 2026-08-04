@@ -8,6 +8,7 @@ import type {
   PlayerFinalStats
 } from '../../src/shared/match-session'
 import {
+  calculateHeadshotKillRate,
   createMapBreakPageData,
   createSeriesEndPageData,
   createStandbyPageData
@@ -124,6 +125,14 @@ function program(type: BroadcastProgram['type']): BroadcastProgram {
     segments: []
   }
 }
+
+test('爆头率严格按爆头击杀数除以总击杀数计算', () => {
+  assert.equal(calculateHeadshotKillRate(30, 13), 43)
+  assert.equal(calculateHeadshotKillRate(22, 12), 55)
+  assert.equal(calculateHeadshotKillRate(17, 10), 59)
+  assert.equal(calculateHeadshotKillRate(0, 0), 0)
+  assert.equal(calculateHeadshotKillRate(10, 12), 100)
+})
 
 test('地图间数据只播放完整的真实逐回合比分', () => {
   const data = createMapBreakPageData(

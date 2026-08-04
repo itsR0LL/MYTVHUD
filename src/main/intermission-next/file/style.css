@@ -1374,7 +1374,6 @@ body {
 }
 
 .utility-radar-image,
-.utility-player-paths,
 .utility-radar-drawing {
   position: absolute;
   inset: 0;
@@ -1385,10 +1384,6 @@ body {
 .utility-radar-image {
   object-fit: contain;
   opacity: 0.94;
-}
-
-.utility-player-paths {
-  pointer-events: none;
 }
 
 .utility-radar-drawing {

@@ -14,14 +14,6 @@ export type UtilityReplaySide = (typeof UTILITY_REPLAY_SIDES)[number]
 export type UtilityReplayTrajectoryPoint = [timeMs: number, radarX: number, radarY: number]
 export type UtilityReplayFlameFrame = [timeMs: number, positions: RadarCoordinate[]]
 
-export interface UtilityReplayPlayerPath {
-  steamId: string
-  roundIndex: number
-  teamId: string
-  side: UtilityReplaySide
-  trajectory: UtilityReplayTrajectoryPoint[]
-}
-
 export interface UtilityReplayRound {
   roundIndex: number
   teamCTId: string
@@ -53,7 +45,6 @@ export interface MapUtilityReplay {
   unassignedGrenadeCount: number
   complete: boolean
   rounds: UtilityReplayRound[]
-  playerPaths: UtilityReplayPlayerPath[]
   events: UtilityReplayEvent[]
 }
 
@@ -141,36 +132,6 @@ function normalizeRound(value: unknown): UtilityReplayRound | null {
   }
 }
 
-function normalizePlayerPath(value: unknown): UtilityReplayPlayerPath | null {
-  if (!isRecord(value)) return null
-  const roundIndex = positiveInteger(value.roundIndex)
-  if (
-    typeof value.steamId !== 'string' ||
-    !value.steamId ||
-    roundIndex === null ||
-    typeof value.teamId !== 'string' ||
-    !value.teamId ||
-    typeof value.side !== 'string' ||
-    !UTILITY_REPLAY_SIDES.includes(value.side as UtilityReplaySide)
-  ) {
-    return null
-  }
-  const trajectory = Array.isArray(value.trajectory)
-    ? value.trajectory
-        .map(normalizeTrajectoryPoint)
-        .filter((point): point is UtilityReplayTrajectoryPoint => point !== null)
-        .sort((first, second) => first[0] - second[0])
-    : []
-  if (trajectory.length === 0) return null
-  return {
-    steamId: value.steamId,
-    roundIndex,
-    teamId: value.teamId,
-    side: value.side as UtilityReplaySide,
-    trajectory
-  }
-}
-
 function normalizeEvent(value: unknown): UtilityReplayEvent | null {
   if (!isRecord(value)) return null
   const roundIndex = positiveInteger(value.roundIndex)
@@ -227,7 +188,6 @@ export function createEmptyMapUtilityReplay(mapId: BPMapId): MapUtilityReplay {
     unassignedGrenadeCount: 0,
     complete: false,
     rounds: [],
-    playerPaths: [],
     events: []
   }
 }
@@ -246,18 +206,6 @@ export function normalizeMapUtilityReplay(value: unknown): MapUtilityReplay | nu
     (first, second) => first.roundIndex - second.roundIndex
   )
   const roundIndexes = new Set(rounds.map((round) => round.roundIndex))
-  const playerPaths = Array.isArray(value.playerPaths)
-    ? value.playerPaths
-        .map(normalizePlayerPath)
-        .filter(
-          (path): path is UtilityReplayPlayerPath =>
-            path !== null && roundIndexes.has(path.roundIndex)
-        )
-        .sort(
-          (first, second) =>
-            first.roundIndex - second.roundIndex || first.steamId.localeCompare(second.steamId)
-        )
-    : []
   const events = Array.isArray(value.events)
     ? value.events
         .map(normalizeEvent)
@@ -284,7 +232,6 @@ export function normalizeMapUtilityReplay(value: unknown): MapUtilityReplay | nu
     unassignedGrenadeCount,
     complete: expectedRoundCount > 0 && rounds.length === expectedRoundCount,
     rounds,
-    playerPaths,
     events
   }
 }

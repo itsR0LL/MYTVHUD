@@ -147,6 +147,13 @@ function teamView(team: BPTeam): IntermissionPageTeam {
   }
 }
 
+export function calculateHeadshotKillRate(totalKills: number, headshotKills: number): number {
+  if (!Number.isInteger(totalKills) || totalKills <= 0) return 0
+  const normalizedHeadshotKills =
+    Number.isInteger(headshotKills) && headshotKills > 0 ? Math.min(totalKills, headshotKills) : 0
+  return Math.round((normalizedHeadshotKills / totalKills) * 100)
+}
+
 function playerView(
   player: PlayerFinalStats | SeriesPlayerStats,
   mapsPlayed: number | null
@@ -160,7 +167,7 @@ function playerView(
     deaths: player.deaths,
     mvps: player.mvps,
     score: player.score,
-    headshotRate: player.kills > 0 ? Math.round((player.headshots / player.kills) * 100) : 0,
+    headshotRate: calculateHeadshotKillRate(player.kills, player.headshots),
     adr: player.adr,
     mapsPlayed
   }

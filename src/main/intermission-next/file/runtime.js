@@ -550,7 +550,6 @@
   function utilityReplayRenderIdentity(value) {
     if (!isRecord(value)) return null
     const rounds = Array.isArray(value.rounds) ? value.rounds : []
-    const playerPaths = Array.isArray(value.playerPaths) ? value.playerPaths : []
     const events = Array.isArray(value.events) ? value.events : []
     return {
       version: value.version,
@@ -567,17 +566,6 @@
               teamCTId: round.teamCTId,
               teamTId: round.teamTId,
               unassignedGrenadeCount: round.unassignedGrenadeCount
-            }
-          : null
-      ),
-      playerPaths: playerPaths.map((path) =>
-        isRecord(path)
-          ? {
-              steamId: path.steamId,
-              roundIndex: path.roundIndex,
-              teamId: path.teamId,
-              side: path.side,
-              trajectoryLength: Array.isArray(path.trajectory) ? path.trajectory.length : 0
             }
           : null
       ),

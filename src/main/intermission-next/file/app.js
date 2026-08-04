@@ -1053,15 +1053,12 @@
     radarImage.src = replay.radarAssetPath
     radarImage.alt = ''
     radarImage.draggable = false
-    const playerPathCanvas = element('canvas', 'utility-player-paths')
-    playerPathCanvas.width = 1024
-    playerPathCanvas.height = 1024
     const drawing = svgElement('svg', {
       class: 'utility-radar-drawing',
       viewBox: '0 0 1024 1024',
       'aria-hidden': 'true'
     })
-    append(radar, radarImage, playerPathCanvas, drawing)
+    append(radar, radarImage, drawing)
 
     const detail = element('aside', 'utility-detail')
     const pageLabel = element('span', 'utility-page-label')
@@ -1093,14 +1090,10 @@
       title: title.querySelector('.utility-title-value'),
       breakClock: breakClock.querySelector('strong'),
       drawing,
-      playerPathContext: playerPathCanvas.getContext('2d'),
       pageLabel,
       pageTitle,
       pageClock: pageClock.querySelector('strong'),
       eventVisuals: [],
-      playerPoints: [],
-      nextPlayerPointIndex: 0,
-      lastPlayerPathElapsedMs: -1,
       lastPageIndex: -1
     }
     updateUtilityReplay(serverNowMs())
@@ -1384,35 +1377,6 @@
     }
   }
 
-  function clearUtilityPlayerPaths(view) {
-    const context = view.playerPathContext
-    if (context) context.clearRect(0, 0, 1024, 1024)
-    view.nextPlayerPointIndex = 0
-    view.lastPlayerPathElapsedMs = -1
-  }
-
-  function updateUtilityPlayerPaths(view, currentPage, pageElapsedMs) {
-    const context = view.playerPathContext
-    if (!context || view.playerPoints.length === 0) return
-    if (pageElapsedMs < view.lastPlayerPathElapsedMs) clearUtilityPlayerPaths(view)
-    context.fillStyle =
-      currentPage.side === 'CT' ? 'rgba(177, 232, 255, 0.76)' : 'rgba(255, 230, 132, 0.8)'
-    context.beginPath()
-    let drewPoint = false
-    while (
-      view.nextPlayerPointIndex < view.playerPoints.length &&
-      view.playerPoints[view.nextPlayerPointIndex][0] <= pageElapsedMs
-    ) {
-      const point = view.playerPoints[view.nextPlayerPointIndex]
-      context.moveTo(point[1] + 5.5, point[2])
-      context.arc(point[1], point[2], 5.5, 0, Math.PI * 2)
-      view.nextPlayerPointIndex += 1
-      drewPoint = true
-    }
-    if (drewPoint) context.fill()
-    view.lastPlayerPathElapsedMs = pageElapsedMs
-  }
-
   function prepareUtilityReplayPage(view, currentPage) {
     const events = view.replay.events.filter(
       (event) => event.teamId === currentPage.teamId && event.side === currentPage.side
@@ -1421,15 +1385,9 @@
     view.eventVisuals = events.map((event) => createUtilityEventVisual(event))
     for (const visual of view.eventVisuals) drawing.appendChild(visual.root)
     view.drawing.replaceChildren(drawing)
-    view.playerPoints = (view.replay.playerPaths || [])
-      .filter((path) => path.teamId === currentPage.teamId && path.side === currentPage.side)
-      .flatMap((path) => path.trajectory)
-      .sort((first, second) => first[0] - second[0])
-    clearUtilityPlayerPaths(view)
   }
 
   function updateUtilityEvents(view, currentPage, pageElapsedMs) {
-    updateUtilityPlayerPaths(view, currentPage, pageElapsedMs)
     const reducedMotion = reducedMotionQuery.matches
     for (const visual of view.eventVisuals) {
       updateUtilityProjectile(visual, pageElapsedMs)
