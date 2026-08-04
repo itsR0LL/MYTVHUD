@@ -14,38 +14,15 @@ import { ColorPicker } from '@/components/ui/color-picker'
 import { Slider } from '@/components/ui/slider'
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
+import {
+  createDefaultManagerSettings,
+  managerSettingsEntries,
+  normalizeManagerSettings
+} from '../../../shared/manager-settings'
 
 const { t } = useI18n({ useScope: 'global' })
 
-const settings = ref({
-  seriesName_first: '',
-  seriesName_second: '',
-  seriesName_third: 'MYTVHUD',
-  overlayFocusedPlayer: true,
-  overlaySidebars: 'row',
-  overlayTopbar: true,
-  overlayRadar: true,
-  ctColor: '286efa',
-  tColor: 'f52559',
-  borderRadius: '0',
-  currentMatchId: 'current',
-  shortcutKey: 'Ctrl+Alt+I'
-})
-
-const default_settings = ref({
-  seriesName_first: '',
-  seriesName_second: '',
-  seriesName_third: 'MYTVHUD',
-  overlayFocusedPlayer: true,
-  overlaySidebars: 'row',
-  overlayTopbar: true,
-  overlayRadar: true,
-  ctColor: '286efa',
-  tColor: 'f52559',
-  borderRadius: '0',
-  currentMatchId: 'current',
-  shortcutKey: 'Ctrl+Alt+I'
-})
+const settings = ref(createDefaultManagerSettings())
 
 const modifierOptions = [
   'None',
@@ -72,6 +49,12 @@ const isImportingData = ref(false)
 const getErrorMessage = (error: unknown, fallback: string): string =>
   error instanceof Error ? error.message : fallback
 
+const persistSettings = async (): Promise<void> => {
+  for (const [key, value] of managerSettingsEntries(settings.value)) {
+    await window.db.settings.set(key, value)
+  }
+}
+
 const parseShortcut = (shortcut: string) => {
   const parts = String(shortcut).split('+')
   const mods = parts.filter((p) => ['Ctrl', 'Alt', 'Shift', 'Meta', 'Command'].includes(p))
@@ -94,7 +77,7 @@ watch(
 )
 const saveSettings = async () => {
   try {
-    await window.db.settings.setAll({ ...settings.value })
+    await persistSettings()
     toast.success(t('settings.toast.saved'), { duration: 2500 })
   } catch (error: any) {
     toast.error(t('common.saveFailed'), {
@@ -106,8 +89,8 @@ const saveSettings = async () => {
 
 const resetSettings = async () => {
   try {
-    settings.value = { ...default_settings.value }
-    await window.db.settings.setAll({ ...default_settings.value })
+    settings.value = createDefaultManagerSettings()
+    await persistSettings()
     toast.success(t('common.resetSuccess'), { duration: 2500 })
   } catch (error: any) {
     toast.error(t('common.saveFailed'), {
@@ -181,7 +164,7 @@ const importDataPackage = async (): Promise<void> => {
 onMounted(async () => {
   try {
     const data = await window.db.settings.getAll()
-    settings.value = { ...default_settings.value, ...data }
+    settings.value = normalizeManagerSettings(data)
     parseShortcut(settings.value.shortcutKey)
   } catch (_) {}
 })
@@ -199,9 +182,9 @@ onMounted(async () => {
               <div class="description">{{ t('settings.manager.seriesName_first.desc') }}</div>
             </div>
             <Input
-              class="w-60"
               id="seriesName_first"
               v-model="settings.seriesName_first"
+              class="w-60"
               :placeholder="t('settings.manager.seriesName_first.placeholder')"
               type="text"
             />
@@ -212,9 +195,9 @@ onMounted(async () => {
               <div class="description">{{ t('settings.manager.seriesName_second.desc') }}</div>
             </div>
             <Input
-              class="w-60"
               id="seriesName_second"
               v-model="settings.seriesName_second"
+              class="w-60"
               :placeholder="t('settings.manager.seriesName_second.placeholder')"
               type="text"
             />
@@ -328,13 +311,13 @@ onMounted(async () => {
               <div class="description">{{ t('settings.overlay.borderRadius.desc') }}</div>
             </div>
             <Slider
-              class="w-60"
               id="borderRadius"
+              class="w-60"
               :model-value="[Number(settings.borderRadius)]"
-              @update:model-value="(val) => (settings.borderRadius = String(val?.[0] ?? 0))"
               :min="0"
               :max="20"
               :step="1"
+              @update:model-value="(val) => (settings.borderRadius = String(val?.[0] ?? 0))"
             />
           </div>
           <div class="setting-item">
