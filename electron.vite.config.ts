@@ -17,6 +17,10 @@ export default defineConfig({
             dest: 'overlay/file'
           },
           {
+            src: 'src/main/hlae/file/**/*',
+            dest: 'hlae/file'
+          },
+          {
             src: 'src/main/bp/file/**/*',
             dest: 'bp/file'
           },

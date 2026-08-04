@@ -5,6 +5,7 @@ directories:
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!.build/**'
   - '!.test-build/**'
   - '!tests/**'
   - '!AUDIO_BROADCAST_DEVELOPMENT_PLAN.md'
@@ -20,6 +21,9 @@ files:
   - '!*.tsbuildinfo'
 asarUnpack:
   - resources/**
+extraResources:
+  - from: out/main/hlae/file/mytvhud-killfeed.js
+    to: hlae/mytvhud-killfeed.js
 win:
   icon: build/icon.ico
   executableName: MYTVHUD Manager
