@@ -16,7 +16,7 @@ import {
   type ResolvedTeamSides
 } from './match-runtime'
 import { capturePlayerHeadshotFrame, processActiveMatchFrame } from '../match-session/match-session'
-import { isBPSequenceComplete, normalizeBPSequence } from '../../shared/bp'
+import { getTeamAbbreviation, isBPSequenceComplete, normalizeBPSequence } from '../../shared/bp'
 import { isBPMatchType } from '../../shared/match-session'
 import {
   getUtilityReplayCaptureDiagnostics,
@@ -313,8 +313,12 @@ function updateTeamResolutionStatus(
 
   const teamSummary = (id: string): { id: string; name: string } | null => {
     const team = context.teams.find((item) => String(item.id) === id)
-    if (!team || typeof team.name !== 'string') return null
-    return { id, name: team.name }
+    if (!team) return null
+    const name = getTeamAbbreviation({
+      name: typeof team.name === 'string' ? team.name : '',
+      name_ingame: typeof team.name_ingame === 'string' ? team.name_ingame : ''
+    })
+    return name ? { id, name } : null
   }
   const teamCT = teamSummary(resolvedSides.CT)
   const teamT = teamSummary(resolvedSides.T)

@@ -123,6 +123,22 @@ export interface BPTeam {
   avatar?: string
 }
 
+export function getTeamAbbreviation(
+  team: Pick<BPTeam, 'name' | 'name_ingame'> | null | undefined,
+  fallback = ''
+): string {
+  if (!team) return fallback
+  return team.name_ingame.trim() || team.name.trim() || fallback
+}
+
+export function getTeamFullName(
+  team: Pick<BPTeam, 'name' | 'name_ingame'> | null | undefined,
+  fallback = ''
+): string {
+  if (!team) return fallback
+  return team.name.trim() || team.name_ingame.trim() || fallback
+}
+
 export interface BPMatch {
   id: string | number
   type: BPMatchType

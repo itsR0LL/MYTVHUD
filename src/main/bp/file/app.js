@@ -118,7 +118,9 @@ let lastPayloadSignature = ''
 
 function teamName(team, fallback) {
   if (!team) return fallback
-  return team.name || team.name_ingame || fallback
+  const abbreviation = typeof team.name_ingame === 'string' ? team.name_ingame.trim() : ''
+  const fullName = typeof team.name === 'string' ? team.name.trim() : ''
+  return abbreviation || fullName || fallback
 }
 
 function renderMatchup(match) {

@@ -1,5 +1,6 @@
 import type { BaseEntity } from '../database/database'
 import type { CSGO } from '../csgo-extended'
+import { getTeamAbbreviation } from '../../shared/bp'
 
 export interface GSIRuntimeContext {
   players: BaseEntity[]
@@ -109,7 +110,11 @@ export function injectResolvedTeamInfo(
   if (!teamCTRecord || !teamTRecord) return data
 
   const createInfos = (team: Record<string, any>): Record<string, any> => {
-    const infos = { ...team }
+    const abbreviation = getTeamAbbreviation({
+      name: typeof team.name === 'string' ? team.name : '',
+      name_ingame: typeof team.name_ingame === 'string' ? team.name_ingame : ''
+    })
+    const infos: Record<string, any> = { ...team, name: abbreviation }
     delete infos.avatar
     return infos
   }

@@ -49,7 +49,7 @@ const messages = {
       createTitle: '创建战队',
       editTitle: '编辑战队',
       name: '队伍名称',
-      nameIngame: '队伍名称（游戏内）',
+      nameIngame: '战队缩写',
       avatar: '队伍头像'
     },
     players: {
@@ -165,7 +165,7 @@ const messages = {
       step2: {
         title: '注册战队与选手',
         summary: '先建立战队，再用 SteamID64 将每名选手准确归属到对应战队。',
-        item1: '在“战队”页面填写队伍名称、游戏内名称和队伍图标。',
+        item1: '在“战队”页面填写队伍名称、战队缩写和队伍图标；HUD 与 BP 使用战队缩写。',
         item2: '在“选手”页面填写昵称、SteamID64、头像，并选择所属战队。',
         item3: 'HUD 会用注册选手的 SteamID64 识别 GSI 阵营，再显示正确队名和系列赛比分。',
         note: '更换导播电脑时，可在“设置 → 赛事数据”导出和导入战队、选手及头像。',

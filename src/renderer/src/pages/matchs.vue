@@ -418,6 +418,7 @@ import {
   BP_MAPS,
   BP_SERIES_ACTION_ORDER,
   BP_SERIES_RULES,
+  getTeamAbbreviation,
   isBPSequenceComplete,
   normalizeBPSequence,
   type BPAction,
@@ -650,7 +651,7 @@ function actionName(action: BPAction): string {
 
 function teamSlotName(slot: BPTeamSlot): string {
   const team = slot === 'team_a' ? selectedTeamA.value : selectedTeamB.value
-  return team?.name || team?.name_ingame || (slot === 'team_a' ? t('bp.teamA') : t('bp.teamB'))
+  return getTeamAbbreviation(team, slot === 'team_a' ? t('bp.teamA') : t('bp.teamB'))
 }
 
 function oppositeTeamSlot(slot: BPTeamSlot): BPTeamSlot {

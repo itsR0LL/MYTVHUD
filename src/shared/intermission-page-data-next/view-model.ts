@@ -1,5 +1,7 @@
 import {
   BP_MAPS,
+  getTeamAbbreviation,
+  getTeamFullName,
   isBPSequenceComplete,
   type BPMapId,
   type BPMatchType,
@@ -138,11 +140,17 @@ export interface StandbyPageData {
 }
 
 function teamView(team: BPTeam): IntermissionPageTeam {
-  const registeredName = team.name.trim()
-  const inGameName = team.name_ingame.trim()
   return {
     id: String(team.id),
-    name: registeredName || inGameName || String(team.id),
+    name: getTeamFullName(team, String(team.id)),
+    avatar: typeof team.avatar === 'string' && team.avatar.length > 0 ? team.avatar : null
+  }
+}
+
+function bpTeamView(team: BPTeam): IntermissionPageTeam {
+  return {
+    id: String(team.id),
+    name: getTeamAbbreviation(team, String(team.id)),
     avatar: typeof team.avatar === 'string' && team.avatar.length > 0 ? team.avatar : null
   }
 }
@@ -309,8 +317,8 @@ export function createBPPageData(payload: BPPayload): BPPageData | null {
     page: 'bp',
     matchId: String(match.id),
     matchType: match.type,
-    teamA: teamView(match.team_a),
-    teamB: teamView(match.team_b),
+    teamA: bpTeamView(match.team_a),
+    teamB: bpTeamView(match.team_b),
     sequence: payload.state.sequence.map((item) => ({ ...item })),
     playbackStarted: payload.state.playbackStarted,
     playbackStartedAtMs: payload.state.playbackStartedAtMs,

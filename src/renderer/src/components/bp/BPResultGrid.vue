@@ -36,6 +36,7 @@ import { defineComponent, h, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   BP_MAPS,
+  getTeamAbbreviation,
   type BPAction,
   type BPMapId,
   type BPSequenceItem,
@@ -64,7 +65,7 @@ function actionName(action: BPAction): string {
 }
 
 function teamDisplayName(team: BPTeam | null, fallback: string): string {
-  return team?.name || team?.name_ingame || fallback
+  return getTeamAbbreviation(team, fallback)
 }
 
 function actorTeam(item: BPSequenceItem): BPTeam | null {
