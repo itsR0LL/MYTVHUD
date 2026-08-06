@@ -83,7 +83,7 @@ function createWindow(): void {
 
 // Electron 初始化完成后再注册系统接口并创建窗口
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.mytvhud.manager')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

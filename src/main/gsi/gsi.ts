@@ -29,7 +29,6 @@ import {
   initializeIntermissionNextOutput,
   publishIntermissionNextSnapshot
 } from '../intermission-next/integration'
-import { HlaeKillfeedBridge } from './hlae-killfeed'
 
 const expressApp = express()
 const GSI = new CSGOGSI()
@@ -40,10 +39,6 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 })
-const hlaeKillfeedBridge = new HlaeKillfeedBridge(server, GSI, (payload) => {
-  io.emit('kill-feed', payload)
-})
-
 // HUD 主动刷新使用的实时通信命名空间
 const realtime = io.of('/realtime')
 const GSI_BROADCAST_INTERVAL_MS = 50
@@ -171,12 +166,7 @@ expressApp.get('/api/gsi/utility-replay-status', (_req, res) => {
   })
 })
 
-expressApp.get('/api/gsi/hlae-killfeed-status', (_req, res) => {
-  res.json(hlaeKillfeedBridge.getStatus())
-})
-
 expressApp.use('/overlay', express.static(join(__dirname, 'overlay/file')))
-expressApp.use('/hlae', express.static(join(__dirname, 'hlae/file')))
 expressApp.use('/bp', express.static(join(__dirname, 'bp/file'), { index: false }))
 void initializeIntermissionNextOutput(expressApp, (eventName, payload) => {
   io.emit(eventName, payload)

@@ -1,6 +1,6 @@
 import type { IpcMain } from 'electron'
 import { dialog } from 'electron'
-import { join, dirname } from 'path'
+import { basename, join, dirname } from 'path'
 import fs from 'fs'
 
 // 注册 GSI 配置写入接口，将 cfg 文件放入 game/csgo/cfg
@@ -19,6 +19,9 @@ export function registerAutoPlaceGSIIPC(ipc: IpcMain): void {
       }
 
       const exePath = res.filePaths[0]
+      if (basename(exePath) !== 'cs2.exe') {
+        return { success: false, message: '请选择 game\\bin\\win64\\cs2.exe' }
+      }
       // cs2.exe 路径格式：<游戏根目录>\\game\\bin\\win64\\cs2.exe
       const win64Dir = dirname(exePath)
       const binDir = dirname(win64Dir)

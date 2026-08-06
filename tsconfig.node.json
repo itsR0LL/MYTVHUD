@@ -17,6 +17,8 @@
         "./src/main/*"
       ]
     },
-    "isolatedModules": false
+    "isolatedModules": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   }
 }

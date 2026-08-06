@@ -205,7 +205,7 @@ const tutorialSteps: TutorialStep[] = [
       },
       {
         labelKey: 'menu.step4.consoleCommand',
-        value: 'cl_draw_only_deathnotices 1'
+        value: 'cl_draw_only_deathnotices 1; cl_drawhud_force_deathnotices -1'
       }
     ],
     actions: []

@@ -37,7 +37,6 @@ function createOverlayWindow(): BrowserWindow {
   overlayWindow.setIgnoreMouseEvents(true)
 
   const url = is.dev ? 'http://localhost:5032/' : 'http://localhost:5031/overlay'
-  console.log(is.dev)
   overlayWindow.loadURL(url).catch(() => {
     // 页面加载失败时关闭无效窗口，允许下次重新创建
     overlayWindow?.close()

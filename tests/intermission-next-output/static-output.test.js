@@ -12,6 +12,9 @@ const rendererI18nPath = path.resolve(__dirname, '../../src/renderer/src/i18n/in
 const broadcastFlowPath = path.resolve(__dirname, '../../src/main/intermission/broadcast-flow.ts')
 const packagePath = path.resolve(__dirname, '../../package.json')
 const electronBuilderPath = path.resolve(__dirname, '../../electron-builder.yml')
+const economyIconDirectory = path.resolve(__dirname, '../../src/main/overlay/file/economy-icons')
+const gameplayCorePath = path.resolve(__dirname, '../../src/main/overlay/file/gameplay-core.js')
+const gameplayCore = require(gameplayCorePath)
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function read(fileName) {
@@ -139,10 +142,151 @@ test('菜单教程保留清理 CS2 原版 UI 的控制台指令', () => {
   const menu = readRendererPage('menu.vue')
   const i18n = fs.readFileSync(rendererI18nPath, 'utf8')
 
-  assert.match(menu, /value: 'cl_draw_only_deathnotices 1'/)
+  assert.match(menu, /value: 'cl_draw_only_deathnotices 1; cl_drawhud_force_deathnotices -1'/)
   assert.match(menu, /labelKey: 'menu\.step4\.consoleCommand'/)
-  assert.match(i18n, /隐藏原版游戏 HUD，避免与 MYTVHUD 重叠/)
+  assert.match(i18n, /隐藏原版游戏 HUD 和击杀信息/)
   assert.match(i18n, /consoleCommand: '清理原版 UI'/)
+})
+
+test('比赛 HUD 使用三格存活人数、原位闪光和已结束地图胜场', () => {
+  const app = fs.readFileSync(
+    path.resolve(__dirname, '../../src/main/overlay/file/gameplay-enhancements.js'),
+    'utf8'
+  )
+  const core = fs.readFileSync(gameplayCorePath, 'utf8')
+  const css = fs.readFileSync(
+    path.resolve(__dirname, '../../src/main/overlay/file/gameplay-enhancements.css'),
+    'utf8'
+  )
+
+  assert.match(app, /element\('div', 'mytvhud-alive__versus', 'V'\)/)
+  assert.doesNotMatch(app, /mytvhud-alive__secondary|mytvhud-flash-row|createFlashCard/)
+  assert.match(core, /map\?\.status !== 'finished'/)
+  assert.match(app, /scheduleVueHudUpdate\(\)/)
+  assert.match(css, /html\.mytvhud-clutch-active/)
+  assert.match(css, /--mytvhud-flash-opacity/)
+})
+
+test('比赛 HUD 核心数据模块复用正式渲染逻辑', () => {
+  const data = {
+    phase_countdowns: { phase: 'live' },
+    map: {
+      team_ct: { name: '蓝队', consecutive_round_losses: 2 },
+      team_t: { name: '红队', consecutive_round_losses: 0 }
+    },
+    players: [
+      {
+        steamid: '1',
+        name: '选手一',
+        team: { side: 'CT' },
+        state: { health: 100, money: 2300, equip_value: 4800, armor: 100 },
+        primary_weapon: { name: 'weapon_m4a1_silencer' },
+        grenades: [{ name: 'weapon_smokegrenade' }, { name: 'weapon_flashbang' }]
+      },
+      {
+        steamid: '2',
+        name: '选手二',
+        team: { side: 'CT' },
+        state: { health: 0, money: 900, equip_value: 3100 },
+        secondary_weapon: { name: 'weapon_deagle' },
+        grenades: []
+      },
+      { steamid: '3', team: { side: 'T' }, state: { health: 100 } },
+      { steamid: '4', team: { side: 'T' }, state: { health: 35 } },
+      { steamid: '5', infos: { type: 'coach' }, team: { side: 'CT' }, state: { health: 0 } }
+    ]
+  }
+  const summary = gameplayCore.economyData(data, 'CT')
+
+  assert.equal(summary.team, '蓝队')
+  assert.equal(summary.totalMoney, 3200)
+  assert.equal(summary.totalEquipmentValue, 7900)
+  assert.equal(summary.consecutiveRoundLosses, 2)
+  assert.deepEqual(
+    summary.rows.map((player) => [player.name, player.weapon]),
+    [
+      ['选手一', 'm4a1_silencer'],
+      ['选手二', 'deagle']
+    ]
+  )
+  assert.deepEqual(gameplayCore.aliveData(data), {
+    visible: true,
+    ct: 1,
+    t: 2,
+    clutch: true
+  })
+  assert.equal(gameplayCore.flashOpacity(0.5), 0.5)
+  assert.equal(gameplayCore.flashOpacity(128), 128 / 255)
+  assert.equal(
+    gameplayCore.finishedMapWins(
+      [
+        { status: 'finished', aid: 'team-a', bid: 'team-b', ascore: 13, bscore: 8 },
+        { status: 'live', aid: 'team-a', bid: 'team-b', ascore: 9, bscore: 3 },
+        { status: 'finished', aid: 'team-a', bid: 'team-b', ascore: 10, bscore: 13 }
+      ],
+      'team-a'
+    ),
+    1
+  )
+})
+
+test('冻结时间经济面板使用独立图标资源并删除人物卡片重复经济信息', () => {
+  const app = fs.readFileSync(
+    path.resolve(__dirname, '../../src/main/overlay/file/gameplay-enhancements.js'),
+    'utf8'
+  )
+  const css = fs.readFileSync(
+    path.resolve(__dirname, '../../src/main/overlay/file/gameplay-enhancements.css'),
+    'utf8'
+  )
+
+  assert.match(css, /\.player-additional\[data-v-e7f03c4e\][\s\S]*?display:\s*none !important/)
+  assert.match(app, /ECONOMY_ICON_ROOT = '\/overlay\/economy-icons'/)
+  const core = fs.readFileSync(gameplayCorePath, 'utf8')
+  assert.match(core, /function playerWeapon\(player\)/)
+  assert.match(core, /function playerGrenades\(player\)/)
+  assert.match(app, /const gameplayCore = window\.MYTVHUDGameplayCore/)
+  assert.match(app, /`\$\{ECONOMY_ICON_ROOT\}\/\$\{iconName\}\.svg`/)
+  assert.doesNotMatch(app, /cloneNode\(true\)|\.player-weapon \.weapon|\.player-weapon \.grenades/)
+  assert.match(css, /\.mytvhud-economy__item-icon\.is-weapon/)
+  assert.match(css, /\.mytvhud-economy__item-icon\.is-grenade/)
+  for (const fileName of [
+    'armor.png',
+    'helmet.png',
+    'defuse.png',
+    'hegrenade.svg',
+    'flashbang.svg',
+    'smokegrenade.svg',
+    'incgrenade.svg',
+    'molotov.svg'
+  ]) {
+    assert.equal(fs.existsSync(path.join(economyIconDirectory, fileName)), true, fileName)
+  }
+  assert.doesNotMatch(app, /function grenadeLabel/)
+  assert.doesNotMatch(css, /mytvhud-economy__badge/)
+})
+
+test('比赛小地图缩小选手标记且不缩小炸弹与道具', () => {
+  const app = fs.readFileSync(
+    path.resolve(__dirname, '../../src/main/overlay/file/gameplay-enhancements.js'),
+    'utf8'
+  )
+  const css = fs.readFileSync(
+    path.resolve(__dirname, '../../src/main/overlay/file/gameplay-enhancements.css'),
+    'utf8'
+  )
+
+  assert.match(app, /RADAR_PLAYER_BASE_SCALE = 0\.78/)
+  assert.match(app, /--mytvhud-radar-player-scale/)
+  assert.match(app, /--mytvhud-radar-object-scale/)
+  assert.match(
+    css,
+    /\.radar-container \.map-container \.map \.player \.content[\s\S]*?var\(--mytvhud-radar-player-scale, 0\.78\)/
+  )
+  assert.match(
+    css,
+    /\.radar-container \.map-container \.map \.grenade \.content,[\s\S]*?var\(--mytvhud-radar-object-scale, 1\)/
+  )
 })
 
 test('本图数据板将双方选手表格上下排列', () => {
@@ -156,7 +300,7 @@ test('本图数据板将双方选手表格上下排列', () => {
   assert.doesNotMatch(statsRule, /border-left:/)
 })
 
-test('道具回放删除开发验证计数并使用真实彩色道具图标', () => {
+test('道具回放使用上一版矢量投掷物、烟雾和燃烧元素', () => {
   const app = read('app.js')
   const css = read('style.css')
 
@@ -166,8 +310,35 @@ test('道具回放删除开发验证计数并使用真实彩色道具图标', ()
   assert.match(app, /\['flash', 'flashbang', '闪光'\]/)
   assert.match(app, /\['fire', 'firebomb', '燃烧'\]/)
   assert.match(app, /createUtilityLegendIcon\(projectileType\)/)
+  assert.match(app, /class: 'utility-projectile-body'/)
+  assert.match(app, /utility-smoke-lobe is-front/)
+  assert.match(app, /class: 'utility-fire-outer'/)
+  assert.match(css, /\.utility-smoke-lobe/)
+  assert.match(css, /\.utility-fire-outer/)
   assert.match(css, /\.utility-legend-icon/)
   assert.doesNotMatch(css, /\.utility-legend-item i/)
+  assert.doesNotMatch(app, /HUD_GRENADE_STYLESHEET_URL|utility-projectile-icon/)
+  assert.doesNotMatch(css, /utility-smoke-zone|utility-fire-zone/)
+})
+
+test('项目不再包含 HLAE 注入、击杀桥接与安装资源', () => {
+  const builder = fs.readFileSync(electronBuilderPath, 'utf8')
+  const viteConfig = fs.readFileSync(
+    path.resolve(__dirname, '../../electron.vite.config.ts'),
+    'utf8'
+  )
+  const menu = readRendererPage('menu.vue')
+  const i18n = fs.readFileSync(rendererI18nPath, 'utf8')
+
+  assert.doesNotMatch(builder, /hlae|AfxHook/i)
+  assert.doesNotMatch(viteConfig, /hlae|AfxHook/i)
+  assert.doesNotMatch(menu, /hlae|attachHlae|killfeed-status/i)
+  assert.doesNotMatch(i18n, /hlae|AfxHook|注入下一次 CS2/i)
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../../src/main/gsi/hlae-launcher.ts')), false)
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../../src/main/gsi/hlae-killfeed.ts')), false)
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../../src/main/hlae')), false)
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../../native/hlae-attach')), false)
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../../vendor/hlae')), false)
 })
 
 test('比赛保存提示指向统一播出控制流程', () => {

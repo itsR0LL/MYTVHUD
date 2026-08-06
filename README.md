@@ -44,7 +44,7 @@ MYTVHUD Manager 是一套面向中文 CS2 赛事导播的本地 HUD 管理工具
 启动 CS2 并进入观察者模式，在管理器中打开 HUD 映射。需要隐藏游戏原生 HUD 时，可在 CS2 控制台执行：
 
 ```text
-cl_draw_only_deathnotices 1
+cl_draw_only_deathnotices 1; cl_drawhud_force_deathnotices -1
 ```
 
 ### 4. 配置 OBS

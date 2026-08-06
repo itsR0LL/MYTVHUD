@@ -81,9 +81,3 @@ watch(
 
 // 页面仅负责导航
 </script>
-
-<style scoped lang="scss">
-.sidebar-indicator-label {
-  font-size: 0.9rem;
-}
-</style>
