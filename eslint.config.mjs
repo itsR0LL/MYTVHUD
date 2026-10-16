@@ -12,7 +12,6 @@ export default defineConfig(
       '**/out',
       '**/.build',
       '**/.test-build',
-      // 现有 Overlay 是上游压缩构建产物，不作为本项目源代码执行 Lint
       'src/main/overlay/file/**'
     ]
   },

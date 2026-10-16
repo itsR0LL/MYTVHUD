@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>MYTVHUD-CSTV验证器</AssemblyName>
+    <RootNamespace>MYTVHUD.CSTVRecorder</RootNamespace>
+  </PropertyGroup>
+</Project>

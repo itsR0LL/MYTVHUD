@@ -1,6 +1,9 @@
 node_modules
 dist
 out
+bin
+obj
+release
 .DS_Store
 .eslintcache
 *.log*
